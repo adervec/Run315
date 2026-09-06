@@ -8,6 +8,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/Run315/static/style.css">
+<link rel="manifest" href="/Run315/manifest.webmanifest">
+<meta name="theme-color" content="#101828">
+<link rel="icon" href="/Run315/static/icon-192.png">
+<link rel="apple-touch-icon" href="/Run315/static/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Run315">
 </head>
 <body>
 
@@ -32,7 +38,7 @@
     <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
     <p class="masthead-meta">Routes you run again and again</p>
     <div class="masthead-actions">
-      <a class="btn btn-ghost" href="/Run315/routes">Plan a route</a>
+      <a class="btn btn-ghost" href="/Run315/routes/">Plan a route</a>
       <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
     </div>
   </header>
@@ -2082,6 +2088,14 @@
   
 </div>
 
+<script>
+  // Installable, and readable on the train. See templates/sw.js.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', function () {
+      navigator.serviceWorker.register('/Run315/sw.js');
+    });
+  }
+</script>
 
 <div id="frozen-note">
   <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page

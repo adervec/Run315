@@ -846,6 +846,24 @@ All free, all unauthenticated, none with an SLA:
   almost any block containing real hard work. The three shares are the honest
   discriminator; the index is for trending one block against the next.
 
+## Installing it
+
+Run315 is a PWA: install it from the browser's address bar on desktop, or
+Share -> Add to Home Screen on iOS, and it opens standalone with its own icon.
+
+`templates/manifest.webmanifest` and `templates/sw.js` are Jinja templates
+rather than static files, so `url_for` decides the paths and the same code
+serves a real install at `/` and the frozen demo under `/Run315/`. The service
+worker has to live at the mount root -- one served from `/static/` could only
+ever control `/static/`.
+
+Pages are network-first: this app shows *your* data, and a stale dashboard is
+worse than a spinner, so the cache only comes out when the network is gone.
+Anything that writes -- a sync, a new race, signing out -- drops the cached
+pages, which is also what stops the offline copy outliving your session.
+Icons come from `icons.py`: a 5x7 bitmap font and a hand-rolled PNG writer,
+which is less than a build dependency for two files that never change.
+
 ## Publishing the demo
 
 GitHub Pages serves files, not Flask, so `freeze.py` seeds the synthetic

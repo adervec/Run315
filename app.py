@@ -3000,6 +3000,25 @@ def export_csv():
         headers={"Content-Disposition": "attachment; filename=run315-activities.csv"})
 
 
+# --------------------------------------------------------------------------- #
+# installable app
+# --------------------------------------------------------------------------- #
+# Both files are templates so that url_for decides the paths: the same code
+# serves a real install at / and the frozen demo under /Run315/.
+@app.route("/manifest.webmanifest")
+def manifest():
+    return Response(render_template("manifest.webmanifest"),
+                    mimetype="application/manifest+json")
+
+
+@app.route("/sw.js")
+def service_worker():
+    # A worker can only control the directory it is served from, so this has
+    # to stay at the mount root -- not under /static/.
+    return Response(render_template("sw.js"), mimetype="text/javascript",
+                    headers={"Cache-Control": "no-cache"})
+
+
 @app.route("/healthz")
 def healthz():
     return {"ok": True, "activities": db().execute(

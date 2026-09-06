@@ -28,9 +28,9 @@ OUT = Path(os.environ.get("FREEZE_OUT", "docs"))
 BASE = os.environ.get("BASE_PATH", "").rstrip("/")
 SOURCE = os.environ.get("SOURCE_URL", "https://github.com/adervec/Run315")
 
-# Fetched by JavaScript rather than linked, so the crawler never sees them.
-SEEDS = ("/", "/api/tiles", "/api/trails", "/api/routes", "/api/poi-layers",
-         "/export.csv")
+# Fetched by JavaScript or registered by name, so no href points at them.
+SEEDS = ("/", "/sw.js", "/api/tiles", "/api/trails", "/api/routes",
+         "/api/poi-layers", "/export.csv")
 
 BANNER = """
 <div id="frozen-note">
@@ -104,7 +104,7 @@ def freeze():
         sess["uid"] = uid
 
     env = {"SCRIPT_NAME": BASE} if BASE else {}
-    seen, queue, written, skipped = set(), list(SEEDS), 0, []
+    seen, queue, made, skipped = set(), list(SEEDS), [], []
 
     while queue:
         path = queue.pop(0)
@@ -126,7 +126,18 @@ def freeze():
         dest = out_path(path)
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(body)
-        written += 1
+        made.append(path)
+
+    # Every page is written as <path>/index.html, so a link to /vitals costs a
+    # 301 to /vitals/. Point the links at the directory instead: no redirect,
+    # and a service worker can cache the answer -- it cannot cache a redirect.
+    dirs = [p for p in made if p != "/" and out_path(p).name == "index.html"]
+    for page in OUT.rglob("*.html"):
+        text = page.read_text(encoding="utf-8")
+        for path in dirs:
+            text = text.replace('href="%s%s"' % (BASE, path),
+                                'href="%s%s/"' % (BASE, path))
+        page.write_text(text, encoding="utf-8")
 
     shutil.copytree("static", OUT / "static")
     if BASE:
@@ -140,12 +151,15 @@ def freeze():
     miss = OUT / "404.html"
     miss.write_bytes((OUT / "index.html").read_bytes())
 
-    print("\n%d pages -> %s/  (base %r)" % (written, OUT, BASE or "/"))
+    print("\n%d pages -> %s/  (base %r)" % (len(made), OUT, BASE or "/"))
     for path, code in skipped:
         print("  skipped %s (%s)" % (path, code))
-    assert written > 10, "the crawl found almost nothing -- did login work?"
+    assert len(made) > 10, "the crawl found almost nothing -- did login work?"
     assert (OUT / "vitals" / "index.html").exists(), "vitals did not render"
-    return written
+    # Without both of these the site is a website, not an installable app.
+    assert (OUT / "sw.js").exists(), "no service worker: nothing will install"
+    assert (OUT / "manifest.webmanifest").exists(), "no manifest"
+    return len(made)
 
 
 if __name__ == "__main__":

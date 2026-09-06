@@ -8,6 +8,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/Run315/static/style.css">
+<link rel="manifest" href="/Run315/manifest.webmanifest">
+<meta name="theme-color" content="#101828">
+<link rel="icon" href="/Run315/static/icon-192.png">
+<link rel="apple-touch-icon" href="/Run315/static/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Run315">
 </head>
 <body>
 
@@ -61,7 +67,7 @@
     <div class="panel-head">
       <p class="eyebrow">Session &middot; 6 reps, 225-875 m
         </p>
-      <p class="panel-note"><a class="quiet-link" href="/Run315/sessions">All sessions</a></p>
+      <p class="panel-note"><a class="quiet-link" href="/Run315/sessions/">All sessions</a></p>
     </div>
 
     <div class="race-headline" style="margin-bottom:20px">
@@ -517,6 +523,14 @@
 
 </div>
 
+<script>
+  // Installable, and readable on the train. See templates/sw.js.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', function () {
+      navigator.serviceWorker.register('/Run315/sw.js');
+    });
+  }
+</script>
 
 <div id="frozen-note">
   <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page

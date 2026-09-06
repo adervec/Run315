@@ -8,6 +8,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/Run315/static/style.css">
+<link rel="manifest" href="/Run315/manifest.webmanifest">
+<meta name="theme-color" content="#101828">
+<link rel="icon" href="/Run315/static/icon-192.png">
+<link rel="apple-touch-icon" href="/Run315/static/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Run315">
 </head>
 <body>
 
@@ -31,7 +37,7 @@
     <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
     <p class="masthead-meta">Hills, and what they cost you</p>
     <div class="masthead-actions">
-      <a class="btn btn-ghost" href="/Run315/durability">Durability</a>
+      <a class="btn btn-ghost" href="/Run315/durability/">Durability</a>
       <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
     </div>
   </header>
@@ -143,7 +149,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-257">Run</a>
+              <a href="/Run315/activity/demo-257/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-07-02</span>
             </td>
             <td class="num dim">10.5 km</td>
@@ -158,7 +164,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-179">Run</a>
+              <a href="/Run315/activity/demo-179/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-04-02</span>
             </td>
             <td class="num dim">8.1 km</td>
@@ -173,7 +179,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-261">Run</a>
+              <a href="/Run315/activity/demo-261/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-07-07</span>
             </td>
             <td class="num dim">9.0 km</td>
@@ -188,7 +194,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-196">Run</a>
+              <a href="/Run315/activity/demo-196/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-04-22</span>
             </td>
             <td class="num dim">9.6 km</td>
@@ -203,7 +209,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-286">Run</a>
+              <a href="/Run315/activity/demo-286/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-08-05</span>
             </td>
             <td class="num dim">11.5 km</td>
@@ -218,7 +224,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-225">Run</a>
+              <a href="/Run315/activity/demo-225/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-05-26</span>
             </td>
             <td class="num dim">10.6 km</td>
@@ -233,7 +239,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-265">Run</a>
+              <a href="/Run315/activity/demo-265/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-07-11</span>
             </td>
             <td class="num dim">5.0 km</td>
@@ -248,7 +254,7 @@
         
           <tr>
             <td>
-              <a href="/Run315/activity/demo-231">Run</a>
+              <a href="/Run315/activity/demo-231/">Run</a>
               <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-06-02</span>
             </td>
             <td class="num dim">9.3 km</td>
@@ -274,6 +280,14 @@
   
 </div>
 
+<script>
+  // Installable, and readable on the train. See templates/sw.js.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', function () {
+      navigator.serviceWorker.register('/Run315/sw.js');
+    });
+  }
+</script>
 
 <div id="frozen-note">
   <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page

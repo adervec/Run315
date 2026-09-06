@@ -3,6 +3,7 @@
 Uses a throwaway SQLite file and the demo seed, so it needs no Garmin or
 Anthropic credentials.
 """
+import json
 import os
 import tempfile
 
@@ -1334,6 +1335,59 @@ def test_channel_capture_keeps_unknown_metrics():
     # And the narrow legacy view still comes out the right shape.
     legacy = garmin.streams_from_channels(channels)
     assert legacy and len(legacy[0]) == 10
+
+
+def test_the_app_is_installable():
+    """Chrome will not offer to install without all of these at once."""
+    A.DEMO = True
+    A.init_db()
+    A.app.config["TESTING"] = True
+    client = A.app.test_client()
+
+    res = client.get("/manifest.webmanifest")
+    assert res.status_code == 200
+    assert res.mimetype == "application/manifest+json"
+    manifest = json.loads(res.get_data(as_text=True))
+    assert manifest["name"] and manifest["display"] == "standalone"
+    sizes = {i["sizes"] for i in manifest["icons"]}
+    assert {"192x192", "512x512"} <= sizes, sizes
+    assert any(i["purpose"] == "maskable" for i in manifest["icons"])
+    # start_url has to sit inside scope or the install is rejected.
+    assert manifest["start_url"].startswith(manifest["scope"])
+
+    # The worker must be served from the mount root: one served from /static/
+    # can only ever control /static/.
+    sw = client.get("/sw.js")
+    assert sw.status_code == 200 and "javascript" in sw.mimetype
+    body = sw.get_data(as_text=True)
+    assert "addEventListener('fetch'" in body     # no fetch handler, no install
+    assert "caches.delete(PAGES)" in body         # writes must drop stale pages
+
+    page = client.get("/").get_data(as_text=True)
+    assert 'rel="manifest"' in page and "serviceWorker" in page
+
+
+def test_the_icons_are_real_pngs_of_the_right_size():
+    import struct
+    for size in (192, 512):
+        raw = open("static/icon-%d.png" % size, "rb").read()
+        assert raw[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10]), "not a PNG"
+        w, h = struct.unpack(">II", raw[16:24])
+        assert (w, h) == (size, size), (w, h)
+
+
+def test_a_mount_point_moves_every_pwa_path():
+    """The frozen demo lives under /Run315/, so nothing may be hardcoded to /."""
+    A.app.config["TESTING"] = True
+    client = A.app.test_client()
+    env = {"SCRIPT_NAME": "/Run315"}
+    manifest = json.loads(
+        client.get("/manifest.webmanifest", environ_overrides=env).get_data(as_text=True))
+    assert manifest["start_url"] == "/Run315/"
+    assert manifest["scope"] == "/Run315/"
+    assert all(i["src"].startswith("/Run315/static/") for i in manifest["icons"])
+    sw = client.get("/sw.js", environ_overrides=env).get_data(as_text=True)
+    assert "'/Run315/'" in sw and "/Run315/static/style.css" in sw
 
 
 if __name__ == "__main__":

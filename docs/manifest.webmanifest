@@ -1,0 +1,48 @@
+{
+  "name": "Run315",
+  "short_name": "Run315",
+  "description": "Garmin analytics, race projections, routes, trails and territory.",
+  "start_url": "/Run315/",
+  "scope": "/Run315/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eceff3",
+  "theme_color": "#101828",
+  "icons": [
+    {
+      "src": "/Run315/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Run315/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Run315/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Vitals",
+      "url": "/Run315/vitals",
+      "description": "What actually responds to your training"
+    },
+    {
+      "name": "Routes",
+      "url": "/Run315/routes",
+      "description": "Draw a route"
+    },
+    {
+      "name": "Territory",
+      "url": "/Run315/intvl",
+      "description": "Tiles claimed"
+    }
+  ]
+}
