@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}{{ act['name'] }} — Run315{% endblock %}
+{% block body %}
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">{{ act['start'].strftime('%A %d %b %Y, %H:%M') }}</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">{{ act['type'].replace('_', ' ') }}{% if kind and kind != act['type'] %} &middot; read as <b>{{ kind }}</b>{% endif %}</p>
+    </div>
+    <h2 class="race-title">{{ act['name'] }}</h2>
+
+    <div class="race-headline">
+      <div>
+        <div class="projected measured">{{ '%.2f'|format((act['distance_m'] or 0) / 1000) }}
+          <small>km</small></div>
+      </div>
+      <div>
+        <div class="projected measured">{{ fmt_time(act['moving_s']) }}
+          <small>moving</small></div>
+      </div>
+      <div>
+        <div class="projected measured">{{ fmt_effort(act) }}
+          <small>average</small></div>
+      </div>
+      {% if adjusted_pace %}
+      <div>
+        <div class="projected">{{ fmt_pace(adjusted_pace, 1000) }}
+          <small>corrected for the heat</small></div>
+      </div>
+      {% endif %}
+      {% if act['avg_hr'] %}
+      <div>
+        <div class="projected measured">{{ '%.0f'|format(act['avg_hr']) }}
+          <small>avg bpm{% if act['max_hr'] %} &middot; max {{ '%.0f'|format(act['max_hr']) }}{% endif %}</small></div>
+      </div>
+      {% endif %}
+      {% if load %}
+      <div>
+        <div class="projected measured">{{ '%.0f'|format(load) }}
+          <small>training load</small></div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if session %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Session &middot; {{ session['name'] }}
+        {% if session['on_track'] %}<span class="badge-track">TRACK</span>{% endif %}</p>
+      <p class="panel-note"><a class="quiet-link" href="{{ url_for('sessions_page') }}">All sessions</a></p>
+    </div>
+
+    <div class="race-headline" style="margin-bottom:20px">
+      <div>
+        <div class="projected measured">{{ session['reps']|length }}
+          <small>reps</small></div>
+      </div>
+      <div>
+        <div class="projected measured">{{ fmt_pace(session['avg_pace'], 1000) }}
+          <small>average rep</small></div>
+      </div>
+      <div>
+        <div class="projected measured">{{ '%.2f'|format(session['work_m'] / 1000) }}
+          <small>km at effort</small></div>
+      </div>
+      {% if session['consistency'] is not none %}
+      <div>
+        <div class="projected measured">&plusmn;{{ '%.1f'|format(session['consistency'] * 100) }}<small>% spread</small></div>
+      </div>
+      {% endif %}
+      {% if session['fade'] is not none %}
+      <div>
+        <div class="projected {{ 'behind' if session['fade'] > 0.02 else 'ahead' if session['fade'] < -0.02 else 'measured' }}">
+          {{ '%+.1f'|format(session['fade'] * 100) }}<small>% fade</small></div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if band %}
+      <p class="stat-hint" style="margin-bottom:14px">
+        Your interval band right now is {{ fmt_time(prescribed[0]) }}&ndash;{{ fmt_pace(prescribed[1], 1000) }}.
+        {% if band['quicker'] == band['total'] %}
+          Every rep was <span class="ahead">quicker than that</span> &mdash; either a good day,
+          or the band is stale and your next hard effort will move it.
+        {% elif band['slower'] == band['total'] %}
+          Every rep came in <span class="behind">slower than that</span>.
+        {% else %}
+          {{ band['inside'] }} of {{ band['total'] }} landed inside it{% if band['quicker'] %},
+          {{ band['quicker'] }} <span class="ahead">quicker</span>{% endif %}{% if band['slower'] %},
+          {{ band['slower'] }} <span class="behind">slower</span>{% endif %}.
+        {% endif %}
+      </p>
+    {% endif %}
+
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Rep</th><th class="num">Distance</th><th class="num">Time</th>
+        <th class="num">Pace</th><th class="num">HR</th><th class="num">Recovery</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% set slow = session['reps']|map(attribute='pace')|max %}
+        {% set fast = session['reps']|map(attribute='pace')|min %}
+        {% for r in session['reps'] %}
+          <tr>
+            <td>{{ r['n'] }}</td>
+            <td class="num">{% if r['snapped_m'] %}{{ r['snapped_m'] }} m
+              <span class="dim">({{ '%.0f'|format(r['distance_m']) }})</span>
+              {% else %}{{ '%.0f'|format(r['distance_m']) }} m{% endif %}</td>
+            <td class="num actual">{{ fmt_time(r['seconds']) }}</td>
+            <td class="num {{ 'actual' if r['pace'] == fast else 'dim' }}">{{ fmt_pace(r['pace'], 1000) }}</td>
+            <td class="num dim">{{ '%.0f'|format(r['avg_hr']) if r['avg_hr'] else '—' }}</td>
+            <td class="num dim">
+              {%- if r['recovery_s'] %}{{ fmt_time(r['recovery_s']) }}
+                {%- if r['recovery_m'] %} <span class="dim">/ {{ '%.0f'|format(r['recovery_m']) }} m</span>{% endif %}
+              {%- else %}&mdash;{% endif %}</td>
+            <td style="width:34%">
+              {% set span = slow - fast %}
+              <span class="split-bar-wrap" style="display:block">
+                <span class="split-bar" style="width:{{ '%.0f'|format(45 + 55 * ((slow - r['pace']) / span if span > 1 else 0.5)) }}%"></span>
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      Reps were found from the pace stream, not from lap presses. Longer bar is faster.
+    </p>
+  </section>
+  {% endif %}
+
+  {% if wx_line %}
+    <p class="wx-line">{{ wx_line }}</p>
+  {% endif %}
+
+  {% if shape and form_findings %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Running form</p>
+      <p class="panel-note">Over the running portion only</p>
+    </div>
+
+    <div class="digest">
+      {% if shape['cadence'] and shape['cadence']['mean'] %}
+      <div class="stat">
+        <div class="stat-value">{{ '%.0f'|format(shape['cadence']['mean']) }}<small class="unit">spm</small></div>
+        <div class="stat-label">Cadence</div>
+        {% if shape['cadence']['sd'] %}
+          <div class="stat-hint">&plusmn;{{ '%.0f'|format(shape['cadence']['sd']) }} spread</div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% if shape['stride_m'] and shape['stride_m']['mean'] %}
+      <div class="stat">
+        <div class="stat-value">{{ '%.2f'|format(shape['stride_m']['mean']) }}<small class="unit">m</small></div>
+        <div class="stat-label">Stride length</div>
+      </div>
+      {% endif %}
+      {% if shape['gct_ms'] and shape['gct_ms']['mean'] %}
+      <div class="stat">
+        <div class="stat-value">{{ '%.0f'|format(shape['gct_ms']['mean']) }}<small class="unit">ms</small></div>
+        <div class="stat-label">Ground contact</div>
+      </div>
+      {% endif %}
+      {% if shape['vertical_ratio'] %}
+      <div class="stat">
+        <div class="stat-value">{{ '%.1f'|format(shape['vertical_ratio']) }}<small class="unit">%</small></div>
+        <div class="stat-label">Vertical ratio</div>
+        <div class="stat-hint">Bounce as a share of stride.</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if form_drift and form_drift['cadence_delta'] is not none %}
+      <p class="stat-hint" style="margin-top:14px">
+        Second half against the first: cadence
+        <span class="{{ 'behind' if form_drift['cadence_delta'] < -2 else 'dim' }}">
+          {{ '%+.0f'|format(form_drift['cadence_delta']) }} spm</span>
+        {%- if form_drift['gct_delta'] is not none %}, ground contact
+        <span class="{{ 'behind' if form_drift['gct_delta'] > 5 else 'dim' }}">
+          {{ '%+.0f'|format(form_drift['gct_delta']) }} ms</span>{% endif %}.
+        {%- if form_drift['pace_first'] and form_drift['pace_second'] %}
+        Pace went {{ fmt_pace(form_drift['pace_first'], 1000) }} to
+        {{ fmt_pace(form_drift['pace_second'], 1000) }}, which moves cadence on its own.
+        {%- endif %}
+      </p>
+    {% endif %}
+
+    <ul class="findings">
+      {% for f in form_findings %}
+        <li class="sev-{{ f['severity'] }}">
+          <span class="sev-dot"></span>{{ f['text'] }}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if breaks %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Why you stopped</p>
+      <p class="panel-note">{{ fmt_time(breaks['lost_s']) }} not running</p>
+    </div>
+
+    <p class="verdict">{{ breaks['verdict'] }}</p>
+
+    <div class="break-counts">
+      {% for key, label, cls in [('crossings','Crossings','k-crossing'),
+                                 ('rests','Rest stops','k-rest'),
+                                 ('climbs','Climbs','k-climb'),
+                                 ('exhaustion','Fatigue','k-exhaustion'),
+                                 ('eased','Eased off','k-eased')] %}
+        {% if breaks[key] %}
+          <span class="break-chip {{ cls }}">{{ breaks[key] }} {{ label }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="table-scroll" style="margin-top:16px"><table>
+      <thead><tr>
+        <th>At</th><th>What it was</th><th class="num">For</th>
+        <th class="num">HR</th><th class="num">Pace after</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for it in breaks['interruptions'] %}
+          <tr>
+            <td class="dim">{{ '%.2f'|format(it['at_m'] / 1000) }} km</td>
+            <td>
+              <span class="break-dot k-{{ it['label'] }}"></span>
+              <b>{{ it['label']|capitalize }}</b>
+              {% if it['junction'] %}<span class="dim"> &middot; known corner</span>{% endif %}
+              <br><span class="dim">{{ it['reason'] }}</span>
+            </td>
+            <td class="num actual">{{ fmt_time(it['seconds']) }}</td>
+            <td class="num dim">
+              {%- if it['hr_drop'] is not none %}&minus;{{ '%.0f'|format(it['hr_drop']) }}
+              {%- else %}&mdash;{% endif %}</td>
+            <td class="num">
+              {% if it['penalty'] is not none %}
+                <span class="{{ 'behind' if it['penalty'] > 0.02 else 'ahead' if it['penalty'] < -0.02 else 'dim' }}">
+                  {{ '%+.1f'|format(it['penalty'] * 100) }}%</span>
+              {% else %}<span class="dim">&mdash;</span>{% endif %}
+            </td>
+            <td class="num dim">{{ '%.0f'|format(it['confidence'] * 100) }}% sure</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      &ldquo;Pace after&rdquo; compares the 250 m before the interruption with the 250 m
+      after. A stop you recover from costs nothing; fatigue shows up here.
+    </p>
+  </section>
+  {% endif %}
+
+  {% if track %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Where you ran</p>
+      <p class="panel-note">{{ track|length }} points</p>
+    </div>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <div id="actmap" style="height:380px;border-radius:3px;background:var(--ground)"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script id="trackdata" type="application/json">{{ track|tojson }}</script>
+    <script>
+    (function () {
+      var pts = JSON.parse(document.getElementById('trackdata').textContent);
+      if (!pts.length || typeof L === 'undefined') return;
+      var map = L.map('actmap', { preferCanvas: true });
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+      var line = L.polyline(pts, { color: '#0b6e79', weight: 4 }).addTo(map);
+      map.fitBounds(line.getBounds(), { padding: [18, 18] });
+      L.circleMarker(pts[0], { radius: 6, color: '#17694a', fillOpacity: 1 })
+        .addTo(map).bindTooltip('Start');
+      L.circleMarker(pts[pts.length - 1], { radius: 6, color: '#a5321f', fillOpacity: 1 })
+        .addTo(map).bindTooltip('Finish');
+    })();
+    </script>
+  </section>
+  {% endif %}
+
+  {% if splits %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Kilometre splits</p>
+      <p class="panel-note">
+        {% if evenness is not none %}
+          {% if evenness < 0.03 %}Very even pacing.
+          {% elif evenness < 0.08 %}Steady, with some variation.
+          {% else %}Uneven &mdash; a workout, or a run that got away from you.{% endif %}
+        {% endif %}
+      </p>
+    </div>
+    <div class="splits">
+      {% for k, secs, pace in splits %}
+        {% set span = split_max - split_min %}
+        {% set frac = (pace - split_min) / span if span > 1 else 0.5 %}
+        <div class="split-row">
+          <span class="split-k">{{ k }}</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:{{ '%.0f'|format(45 + 55 * (1 - frac)) }}%"></span>
+          </span>
+          <span class="split-pace">{{ fmt_pace(pace, 1000) }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="stat-hint" style="margin-top:10px">Longer bar is faster. Last split may be partial.</p>
+  </section>
+  {% endif %}
+
+  <div class="grid-half">
+    {% if efforts %}
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Best efforts in this run</p></div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Distance</th><th class="num">Time</th><th class="num">Pace</th><th class="num">vs record</th></tr></thead>
+        <tbody>
+          {% for d, s, pr, is_pr in efforts %}
+            <tr>
+              <td>{{ '%.2f'|format(d / 1000) }} km{% if is_pr %} <span class="tag">PR</span>{% endif %}</td>
+              <td class="num actual">{{ fmt_time(s) }}</td>
+              <td class="num dim">{{ fmt_pace(s, d) }}</td>
+              <td class="num dim">{% if pr %}{{ '+' if s > pr + 0.5 else '' }}{{ fmt_time(s - pr) if s > pr + 0.5 else 'record' }}{% else %}&mdash;{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Signals</p></div>
+      {% if drift is not none %}
+        <div class="stat">
+          <div class="stat-value {% if drift > 8 %}risk{% endif %}">{{ '%+.1f'|format(drift) }}%</div>
+          <div class="stat-label">Cardiac drift</div>
+          <div class="stat-hint">
+            {% if drift < 3 %}Well within aerobic range. This effort was sustainable.
+            {% elif drift < 8 %}Some drift &mdash; warm conditions, or the top end of easy.
+            {% else %}High drift. Hotter, longer, or harder than it should have been.{% endif %}
+          </div>
+        </div>
+      {% endif %}
+      {% if act['elev_gain_m'] %}
+        <div class="stat">
+          <div class="stat-value">{{ '%.0f'|format(act['elev_gain_m']) }}</div>
+          <div class="stat-label">Metres climbed</div>
+        </div>
+      {% endif %}
+      {% if act['calories'] %}
+        <div class="stat">
+          <div class="stat-value">{{ '%.0f'|format(act['calories']) }}</div>
+          <div class="stat-label">Calories</div>
+        </div>
+      {% endif %}
+      {% if not has_stream %}
+        <div class="empty"><p>No per-second data for this activity yet. It will fill in
+          on the next analysis pass, if Garmin has it.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+</div>
+{% endblock %}

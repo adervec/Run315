@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Vitals — Run315{% endblock %}
+{% block body %}
+<style>
+  .rbar { display: inline-block; height: 10px; border-radius: 5px; vertical-align: 1px; }
+  .rbar.pos { background: var(--measured); }
+  .rbar.neg { background: var(--behind); }
+  .rnum { font-family: var(--mono); font-size: 13px; }
+  .stages { display: flex; height: 26px; border-radius: 4px; overflow: hidden;
+            margin: 10px 0 6px; }
+  .stages i { display: block; height: 100%; }
+  .st-deep { background: #1b3a6b; } .st-light { background: #7ba7d7; }
+  .st-rem { background: var(--projected); }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 11px;
+          padding: 2px 7px; border-radius: 10px; background: #eef1f5;
+          color: var(--muted); margin: 2px 3px 2px 0; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Everything the watch records off the run</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="{{ url_for('durability_page') }}">Durability</a>
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Dashboard</a>
+    </div>
+  </header>
+
+  {% if not report %}
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Not enough days yet</p></div>
+      <div class="empty">
+        <p>This page needs a few weeks of daily data &mdash; stress, sleep stages,
+          body battery, blood oxygen, body mass &mdash; before any of it can be
+          told apart from noise. Sync once the watch has been worn a while.</p>
+      </div>
+    </section>
+  {% else %}
+
+  {% set co = report['correlations'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What actually responds to your training</p>
+      <p class="panel-note">{{ report['metrics'] }} metrics &middot;
+        {{ report['days'] }} days &middot; {{ co['tested'] }} correlations tested</p>
+    </div>
+    <div class="empty">
+      <p>Your watch records two dozen things a day. For any given person about
+        three of them genuinely move with training, and which three is
+        individual. These are yours.</p>
+    </div>
+
+    {% if co['findings'] %}
+      <div class="table-scroll"><table>
+        <thead><tr><th>Signal</th><th>When</th><th class="num">r</th><th></th></tr></thead>
+        <tbody>
+          {% for f in co['findings'] %}
+            <tr>
+              <td><b>{{ f['label'][0]|upper }}{{ f['label'][1:] }}</b></td>
+              <td class="dim">{{ {0: 'same day', 1: 'next day', 2: 'two days later'}.get(f['lag'], 'a week later') }}</td>
+              <td class="num rnum {{ 'ahead' if f['r'] > 0 else 'behind' }}">{{ '%+.2f'|format(f['r']) }}</td>
+              <td>
+                <span class="rbar {{ 'pos' if f['r'] > 0 else 'neg' }}"
+                      style="width:{{ '%.0f'|format(f['r']|abs * 120) }}px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">{{ f['note'] }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    {% else %}
+      <p class="verdict">Nothing clears the bar. With {{ co['tested'] }} tests run,
+        a correlation has to reach {{ '%.2f'|format(co['critical_r']) }} before it
+        is worth believing, and none of yours does.</p>
+    {% endif %}
+
+    <p class="stat-hint" style="margin-top:14px">
+      Testing {{ co['tested'] }} correlations at the usual 5% threshold would throw up
+      about {{ (co['tested'] * 0.05)|round|int }} false positives from noise alone
+      &mdash; and in fact {{ co['uncorrected'] }} of yours would have cleared that bar.
+      Everything above is corrected for the number of tests, so the threshold is
+      <strong>r &gt; {{ '%.2f'|format(co['critical_r']) }}</strong> instead.
+    </p>
+    <p class="stat-hint">
+      Two honest caveats. Hard days cluster and bad nights cluster, so your days
+      are not independent and the real evidence is weaker than the arithmetic
+      suggests. And correlation is not causation: a daily record cannot tell you
+      which way the arrow points. Read these as dials worth glancing at, not as
+      findings.
+    </p>
+
+    {% if co['mechanical'] %}
+      <p class="stat-hint" style="margin-top:12px">
+        Left out as arithmetic rather than insight:
+        {% for m in co['mechanical'] %}<span class="chip">{{ m['label'] }} {{ '%+.2f'|format(m['r']) }}</span>{% endfor %}
+        &mdash; calories and step counts rise on days you run further because
+        that is what they measure.
+      </p>
+    {% endif %}
+  </section>
+
+  {% if report['sleep'] %}
+  {% set s = report['sleep'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">How your nights are built</p>
+      <p class="panel-note">{{ s['nights'] }} nights &middot;
+        {{ '%.1f'|format(s['asleep_s'] / 3600) }} h asleep on average</p>
+    </div>
+    <div class="stages">
+      <i class="st-deep" style="width:{{ '%.1f'|format(s['deep_share'] * 100) }}%"></i>
+      <i class="st-light" style="width:{{ '%.1f'|format(s['light_share'] * 100) }}%"></i>
+      <i class="st-rem" style="width:{{ '%.1f'|format(s['rem_share'] * 100) }}%"></i>
+    </div>
+    <div class="polar-key">
+      <span><i class="st-deep"></i>Deep {{ '%.0f'|format(s['deep_share'] * 100) }}%</span>
+      <span><i class="st-light"></i>Light {{ '%.0f'|format(s['light_share'] * 100) }}%</span>
+      <span><i class="st-rem"></i>REM {{ '%.0f'|format(s['rem_share'] * 100) }}%</span>
+    </div>
+    <p class="verdict" style="margin-top:12px">{{ s['note'] }}</p>
+    <p class="stat-hint">Adults typically run 13&ndash;23% deep and 20&ndash;25% REM.
+      Yours are {{ 'both inside' if s['deep_typical'] and s['rem_typical'] else 'not both inside' }} those ranges.</p>
+  </section>
+  {% endif %}
+
+  {% if report['trends'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Which way things are heading</p>
+      <p class="panel-note">last fortnight against the one before</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Metric</th><th class="num">Before</th><th class="num">Recent</th>
+        <th class="num">Change</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for t in report['trends'] %}
+          <tr>
+            <td>{{ t['label'][0]|upper }}{{ t['label'][1:] }}</td>
+            <td class="num dim">{{ '%.1f'|format(t['before']) }}</td>
+            <td class="num actual">{{ '%.1f'|format(t['recent']) }}</td>
+            <td class="num {{ 'ahead' if t['better'] else 'behind' if t['better'] is false else 'dim' }}">
+              {{ '%+.1f'|format(t['change']) }}</td>
+            <td class="dim">{% if t['notable'] %}notable{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      &ldquo;Notable&rdquo; means the change is more than half the metric&rsquo;s
+      own spread &mdash; a blunt filter, but it stops a number wobbling by its
+      usual amount from looking like a development.
+    </p>
+  </section>
+  {% endif %}
+
+  {% if report['odd_days'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Days your body was somewhere else</p>
+      <p class="panel-note">unusual across several signals at once</p>
+    </div>
+    <div class="empty"><p>One metric out of range is noise. Three or four at once,
+      on the same day, is the day you were coming down with something &mdash; and
+      no single chart can show you that.</p></div>
+    {% for o in report['odd_days'] %}
+      <div class="rung" style="display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule)">
+        <b style="font-family:var(--mono)">{{ o['day'] }}</b>
+        <span class="dim">{{ o['count'] }} signals</span>
+        <span style="margin-left:auto">
+          {% for m in o['metrics'] %}
+            <span class="chip">{{ m['label'] }} {{ '%+.1f'|format(m['z']) }}&sigma;</span>
+          {% endfor %}
+        </span>
+      </div>
+    {% endfor %}
+    <p class="stat-hint" style="margin-top:12px">
+      Days when you simply ran further are excluded &mdash; calories and step
+      counts spiking on a long run is not your body being unusual.
+    </p>
+  </section>
+  {% endif %}
+
+  {% if report['coverage'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What your watches actually record</p>
+      <p class="panel-note">per-sample channels, and how many runs carry them</p>
+    </div>
+    <div class="empty"><p>Every channel the device reports is stored, named or
+      not. This is what makes the analysis above possible, and it changes the day
+      you buy a new watch or put on a chest strap.</p></div>
+    {% for name, count in report['coverage'] %}
+      <span class="chip">{{ name }} &middot; {{ count }}</span>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% endif %}
+</div>
+{% endblock %}

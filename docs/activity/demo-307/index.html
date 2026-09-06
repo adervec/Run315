@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Saturday 29 Aug 2026, 07:30</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">running &middot; read as <b>tempo</b></p>
+    </div>
+    <h2 class="race-title">Run</h2>
+
+    <div class="race-headline">
+      <div>
+        <div class="projected measured">11.62
+          <small>km</small></div>
+      </div>
+      <div>
+        <div class="projected measured">51:22
+          <small>moving</small></div>
+      </div>
+      <div>
+        <div class="projected measured">4:25 /km
+          <small>average</small></div>
+      </div>
+      
+      <div>
+        <div class="projected">4:22 /km
+          <small>corrected for the heat</small></div>
+      </div>
+      
+      
+      <div>
+        <div class="projected measured">162
+          <small>avg bpm &middot; max 177</small></div>
+      </div>
+      
+      
+      <div>
+        <div class="projected measured">73
+          <small>training load</small></div>
+      </div>
+      
+    </div>
+  </section>
+
+  
+
+  
+    <p class="wx-line">20 C, 56% humidity, 11 C dew point -- worth about 1.4%, so your corrected pace is what matters.</p>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Running form</p>
+      <p class="panel-note">Over the running portion only</p>
+    </div>
+
+    <div class="digest">
+      
+      <div class="stat">
+        <div class="stat-value">184<small class="unit">spm</small></div>
+        <div class="stat-label">Cadence</div>
+        
+          <div class="stat-hint">&plusmn;2 spread</div>
+        
+      </div>
+      
+      
+      <div class="stat">
+        <div class="stat-value">1.23<small class="unit">m</small></div>
+        <div class="stat-label">Stride length</div>
+      </div>
+      
+      
+      <div class="stat">
+        <div class="stat-value">233<small class="unit">ms</small></div>
+        <div class="stat-label">Ground contact</div>
+      </div>
+      
+      
+      <div class="stat">
+        <div class="stat-value">6.7<small class="unit">%</small></div>
+        <div class="stat-label">Vertical ratio</div>
+        <div class="stat-hint">Bounce as a share of stride.</div>
+      </div>
+      
+    </div>
+
+    
+      <p class="stat-hint" style="margin-top:14px">
+        Second half against the first: cadence
+        <span class="dim">
+          -0 spm</span>, ground contact
+        <span class="dim">
+          +1 ms</span>.
+        Pace went 4:24 /km to
+        4:24 /km, which moves cadence on its own.
+      </p>
+    
+
+    <ul class="findings">
+      
+        <li class="sev-good">
+          <span class="sev-dot"></span>Cadence averaged 184 spm, inside the 170-180 range most runners settle at.
+        </li>
+      
+        <li class="sev-good">
+          <span class="sev-dot"></span>Ground contact averaged 233 ms, the quick side of the ~250 ms usually quoted.
+        </li>
+      
+        <li class="sev-good">
+          <span class="sev-dot"></span>Vertical ratio 6.7%, under the ~10% usually called economical: the bounce is paying for itself in stride.
+        </li>
+      
+        <li class="sev-good">
+          <span class="sev-dot"></span>Cadence and ground contact held between the halves of the run: the form you finished with was the form you started with.
+        </li>
+      
+        <li class="sev-good">
+          <span class="sev-dot"></span>Cadence moves only 5 spm from your slowest pace to your fastest, so the gears are coming from stride length. That is what a settled gait looks like.
+        </li>
+      
+    </ul>
+  </section>
+  
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Where you ran</p>
+      <p class="panel-note">233 points</p>
+    </div>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <div id="actmap" style="height:380px;border-radius:3px;background:var(--ground)"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script id="trackdata" type="application/json">[[47.3769, 8.5417], [47.376675, 8.542274], [47.376451, 8.542849], [47.376222, 8.543419], [47.375953, 8.543951], [47.375685, 8.544482], [47.375408, 8.545004], [47.375099, 8.545485], [47.37479, 8.545967], [47.37449, 8.546459], [47.374213, 8.546981], [47.373935, 8.547502], [47.373642, 8.548004], [47.373326, 8.548475], [47.373009, 8.548945], [47.372676, 8.549389], [47.372325, 8.549802], [47.371974, 8.550216], [47.37164, 8.550657], [47.371317, 8.551119], [47.370995, 8.551581], [47.37065, 8.552005], [47.370295, 8.552411], [47.36994, 8.552816], [47.369563, 8.553176], [47.36918, 8.553522], [47.368796, 8.553868], [47.368435, 8.554262], [47.368078, 8.554663], [47.36772, 8.555065], [47.367338, 8.555411], [47.366954, 8.555755], [47.366569, 8.556096], [47.366163, 8.556381], [47.365757, 8.556665], [47.365355, 8.556959], [47.364972, 8.557307], [47.36459, 8.557655], [47.364203, 8.55799], [47.3638, 8.558282], [47.363397, 8.558575], [47.362988, 8.558848], [47.362568, 8.559084], [47.362148, 8.559319], [47.361738, 8.559586], [47.36134, 8.559894], [47.360942, 8.560202], [47.360536, 8.560482], [47.360121, 8.560738], [47.359707, 8.560994], [47.359285, 8.561218], [47.358858, 8.561423], [47.35843, 8.561627], [47.358019, 8.561889], [47.357613, 8.562174], [47.357207, 8.562459], [47.356791, 8.562706], [47.356372, 8.562945], [47.355953, 8.563184], [47.355524, 8.563382], [47.355095, 8.563576], [47.354665, 8.56377], [47.354258, 8.564051], [47.353852, 8.564332], [47.353444, 8.56461], [47.353026, 8.564852], [47.352608, 8.565094], [47.352188, 8.565329], [47.351761, 8.565534], [47.351333, 8.565738], [47.350914, 8.56597], [47.350512, 8.566268], [47.350111, 8.566566], [47.349706, 8.566852], [47.349295, 8.567118], [47.348883, 8.567384], [47.348468, 8.567635], [47.348048, 8.567871], [47.347628, 8.568106], [47.347226, 8.568398], [47.346838, 8.568731], [47.34645, 8.569064], [47.346055, 8.56938], [47.345657, 8.569688], [47.34526, 8.569996], [47.344856, 8.570286], [47.34445, 8.57057], [47.344044, 8.570854], [47.343672, 8.571223], [47.343305, 8.571606], [47.342938, 8.571989], [47.342563, 8.572353], [47.342188, 8.572717], [47.341812, 8.573079], [47.341428, 8.573425], [47.341045, 8.57377], [47.340669, 8.57413], [47.340334, 8.574571], [47.339999, 8.575012], [47.339661, 8.57545], [47.339318, 8.575877], [47.338974, 8.576304], [47.338628, 8.576726], [47.338277, 8.57714], [47.337926, 8.577554], [47.3376, 8.578005], [47.337307, 8.578507], [47.337013, 8.579009], [47.336715, 8.579505], [47.336414, 8.579996], [47.336112, 8.580487], [47.335806, 8.580972], [47.335497, 8.581453], [47.335188, 8.581934], [47.334926, 8.58247], [47.334684, 8.583027], [47.334441, 8.583585], [47.334595, 8.583231], [47.334838, 8.582673], [47.335081, 8.582116], [47.335384, 8.581628], [47.335693, 8.581148], [47.336002, 8.580666], [47.336304, 8.580175], [47.336605, 8.579684], [47.336906, 8.579192], [47.337199, 8.57869], [47.337493, 8.578189], [47.337798, 8.577705], [47.338149, 8.577291], [47.3385, 8.576877], [47.338849, 8.57646], [47.339192, 8.576033], [47.339536, 8.575606], [47.339876, 8.575173], [47.340211, 8.574732], [47.340547, 8.574291], [47.340905, 8.573897], [47.341289, 8.573551], [47.341672, 8.573205], [47.342051, 8.572849], [47.342426, 8.572486], [47.342802, 8.572122], [47.343171, 8.571746], [47.343538, 8.571363], [47.343905, 8.57098], [47.344302, 8.570674], [47.344708, 8.57039], [47.345113, 8.570105], [47.345512, 8.569801], [47.34591, 8.569493], [47.346308, 8.569185], [47.346696, 8.568853], [47.347085, 8.56852], [47.347475, 8.568192], [47.347895, 8.567957], [47.348315, 8.567721], [47.348733, 8.567481], [47.349144, 8.567215], [47.349556, 8.566949], [47.349965, 8.566675], [47.350366, 8.566377], [47.350767, 8.566079], [47.351177, 8.565813], [47.351605, 8.565608], [47.352032, 8.565404], [47.352455, 8.565183], [47.352873, 8.564941], [47.353291, 8.564698], [47.353703, 8.564435], [47.35411, 8.564154], [47.354517, 8.563872], [47.354938, 8.563646], [47.355367, 8.563453], [47.355797, 8.563259], [47.356219, 8.563032], [47.356638, 8.562793], [47.357057, 8.562555], [47.357465, 8.562278], [47.35787, 8.561993], [47.358276, 8.561709], [47.358702, 8.561498], [47.359129, 8.561293], [47.359556, 8.561088], [47.35997, 8.560832], [47.360385, 8.560576], [47.360797, 8.560314], [47.361195, 8.560006], [47.361593, 8.559698], [47.361995, 8.559405], [47.362415, 8.55917], [47.362835, 8.558934], [47.36325, 8.558681], [47.363653, 8.558389], [47.364056, 8.558097], [47.364451, 8.557782], [47.364833, 8.557434], [47.365215, 8.557086], [47.365609, 8.556769], [47.366015, 8.556485], [47.36642, 8.5562], [47.366814, 8.555881], [47.367198, 8.555537], [47.367581, 8.555193], [47.367947, 8.55481], [47.368305, 8.554408], [47.368662, 8.554007], [47.36904, 8.553648], [47.369423, 8.553302], [47.369806, 8.552957], [47.370165, 8.552559], [47.370521, 8.552153], [47.370876, 8.551747], [47.371199, 8.551288], [47.371522, 8.550826], [47.371846, 8.550367], [47.372197, 8.549953], [47.372548, 8.54954], [47.372894, 8.549117], [47.37321, 8.548646], [47.373527, 8.548176], [47.373834, 8.547693], [47.374111, 8.547171], [47.374389, 8.54665], [47.374677, 8.546142], [47.374986, 8.545661], [47.375295, 8.54518], [47.375587, 8.544676], [47.375855, 8.544145], [47.376124, 8.543613], [47.376369, 8.543059], [47.376593, 8.542484], [47.376818, 8.54191]]</script>
+    <script>
+    (function () {
+      var pts = JSON.parse(document.getElementById('trackdata').textContent);
+      if (!pts.length || typeof L === 'undefined') return;
+      var map = L.map('actmap', { preferCanvas: true });
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+      var line = L.polyline(pts, { color: '#0b6e79', weight: 4 }).addTo(map);
+      map.fitBounds(line.getBounds(), { padding: [18, 18] });
+      L.circleMarker(pts[0], { radius: 6, color: '#17694a', fillOpacity: 1 })
+        .addTo(map).bindTooltip('Start');
+      L.circleMarker(pts[pts.length - 1], { radius: 6, color: '#a5321f', fillOpacity: 1 })
+        .addTo(map).bindTooltip('Finish');
+    })();
+    </script>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Kilometre splits</p>
+      <p class="panel-note">
+        
+          Uneven &mdash; a workout, or a run that got away from you.
+        
+      </p>
+    </div>
+    <div class="splits">
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">1</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:45%"></span>
+          </span>
+          <span class="split-pace">4:45 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">2</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:45%"></span>
+          </span>
+          <span class="split-pace">4:45 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">3</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:45%"></span>
+          </span>
+          <span class="split-pace">4:45 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">4</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:74%"></span>
+          </span>
+          <span class="split-pace">4:20 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">5</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:100%"></span>
+          </span>
+          <span class="split-pace">3:57 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">6</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:100%"></span>
+          </span>
+          <span class="split-pace">3:57 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">7</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:100%"></span>
+          </span>
+          <span class="split-pace">3:57 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">8</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:100%"></span>
+          </span>
+          <span class="split-pace">3:57 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">9</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:52%"></span>
+          </span>
+          <span class="split-pace">4:39 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">10</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:45%"></span>
+          </span>
+          <span class="split-pace">4:45 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">11</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:45%"></span>
+          </span>
+          <span class="split-pace">4:45 /km</span>
+        </div>
+      
+        
+        
+        <div class="split-row">
+          <span class="split-k">12</span>
+          <span class="split-bar-wrap">
+            <span class="split-bar" style="width:45%"></span>
+          </span>
+          <span class="split-pace">4:45 /km</span>
+        </div>
+      
+    </div>
+    <p class="stat-hint" style="margin-top:10px">Longer bar is faster. Last split may be partial.</p>
+  </section>
+  
+
+  <div class="grid-half">
+    
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Best efforts in this run</p></div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Distance</th><th class="num">Time</th><th class="num">Pace</th><th class="num">vs record</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>0.40 km</td>
+              <td class="num actual">1:35</td>
+              <td class="num dim">3:57 /km</td>
+              <td class="num dim">+0:08</td>
+            </tr>
+          
+            <tr>
+              <td>0.80 km</td>
+              <td class="num actual">3:10</td>
+              <td class="num dim">3:57 /km</td>
+              <td class="num dim">+0:17</td>
+            </tr>
+          
+            <tr>
+              <td>1.00 km</td>
+              <td class="num actual">3:57</td>
+              <td class="num dim">3:57 /km</td>
+              <td class="num dim">+0:14</td>
+            </tr>
+          
+            <tr>
+              <td>1.61 km</td>
+              <td class="num actual">6:22</td>
+              <td class="num dim">3:57 /km</td>
+              <td class="num dim">+0:08</td>
+            </tr>
+          
+            <tr>
+              <td>3.00 km</td>
+              <td class="num actual">11:52</td>
+              <td class="num dim">3:57 /km</td>
+              <td class="num dim">+0:16</td>
+            </tr>
+          
+            <tr>
+              <td>5.00 km</td>
+              <td class="num actual">20:03</td>
+              <td class="num dim">4:01 /km</td>
+              <td class="num dim">+0:43</td>
+            </tr>
+          
+            <tr>
+              <td>10.00 km</td>
+              <td class="num actual">43:46</td>
+              <td class="num dim">4:23 /km</td>
+              <td class="num dim">+2:50</td>
+            </tr>
+          
+        </tbody>
+      </table></div>
+    </section>
+    
+
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Signals</p></div>
+      
+        <div class="stat">
+          <div class="stat-value ">+4.9%</div>
+          <div class="stat-label">Cardiac drift</div>
+          <div class="stat-hint">
+            Some drift &mdash; warm conditions, or the top end of easy.
+            
+          </div>
+        </div>
+      
+      
+        <div class="stat">
+          <div class="stat-value">36</div>
+          <div class="stat-label">Metres climbed</div>
+        </div>
+      
+      
+        <div class="stat">
+          <div class="stat-value">565</div>
+          <div class="stat-label">Calories</div>
+        </div>
+      
+      
+    </section>
+  </div>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

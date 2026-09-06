@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Your routes — Run315{% endblock %}
+{% block body %}
+<style>
+  .route-name { font-weight: 600; font-size: 16px; }
+  .route-sub { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .run-count {
+    font-family: var(--display); font-size: 26px; font-weight: 800;
+    letter-spacing: -0.03em; color: var(--measured);
+  }
+  .spark { display: flex; gap: 2px; align-items: flex-end; height: 30px; }
+  .spark i {
+    display: block; width: 4px; background: var(--measured); border-radius: 1px;
+    min-height: 3px;
+  }
+  .spark i.best { background: var(--ahead); }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Routes you run again and again</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="{{ url_for('routes_page') }}">Plan a route</a>
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Dashboard</a>
+    </div>
+  </header>
+
+  {% if not routes %}
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Nothing repeated yet</p></div>
+      <div class="empty">
+        <p>Run315 spots a route you have run before by comparing the map tiles a
+          run covers &mdash; the same machinery the territory game uses. Once the
+          same ground shows up three times, it appears here with your times on it.</p>
+      </div>
+      <a class="btn" href="{{ url_for('index') }}">Go and sync</a>
+    </section>
+  {% else %}
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Your routes</p>
+      <p class="panel-note">{{ routes|length }} run at least three times &middot; last 12 months</p>
+    </div>
+    <div class="empty"><p>Same ground, same comparison. A route you run weekly is
+      the most honest fitness test you have, because nothing about it changes
+      except you.</p></div>
+
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Route</th><th class="num">Runs</th><th class="num">Best</th>
+        <th class="num">Latest</th><th class="num">Trend</th><th>Times</th>
+      </tr></thead>
+      <tbody>
+        {% for r in routes %}
+          {% set p = r['progression'] %}
+          <tr>
+            <td>
+              <span class="route-name">{{ r['name'] }}</span>
+              <br><span class="route-sub">{{ '%.2f'|format(r['distance_m'] / 1000) }} km
+                &middot; {{ p['first'].strftime('%Y-%m-%d') if p['first'] else '' }}
+                &rarr; {{ p['last'].strftime('%Y-%m-%d') if p['last'] else '' }}</span>
+            </td>
+            <td class="num"><span class="run-count">{{ r['count'] }}</span></td>
+            <td class="num actual">
+              {%- if p['best_pace'] %}{{ fmt_pace(p['best_pace'], 1000) }}
+                <br><span class="route-sub">{{ p['best_at'].strftime('%Y-%m-%d') if p['best_at'] else '' }}</span>
+              {%- else %}&mdash;{% endif %}</td>
+            <td class="num dim">{{ fmt_pace(p['latest_pace'], 1000) if p['latest_pace'] else '—' }}</td>
+            <td class="num">
+              {% if p['change'] is not none %}
+                <span class="{{ 'ahead' if p['change'] < -0.005 else 'behind' if p['change'] > 0.005 else 'dim' }}">
+                  {{ '%+.1f'|format(p['change'] * 100) }}%</span>
+              {% else %}<span class="dim">&mdash;</span>{% endif %}
+            </td>
+            <td>
+              {% set paces = [] %}
+              {% for run in r['runs'] %}
+                {% if run['moving_s'] and run['distance_m'] %}
+                  {% set _ = paces.append(run['moving_s'] / (run['distance_m'] / 1000)) %}
+                {% endif %}
+              {% endfor %}
+              {% if paces|length > 1 %}
+                {% set slow = paces|max %}{% set fast = paces|min %}
+                <span class="spark">
+                  {% for pace in paces[-40:] %}
+                    {% set span = slow - fast %}
+                    <i class="{{ 'best' if span > 1 and pace <= fast + span * 0.02 }}"
+                       style="height:{{ '%.0f'|format(6 + 22 * ((slow - pace) / span if span > 1 else 0.5)) }}px"
+                       title="{{ fmt_pace(pace, 1000) }}"></i>
+                  {% endfor %}
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:12px">
+      Taller bar is quicker; green is your best on that route. Trend compares the
+      first half of your runs on it with the second, so a route you only ever jog
+      will read flat &mdash; which is the honest answer.
+    </p>
+  </section>
+
+  {% for r in routes[:6] %}
+    {% if r['progression']['verdict'] %}
+      <section class="panel">
+        <div class="panel-head">
+          <p class="eyebrow">{{ r['name'] }}</p>
+          <p class="panel-note">{{ r['shape'] }} &middot; {{ r['count'] }} runs
+            over {{ r['progression']['days'] }} days</p>
+        </div>
+        <p class="verdict">{{ r['progression']['verdict'] }}</p>
+        {% if r['progression']['off_best'] %}
+          <p class="stat-hint">Your most recent effort was
+            {{ '%.1f'|format(r['progression']['off_best'] * 100) }}% off your best on it.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+  {% endfor %}
+
+  {% endif %}
+</div>
+{% endblock %}

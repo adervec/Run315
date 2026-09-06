@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riverside Half — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Race plan</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">2026-07-12 &middot; 21.10 km</p>
+    </div>
+    <h2 class="race-title">Riverside Half</h2>
+
+    
+      <p class="stat-hint">Run 56 days ago.</p>
+    
+  </section>
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Result</p>
+    </div>
+    
+      <div class="race-headline">
+        <div>
+          <div class="projected measured">1:37:22
+            <small>4:37 /km</small></div>
+          <div class="stat-label" style="margin-top:8px">Finish time</div>
+        </div>
+        
+          
+          <div>
+            <div class="projected behind">
+              +1:22
+              <small>projected 1:36:00</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              Slower than projected</div>
+          </div>
+        
+      </div>
+    
+    <form method="post" action="/Run315/races/5/result" class="form-row" style="margin-top:14px">
+      <div class="field"><label for="actual">Correct the finish time</label>
+        <input type="text" id="actual" name="actual" placeholder="1:29:30" pattern="[0-9:.]*" required></div>
+      <button class="btn" type="submit">Save result</button>
+    </form>
+  </section>
+  
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">The course</p>
+      
+    </div>
+
+    
+      <div class="empty">
+        <p>Attach the course and the pacing below stops being a guess about a flat
+          road. Upload the organiser GPX, or point at a run where you covered the
+          same ground.</p>
+      </div>
+      <form method="post" action="/Run315/race/5/course"
+            enctype="multipart/form-data" class="form-row">
+        <input type="hidden" name="source" value="gpx">
+        <div class="field field-grow"><label for="gpx">Course GPX</label>
+          <input type="file" id="gpx" name="gpx" accept=".gpx,application/gpx+xml" required></div>
+        <button class="btn" type="submit">Attach course</button>
+      </form>
+      
+        <form method="post" action="/Run315/race/5/course"
+              class="form-row" style="margin-top:10px">
+          <input type="hidden" name="source" value="activity">
+          <div class="field field-grow"><label for="fromact">Or use a run</label>
+            <select id="fromact" name="garmin_id">
+              
+                <option value="demo-266">2026-07-12 &middot;
+                  23.00 km</option>
+              
+                <option value="demo-265">2026-07-11 &middot;
+                  5.00 km</option>
+              
+            </select></div>
+          <button class="btn btn-ghost" type="submit">Use that track</button>
+        </form>
+      
+    
+  </section>
+
+  
+  
+
+  
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Fuelling</p>
+      <p class="panel-note">for 1:38:04 of running</p>
+    </div>
+
+    <div class="digest">
+      <div class="stat">
+        <div class="stat-value">30&ndash;60<small class="unit">g/h</small></div>
+        <div class="stat-label">Carbohydrate</div>
+        <div class="stat-hint">49&ndash;98 g over the race.</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-value">400&ndash;600<small class="unit">ml/h</small></div>
+        <div class="stat-label">Fluid</div>
+        <div class="stat-hint">To thirst, inside that range.</div>
+      </div>
+      
+      
+    </div>
+
+    <p class="stat-hint" style="margin-top:12px">30-60 g of carbohydrate an hour. A single sugar is fine at this rate; the gut absorbs it without help.</p>
+    
+      <p class="stat-hint">Drink to thirst inside this range rather than to a schedule. Overdrinking dilutes your blood sodium, which is more dangerous than mild dehydration and does put runners in hospital every year.</p>
+    
+
+    
+      <p class="eyebrow" style="margin-top:16px">Roughly when</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>At</th><th class="num">Take</th><th class="num">Running total</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>14:41</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">22 g</td>
+            </tr>
+          
+            <tr>
+              <td>44:02</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">44 g</td>
+            </tr>
+          
+            <tr>
+              <td>1:13:23</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">66 g</td>
+            </tr>
+          
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:10px">
+        Spaced evenly rather than crammed late: the gut empties at a rate, and a
+        backlog does not clear once you are working hard. Nothing in the last ten
+        minutes, because it would not be absorbed in time to matter.
+      </p>
+    
+
+    
+      <p class="stat-hint" style="margin-top:14px">For a race this long, 36-48 hours of high-carbohydrate eating beforehand measurably helps. It is about eating more carbohydrate, not more food -- and the training taper is what makes room for it.
+        
+          Aim for 8&ndash;12 g
+          of carbohydrate per kilo of body weight per day, for the two days before.
+        </p>
+    
+
+    <p class="stat-hint" style="margin-top:12px">
+      These are the published consensus ranges (Jeukendrup 2014; the joint
+      position stand of the Academy of Nutrition and Dietetics, Dietitians of
+      Canada and the ACSM, 2016), not personal advice. Gut tolerance is
+      individual and 90 g/h is a trained capacity rather than a starting point
+      &mdash; practise it in training, never first on race day.
+    </p>
+  </section>
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Postmortem</p>
+      <p class="panel-note">
+        <a class="quiet-link" href="/Run315/activity/demo-266">the run</a> &middot; matched automatically</p>
+    </div>
+
+    
+      <p class="verdict">Negative split. Exactly how it is supposed to be done.</p>
+      <div class="digest">
+        <div class="stat">
+          <div class="stat-value">1:59:23</div>
+          <div class="stat-label">Ran</div>
+          
+        </div>
+        
+        <div class="stat">
+          <div class="stat-value ">-3.5<small class="unit">%</small></div>
+          <div class="stat-label">Second half vs first</div>
+          
+            <div class="stat-hint">-3.2% on effort</div>
+          
+        </div>
+        
+        
+        
+        <div class="stat">
+          <div class="stat-value">+9</div>
+          <div class="stat-label">HR drift, bpm</div>
+        </div>
+        
+      </div>
+
+      <div class="table-scroll" style="margin-top:18px"><table>
+        <thead><tr>
+          <th>Km</th><th class="num">Plan</th><th class="num">Ran</th>
+          <th class="num">Delta</th><th class="num">Grade</th>
+          <th class="num">Effort</th><th class="num">HR</th>
+        </tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.9%</td>
+              <td class="num dim">4:48 /km</td>
+              <td class="num dim">139</td>
+            </tr>
+          
+            <tr>
+              <td>2</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:25 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.5%</td>
+              <td class="num dim">5:17 /km</td>
+              <td class="num dim">139</td>
+            </tr>
+          
+            <tr>
+              <td>3</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.0%</td>
+              <td class="num dim">5:02 /km</td>
+              <td class="num dim">141</td>
+            </tr>
+          
+            <tr>
+              <td>4</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.5%</td>
+              <td class="num dim">5:10 /km</td>
+              <td class="num dim">141</td>
+            </tr>
+          
+            <tr>
+              <td>5</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:01 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.9%</td>
+              <td class="num dim">5:16 /km</td>
+              <td class="num dim">142</td>
+            </tr>
+          
+            <tr>
+              <td>6</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-1.0%</td>
+              <td class="num dim">5:18 /km</td>
+              <td class="num dim">143</td>
+            </tr>
+          
+            <tr>
+              <td>7</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.8%</td>
+              <td class="num dim">5:15 /km</td>
+              <td class="num dim">143</td>
+            </tr>
+          
+            <tr>
+              <td>8</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:01 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.4%</td>
+              <td class="num dim">5:08 /km</td>
+              <td class="num dim">144</td>
+            </tr>
+          
+            <tr>
+              <td>9</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.1%</td>
+              <td class="num dim">4:59 /km</td>
+              <td class="num dim">145</td>
+            </tr>
+          
+            <tr>
+              <td>10</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.6%</td>
+              <td class="num dim">4:52 /km</td>
+              <td class="num dim">145</td>
+            </tr>
+          
+            <tr>
+              <td>11</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">7:33 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.9%</td>
+              <td class="num dim">7:11 /km</td>
+              <td class="num dim">131</td>
+            </tr>
+          
+            <tr>
+              <td>12</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.9%</td>
+              <td class="num dim">4:46 /km</td>
+              <td class="num dim">147</td>
+            </tr>
+          
+            <tr>
+              <td>13</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.7%</td>
+              <td class="num dim">4:50 /km</td>
+              <td class="num dim">147</td>
+            </tr>
+          
+            <tr>
+              <td>14</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:01 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.2%</td>
+              <td class="num dim">4:57 /km</td>
+              <td class="num dim">148</td>
+            </tr>
+          
+            <tr>
+              <td>15</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:22 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.3%</td>
+              <td class="num dim">5:26 /km</td>
+              <td class="num dim">147</td>
+            </tr>
+          
+            <tr>
+              <td>16</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:02 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.7%</td>
+              <td class="num dim">5:14 /km</td>
+              <td class="num dim">149</td>
+            </tr>
+          
+            <tr>
+              <td>17</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">5:01 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.9%</td>
+              <td class="num dim">5:17 /km</td>
+              <td class="num dim">150</td>
+            </tr>
+          
+            <tr>
+              <td>18</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">4:40 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.9%</td>
+              <td class="num dim">4:54 /km</td>
+              <td class="num dim">150</td>
+            </tr>
+          
+            <tr>
+              <td>19</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">6:16 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.6%</td>
+              <td class="num dim">6:28 /km</td>
+              <td class="num dim">151</td>
+            </tr>
+          
+            <tr>
+              <td>20</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">4:57 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">-0.1%</td>
+              <td class="num dim">4:59 /km</td>
+              <td class="num dim">152</td>
+            </tr>
+          
+            <tr>
+              <td>21</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">4:57 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.4%</td>
+              <td class="num dim">4:50 /km</td>
+              <td class="num dim">152</td>
+            </tr>
+          
+            <tr>
+              <td>22</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">4:57 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+0.8%</td>
+              <td class="num dim">4:44 /km</td>
+              <td class="num dim">153</td>
+            </tr>
+          
+            <tr>
+              <td>23</td>
+              <td class="num dim">&mdash;</td>
+              <td class="num actual">4:57 /km</td>
+              <td class="num">
+                <span class="dim">&mdash;</span>
+              </td>
+              <td class="num dim">+1.0%</td>
+              <td class="num dim">4:42 /km</td>
+              <td class="num dim">154</td>
+            </tr>
+          
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:10px">
+        &ldquo;Effort&rdquo; is the pace adjusted for gradient, so a slow kilometre
+        uphill can be a better effort than a quick one on the flat.
+      </p>
+    
+
+    
+      <form method="post" action="/Run315/race/5/ran"
+            class="form-row" style="margin-top:14px">
+        <div class="field field-grow"><label for="ranact">The run that was this race</label>
+          <select id="ranact" name="garmin_id">
+            <option value="">&mdash; none &mdash;</option>
+            
+              <option value="demo-266" selected>
+                2026-07-12 &middot; 23.00 km</option>
+            
+              <option value="demo-265">
+                2026-07-11 &middot; 5.00 km</option>
+            
+          </select></div>
+        <button class="btn btn-ghost" type="submit">Link</button>
+      </form>
+    
+  </section>
+  
+
+  
+
+  <form method="post" action="/Run315/races/5/delete">
+    <button class="btn-quiet" type="submit">Remove this race</button>
+  </form>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

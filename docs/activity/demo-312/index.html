@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bike — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Thursday 03 Sep 2026, 16:30</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">cycling</p>
+    </div>
+    <h2 class="race-title">Bike</h2>
+
+    <div class="race-headline">
+      <div>
+        <div class="projected measured">44.19
+          <small>km</small></div>
+      </div>
+      <div>
+        <div class="projected measured">1:32:22
+          <small>moving</small></div>
+      </div>
+      <div>
+        <div class="projected measured">28.7 km/h
+          <small>average</small></div>
+      </div>
+      
+      
+      <div>
+        <div class="projected measured">133
+          <small>avg bpm &middot; max 155</small></div>
+      </div>
+      
+      
+      <div>
+        <div class="projected measured">89
+          <small>training load</small></div>
+      </div>
+      
+    </div>
+  </section>
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  <div class="grid-half">
+    
+
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Signals</p></div>
+      
+      
+        <div class="stat">
+          <div class="stat-value">249</div>
+          <div class="stat-label">Metres climbed</div>
+        </div>
+      
+      
+        <div class="stat">
+          <div class="stat-value">831</div>
+          <div class="stat-label">Calories</div>
+        </div>
+      
+      
+        <div class="empty"><p>No per-second data for this activity yet. It will fill in
+          on the next analysis pass, if Garmin has it.</p></div>
+      
+    </section>
+  </div>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

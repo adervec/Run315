@@ -1,0 +1,501 @@
+/* Run315 -- measured data reads teal, model projections read violet.
+   That split is the whole point of the app, so colour carries it everywhere. */
+:root {
+  --ground: #eceff3;
+  --surface: #ffffff;
+  --line: #d6dbe2;
+  --ink: #101828;
+  --muted: #5b6675;
+  --faint: #8b94a3;
+
+  --measured: #0b6e79;
+  --measured-soft: #e0f0f2;
+  --projected: #5b3fd6;
+  --projected-soft: #ece7fd;
+
+  --ahead: #17694a;
+  --behind: #a5321f;
+
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--projected); }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 72px; }
+
+/* ---------- masthead ---------- */
+.masthead {
+  display: flex; align-items: center; gap: 16px;
+  padding: 22px 0 18px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.brand span { color: var(--measured); }
+.masthead-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: auto;
+}
+.masthead-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- buttons ---------- */
+.btn {
+  font-family: var(--body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 2px;
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1.2;
+}
+.btn:hover { background: #24304a; border-color: #24304a; }
+.btn-ghost { background: transparent; color: var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: #fff; }
+.btn-quiet {
+  background: none; border: none; color: var(--faint);
+  font-size: 13px; padding: 4px 6px; cursor: pointer; text-decoration: underline;
+}
+.btn-quiet:hover { color: var(--behind); }
+.btn:focus-visible, .btn-quiet:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 3px solid var(--projected);
+  outline-offset: 2px;
+}
+
+/* ---------- panels ---------- */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.panel-head {
+  display: flex; align-items: baseline; gap: 12px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.panel-note { font-size: 13px; color: var(--faint); margin: 0 0 0 auto; }
+
+.grid-2 { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+.grid-half { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+/* Grid children default to min-width:auto and refuse to shrink below their
+   content, which pushes the whole page into horizontal scroll. */
+.grid-2 > *, .grid-half > *, .start-row > * { min-width: 0; }
+.table-scroll { overflow-x: auto; }
+
+/* ---------- signature: the start list ---------- */
+.startlist { display: flex; flex-direction: column; }
+.start-row {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 150px 104px 28px;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.start-row:first-child { border-top: none; }
+
+.countdown {
+  font-family: var(--mono);
+  text-align: center;
+  line-height: 1;
+}
+.countdown b {
+  display: block;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.countdown small {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint);
+}
+
+.race-name { font-weight: 600; font-size: 17px; margin: 0 0 3px; }
+.race-sub {
+  font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 0;
+}
+
+.projected {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--projected);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.projected small {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.delta {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.delta small {
+  display: block; font-size: 10px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint);
+}
+.ahead { color: var(--ahead); }
+.behind { color: var(--behind); }
+
+/* confidence: three lanes, filled left to right */
+.lanes { display: flex; gap: 3px; margin-top: 7px; }
+.lane { height: 3px; width: 16px; background: var(--line); border-radius: 2px; }
+.lane.on { background: var(--projected); }
+
+/* ---------- form / stats ---------- */
+.stat { border-top: 1px solid var(--line); padding: 12px 0; }
+.stat:first-child { border-top: none; padding-top: 0; }
+.stat-value {
+  font-family: var(--display);
+  font-size: 30px; font-weight: 800; letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--measured);
+}
+.stat-label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-top: 5px;
+}
+.stat-hint { font-size: 13px; color: var(--faint); margin-top: 3px; }
+
+/* ---------- chart ---------- */
+.chart { width: 100%; height: 170px; display: block; }
+.chart-legend {
+  display: flex; gap: 18px; margin-top: 10px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.swatch { display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; }
+
+/* ---------- tables ---------- */
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  text-align: left; padding: 0 0 8px; border-bottom: 1px solid var(--line);
+}
+td {
+  padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px;
+  vertical-align: baseline;
+}
+tr:last-child td { border-bottom: none; }
+/* Cells carry no horizontal padding, so neighbouring columns run into each
+   other once a table gets crowded. Space them from the second column on. */
+th + th, td + td { padding-left: 14px; }
+.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.time { color: var(--projected); font-weight: 600; }
+.actual { color: var(--measured); font-weight: 600; }
+.dim { color: var(--faint); }
+
+/* ---------- forms ---------- */
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+}
+input[type=text], input[type=date], input[type=password], input[type=email], input[type=number] {
+  font-family: var(--body); font-size: 14px;
+  padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 2px;
+  background: #fff; color: var(--ink);
+}
+input:focus { border-color: var(--projected); }
+.field-grow { flex: 1 1 180px; }
+.field-grow input { width: 100%; }
+
+/* ---------- flashes ---------- */
+.flash {
+  padding: 11px 14px; border-radius: 2px; margin-bottom: 12px; font-size: 14px;
+  border-left: 4px solid var(--muted); background: #fff;
+}
+.flash-success { border-left-color: var(--ahead); }
+.flash-error { border-left-color: var(--behind); }
+.flash-info { border-left-color: var(--projected); }
+
+/* ---------- review ---------- */
+.review h3 {
+  font-family: var(--display); font-size: 15px; font-weight: 800;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  margin: 22px 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--line);
+}
+.review h3:first-child { margin-top: 0; }
+.review p { margin: 0 0 10px; }
+.review ul { margin: 0 0 12px; padding-left: 20px; }
+.review li { margin-bottom: 5px; }
+.review code {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--measured-soft); padding: 1px 4px; border-radius: 2px;
+}
+
+/* ---------- empty states ---------- */
+.empty { padding: 6px 0 2px; }
+.empty p { margin: 0 0 14px; color: var(--muted); max-width: 52ch; }
+
+/* ---------- login ---------- */
+.login-page { display: flex; align-items: center; min-height: 100vh; }
+.login-card { max-width: 470px; margin: 0 auto; padding: 20px; }
+.login-title {
+  font-family: var(--display); font-size: 52px; font-weight: 800;
+  letter-spacing: -0.045em; line-height: 0.95; margin: 0 0 6px;
+}
+.login-title span { color: var(--measured); }
+.login-lede { font-size: 17px; color: var(--muted); margin: 0 0 26px; max-width: 40ch; }
+.login-list {
+  list-style: none; padding: 0; margin: 0 0 28px;
+  border-top: 1px solid var(--line);
+}
+.login-list li {
+  padding: 11px 0; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; color: var(--muted);
+}
+.login-list b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 820px) {
+  .grid-2, .grid-half { grid-template-columns: 1fr; }
+  .start-row {
+    grid-template-columns: 54px 1fr;
+    grid-template-areas: "count name" "proj delta" "lanes lanes";
+    row-gap: 10px;
+  }
+  .start-row .countdown { grid-area: count; }
+  .start-row .race-cell { grid-area: name; }
+  .start-row .proj-cell { grid-area: proj; }
+  .start-row .delta { grid-area: delta; }
+  .start-row .del-cell { display: none; }
+  .login-title { font-size: 40px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .start-row { transition: background 120ms ease; }
+  .start-row:hover { background: #fafbfc; }
+}
+
+/* ---------- training log heatmap ---------- */
+.heat-scroll { overflow-x: auto; padding-bottom: 4px; }
+.heat { display: flex; gap: 3px; min-width: max-content; }
+.heat-col { display: flex; flex-direction: column; gap: 3px; }
+.heat-cell {
+  width: 13px; height: 13px; border-radius: 2px;
+  background: var(--measured); display: block;
+}
+.heat-empty { background: #e7ebf0; }
+
+/* ---------- pace curve ---------- */
+.chart-curve { height: 150px; }
+
+/* ---------- race detail ---------- */
+.race-title {
+  font-family: var(--display); font-size: 34px; font-weight: 800;
+  letter-spacing: -0.04em; margin: 0 0 22px;
+}
+.race-headline {
+  display: flex; gap: 48px; flex-wrap: wrap; align-items: flex-start;
+}
+.projected.measured { color: var(--measured); }
+.projected.ahead { color: var(--ahead); }
+.projected.behind { color: var(--behind); }
+.stat-value.risk { color: var(--behind); }
+
+.brand a { color: inherit; text-decoration: none; }
+.race-name a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.race-name a:hover { border-bottom-color: var(--projected); color: var(--projected); }
+.axis-label {
+  font-family: var(--mono); font-size: 10px; fill: var(--faint);
+}
+
+/* ---------- this week digest ---------- */
+.digest {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 28px;
+}
+.digest .stat { border-top: none; padding-top: 0; }
+.stat-value .unit {
+  font-family: var(--mono); font-size: 12px; font-weight: 400;
+  letter-spacing: 0; margin-left: 4px; color: var(--muted);
+}
+.quiet-link { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.quiet-link:hover { color: var(--projected); border-bottom-color: var(--projected); }
+
+/* ---------- activity splits ---------- */
+.splits { display: flex; flex-direction: column; gap: 5px; }
+.split-row {
+  display: grid; grid-template-columns: 28px 1fr 84px; gap: 12px; align-items: center;
+}
+.split-k { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; }
+.split-bar-wrap { background: #eef1f5; height: 14px; border-radius: 2px; overflow: hidden; }
+.split-bar { display: block; height: 100%; background: var(--measured); }
+.split-pace {
+  font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right;
+}
+.tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  background: var(--measured); color: #fff; padding: 1px 5px; border-radius: 2px;
+  vertical-align: middle; margin-left: 4px;
+}
+
+.past-races { margin-top: 14px; }
+.past-races summary {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); cursor: pointer; padding: 6px 0;
+}
+.past-races[open] summary { margin-bottom: 8px; }
+
+/* ---------- interval sessions ---------- */
+.badge-track {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  background: var(--projected); color: #fff; padding: 1px 6px; border-radius: 2px;
+  vertical-align: middle; margin-left: 6px;
+}
+
+/* ---------- why you stopped ---------- */
+.verdict {
+  font-family: var(--display); font-size: 19px; font-weight: 600;
+  letter-spacing: -0.01em; margin: 0 0 14px;
+}
+.break-counts { display: flex; gap: 8px; flex-wrap: wrap; }
+.break-chip {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+  padding: 4px 9px; border-radius: 2px; border: 1px solid var(--line);
+}
+.break-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: 1px;
+}
+.k-crossing { border-color: #8b94a3; }
+.k-crossing.break-dot { background: #8b94a3; }
+.k-rest { border-color: var(--projected); }
+.k-rest.break-dot { background: var(--projected); }
+.k-climb { border-color: #b07d2b; }
+.k-climb.break-dot { background: #b07d2b; }
+.k-exhaustion { border-color: var(--behind); color: var(--behind); }
+.k-exhaustion.break-dot { background: var(--behind); }
+.k-eased { border-color: var(--line); color: var(--muted); }
+.k-eased.break-dot { background: var(--line); }
+
+
+/* ---------- race strategy ---------- */
+.profile { height: 130px; }
+.climb-list { margin: 6px 0 0; padding-left: 18px; }
+.climb-list li { font-size: 14px; margin-bottom: 4px; }
+input[type=file] { font-family: var(--body); font-size: 13px; }
+select {
+  font-family: var(--body); font-size: 14px; padding: 8px 10px;
+  border: 1.5px solid var(--line); border-radius: 2px; background: #fff; color: var(--ink);
+}
+
+/* ---------- weather on an activity ---------- */
+.wx-line {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+  padding: 10px 14px; margin: 0 0 20px;
+}
+
+
+/* ---------- training polarisation ---------- */
+.polar-bar {
+  display: flex; height: 26px; border-radius: 3px; overflow: hidden;
+  background: #eef1f5;
+}
+.polar-bar span { display: block; height: 100%; }
+.polar-key {
+  display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.polar-key i {
+  display: inline-block; width: 12px; height: 12px; border-radius: 2px;
+  margin-right: 6px; vertical-align: -2px;
+}
+.p-easy { background: var(--measured); }
+.p-mod { background: #b07d2b; }
+.p-hard { background: var(--behind); }
+
+
+/* ---------- running form findings ---------- */
+.findings { list-style: none; margin: 16px 0 0; padding: 0; }
+.findings li {
+  font-size: 14px; padding: 7px 0 7px 0; border-top: 1px solid var(--line);
+  display: flex; gap: 10px; align-items: baseline;
+}
+.findings li:first-child { border-top: none; }
+.sev-dot {
+  flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--line); margin-top: 5px;
+}
+.sev-good .sev-dot { background: var(--ahead); }
+.sev-watch .sev-dot { background: var(--behind); }
+.sev-note .sev-dot { background: var(--muted); }
+
+
+/* ---------- training block ---------- */
+.plan-strip { display: flex; gap: 3px; align-items: flex-end; height: 64px; }
+.plan-week { display: block; flex: 1 1 auto; border-radius: 2px 2px 0 0; min-width: 8px; }
+.phase-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: 1px;
+}
+.polar-key i.ph-base, .polar-key i.ph-build,
+.polar-key i.ph-peak, .polar-key i.ph-taper { border-radius: 2px; }
+.ph-base { background: #9bb7bd; }
+.ph-build { background: var(--measured); }
+.ph-peak { background: var(--projected); }
+.ph-taper { background: #c9a227; }
+.session { margin-bottom: 8px; font-size: 13px; }
+.session:last-child { margin-bottom: 0; }
+
+
+/* ---------- readiness ---------- */
+.band-primed, .band-ready { color: var(--ahead); }
+.band-steady { color: var(--measured); }
+.band-tired { color: #b07d2b; }
+.band-depleted { color: var(--behind); }

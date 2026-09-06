@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>City Marathon — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Race plan</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">2026-12-27 &middot; 42.20 km</p>
+    </div>
+    <h2 class="race-title">City Marathon</h2>
+
+    
+      <div class="race-headline">
+        <div>
+          <div class="projected">3:34:26
+            <small>5:05 /km</small></div>
+          <div class="stat-label" style="margin-top:8px">Projected finish</div>
+          <div class="lanes" title="Confidence: medium">
+            
+              <span class="lane on"></span>
+            
+              <span class="lane on"></span>
+            
+              <span class="lane "></span>
+            
+          </div>
+        </div>
+
+        
+          
+          <div>
+            <div class="projected behind">
+              +19:26
+              <small>goal 3:15:00</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              Short of your goal</div>
+          </div>
+        
+
+        <div>
+          <div class="projected measured">112
+            <small>days to go</small></div>
+          <div class="stat-label" style="margin-top:8px">
+            Trend -0.5%
+            &middot; your bias +0.6%</div>
+        </div>
+      </div>
+    
+  </section>
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Race-day readiness</p>
+      <p class="panel-note">If you hold your current 66 load per day</p>
+    </div>
+    <div class="grid-half">
+      <div>
+        <div class="stat">
+          <div class="stat-value">+0</div>
+          <div class="stat-label">Form on race day &middot; no taper</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">+17</div>
+          <div class="stat-label">Form with a 14-day taper</div>
+          <div class="stat-hint">Fitness would still be 58.</div>
+        </div>
+      </div>
+      <div class="empty">
+        <p>Form above about +10 on the day is where most people race well. Cutting
+          volume to roughly 55% for the last 14 days moves you from
+          +0 to +17
+          without losing meaningful fitness.</p>
+        
+      </div>
+    </div>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">The course</p>
+      
+    </div>
+
+    
+      <div class="empty">
+        <p>Attach the course and the pacing below stops being a guess about a flat
+          road. Upload the organiser GPX, or point at a run where you covered the
+          same ground.</p>
+      </div>
+      <form method="post" action="/Run315/race/2/course"
+            enctype="multipart/form-data" class="form-row">
+        <input type="hidden" name="source" value="gpx">
+        <div class="field field-grow"><label for="gpx">Course GPX</label>
+          <input type="file" id="gpx" name="gpx" accept=".gpx,application/gpx+xml" required></div>
+        <button class="btn" type="submit">Attach course</button>
+      </form>
+      
+    
+  </section>
+
+  
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Training block</p>
+      <p class="panel-note">16 weeks
+        &middot; peaks at 97 km
+        in week 13</p>
+    </div>
+
+    <div class="empty"><p>Built from what you are running now, not from a template.
+      Volume rises across the block, backs off every fourth week, and the heaviest
+      week lands just before the taper. Every session is a band off your own curve,
+      so it stays right as you get fitter.</p></div>
+
+    
+
+    
+      <div class="grid-2" style="margin:14px 0 4px">
+        <div>
+          <div class="stat">
+            <div class="stat-value behind">
+              85<small class="unit">%</small>
+            </div>
+            <div class="stat-label">Of the plan, actually run</div>
+            <div class="stat-hint">3 of
+              16 finished weeks on target &middot;
+              12/16
+              long runs done.</div>
+          </div>
+        </div>
+        <div><p class="stat-hint">You are running 85% of what the plan asks, most weeks. That is worth taking seriously in the other direction: the race projections assume the training in the plan, so either the plan needs to come down to meet you, or they are optimistic.</p></div>
+      </div>
+    
+
+    <div class="plan-strip">
+      
+      
+        <span class="plan-week ph-base"
+              style="height:43px"
+              title="Week 1 (base): 61 km, long run 15.8 km"></span>
+      
+        <span class="plan-week ph-base"
+              style="height:44px"
+              title="Week 2 (base): 64 km, long run 16.6 km"></span>
+      
+        <span class="plan-week ph-base"
+              style="height:46px"
+              title="Week 3 (base): 67 km, long run 17.4 km"></span>
+      
+        <span class="plan-week ph-base"
+              style="height:37px"
+              title="Week 4 (base): 49 km, long run 12.7 km"></span>
+      
+        <span class="plan-week ph-base"
+              style="height:48px"
+              title="Week 5 (base): 73 km, long run 19.0 km"></span>
+      
+        <span class="plan-week ph-base"
+              style="height:50px"
+              title="Week 6 (base): 76 km, long run 19.8 km"></span>
+      
+        <span class="plan-week ph-build"
+              style="height:51px"
+              title="Week 7 (build): 79 km, long run 23.7 km"></span>
+      
+        <span class="plan-week ph-build"
+              style="height:41px"
+              title="Week 8 (build): 58 km, long run 17.3 km"></span>
+      
+        <span class="plan-week ph-build"
+              style="height:54px"
+              title="Week 9 (build): 85 km, long run 25.6 km"></span>
+      
+        <span class="plan-week ph-build"
+              style="height:56px"
+              title="Week 10 (build): 88 km, long run 26.5 km"></span>
+      
+        <span class="plan-week ph-peak"
+              style="height:57px"
+              title="Week 11 (peak): 91 km, long run 31.0 km"></span>
+      
+        <span class="plan-week ph-peak"
+              style="height:45px"
+              title="Week 12 (peak): 66 km, long run 22.4 km"></span>
+      
+        <span class="plan-week ph-peak"
+              style="height:60px"
+              title="Week 13 (peak): 97 km, long run 33.1 km"></span>
+      
+        <span class="plan-week ph-taper"
+              style="height:48px"
+              title="Week 14 (taper): 73 km, long run 18.3 km"></span>
+      
+        <span class="plan-week ph-taper"
+              style="height:39px"
+              title="Week 15 (taper): 54 km, long run 13.4 km"></span>
+      
+        <span class="plan-week ph-taper"
+              style="height:30px"
+              title="Week 16 (taper): 34 km, long run 8.5 km"></span>
+      
+    </div>
+    <div class="polar-key" style="margin-top:8px">
+      <span><i class="ph-base"></i>Base</span>
+      <span><i class="ph-build"></i>Build</span>
+      <span><i class="ph-peak"></i>Peak</span>
+      <span><i class="ph-taper"></i>Taper</span>
+    </div>
+
+    <div class="table-scroll" style="margin-top:16px"><table>
+      <thead><tr>
+        <th>Week</th><th>Phase</th><th class="num">Volume</th>
+        <th class="num">Long run</th><th>Key sessions</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>1<span class="dim"> &middot; 16 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base
+            </td>
+            <td class="num actual">61 km</td>
+            <td class="num dim">15.8 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>2<span class="dim"> &middot; 15 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base
+            </td>
+            <td class="num actual">64 km</td>
+            <td class="num dim">16.6 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>3<span class="dim"> &middot; 14 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base
+            </td>
+            <td class="num actual">67 km</td>
+            <td class="num dim">17.4 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>4<span class="dim"> &middot; 13 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base <span class="dim">easy</span>
+            </td>
+            <td class="num actual">49 km</td>
+            <td class="num dim">12.7 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>5<span class="dim"> &middot; 12 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base
+            </td>
+            <td class="num actual">73 km</td>
+            <td class="num dim">19.0 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>6<span class="dim"> &middot; 11 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base
+            </td>
+            <td class="num actual">76 km</td>
+            <td class="num dim">19.8 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>7<span class="dim"> &middot; 10 to go</span></td>
+            <td>
+              <span class="phase-dot ph-build"></span>Build
+            </td>
+            <td class="num actual">79 km</td>
+            <td class="num dim">23.7 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">3 x 8 min with 2 min jog</span>
+                </div>
+              
+                <div class="session">
+                  <b>Intervals</b> <span class="time">4:00&ndash;4:12 /km</span>
+                  <br><span class="dim">6 x 3 min hard with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>8<span class="dim"> &middot; 9 to go</span></td>
+            <td>
+              <span class="phase-dot ph-build"></span>Build <span class="dim">easy</span>
+            </td>
+            <td class="num actual">58 km</td>
+            <td class="num dim">17.3 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">3 x 8 min with 2 min jog</span>
+                </div>
+              
+                <div class="session">
+                  <b>Intervals</b> <span class="time">4:00&ndash;4:12 /km</span>
+                  <br><span class="dim">6 x 3 min hard with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>9<span class="dim"> &middot; 8 to go</span></td>
+            <td>
+              <span class="phase-dot ph-build"></span>Build
+            </td>
+            <td class="num actual">85 km</td>
+            <td class="num dim">25.6 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">3 x 8 min with 2 min jog</span>
+                </div>
+              
+                <div class="session">
+                  <b>Intervals</b> <span class="time">4:00&ndash;4:12 /km</span>
+                  <br><span class="dim">6 x 3 min hard with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>10<span class="dim"> &middot; 7 to go</span></td>
+            <td>
+              <span class="phase-dot ph-build"></span>Build
+            </td>
+            <td class="num actual">88 km</td>
+            <td class="num dim">26.5 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">3 x 8 min with 2 min jog</span>
+                </div>
+              
+                <div class="session">
+                  <b>Intervals</b> <span class="time">4:00&ndash;4:12 /km</span>
+                  <br><span class="dim">6 x 3 min hard with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>11<span class="dim"> &middot; 6 to go</span></td>
+            <td>
+              <span class="phase-dot ph-peak"></span>Peak
+            </td>
+            <td class="num actual">91 km</td>
+            <td class="num dim">31.0 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Race pace</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">2 x 20 min at goal pace inside the long run</span>
+                </div>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">4 x 8 min with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>12<span class="dim"> &middot; 5 to go</span></td>
+            <td>
+              <span class="phase-dot ph-peak"></span>Peak <span class="dim">easy</span>
+            </td>
+            <td class="num actual">66 km</td>
+            <td class="num dim">22.4 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Race pace</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">2 x 20 min at goal pace inside the long run</span>
+                </div>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">4 x 8 min with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>13<span class="dim"> &middot; 4 to go</span></td>
+            <td>
+              <span class="phase-dot ph-peak"></span>Peak
+            </td>
+            <td class="num actual">97 km</td>
+            <td class="num dim">33.1 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Race pace</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">2 x 20 min at goal pace inside the long run</span>
+                </div>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">4 x 8 min with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>14<span class="dim"> &middot; 3 to go</span></td>
+            <td>
+              <span class="phase-dot ph-taper"></span>Taper
+            </td>
+            <td class="num actual">73 km</td>
+            <td class="num dim">18.3 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Sharpener</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">10 min easy, 6 x 90 s at race effort, 10 min easy</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>15<span class="dim"> &middot; 2 to go</span></td>
+            <td>
+              <span class="phase-dot ph-taper"></span>Taper
+            </td>
+            <td class="num actual">54 km</td>
+            <td class="num dim">13.4 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Sharpener</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">10 min easy, 6 x 90 s at race effort, 10 min easy</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>16<span class="dim"> &middot; 1 to go</span></td>
+            <td>
+              <span class="phase-dot ph-taper"></span>Taper
+            </td>
+            <td class="num actual">34 km</td>
+            <td class="num dim">8.5 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Sharpener</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">10 min easy, 6 x 90 s at race effort, 10 min easy</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      A schedule, not a prescription. It has no idea whether you slept, and the
+      readiness read on the dashboard is the thing that should override it.
+    </p>
+  </section>
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Fuelling</p>
+      <p class="panel-note">for 3:34:26 of running</p>
+    </div>
+
+    <div class="digest">
+      <div class="stat">
+        <div class="stat-value">60&ndash;90<small class="unit">g/h</small></div>
+        <div class="stat-label">Carbohydrate</div>
+        <div class="stat-hint">214&ndash;322 g over the race.</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-value">400&ndash;600<small class="unit">ml/h</small></div>
+        <div class="stat-label">Fluid</div>
+        <div class="stat-hint">To thirst, inside that range.</div>
+      </div>
+      
+      
+      <div class="stat">
+        <div class="stat-value">300&ndash;600<small class="unit">mg/l</small></div>
+        <div class="stat-label">Sodium</div>
+      </div>
+      
+    </div>
+
+    <p class="stat-hint" style="margin-top:12px">60-90 g an hour, and above 60 g it has to be a glucose-and-fructose mix, roughly 2:1. Glucose transport saturates near 60 g/h, so taking more of a single-sugar gel mostly leaves it in your stomach.</p>
+    
+      <p class="stat-hint">Drink to thirst inside this range rather than to a schedule. Overdrinking dilutes your blood sodium, which is more dangerous than mild dehydration and does put runners in hospital every year.</p>
+    
+
+    
+      <p class="eyebrow" style="margin-top:16px">Roughly when</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>At</th><th class="num">Take</th><th class="num">Running total</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>8:31</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">22 g</td>
+            </tr>
+          
+            <tr>
+              <td>25:33</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">44 g</td>
+            </tr>
+          
+            <tr>
+              <td>42:35</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">66 g</td>
+            </tr>
+          
+            <tr>
+              <td>59:37</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">88 g</td>
+            </tr>
+          
+            <tr>
+              <td>1:16:40</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">110 g</td>
+            </tr>
+          
+            <tr>
+              <td>1:33:42</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">132 g</td>
+            </tr>
+          
+            <tr>
+              <td>1:50:44</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">154 g</td>
+            </tr>
+          
+            <tr>
+              <td>2:07:46</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">176 g</td>
+            </tr>
+          
+            <tr>
+              <td>2:24:48</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">198 g</td>
+            </tr>
+          
+            <tr>
+              <td>2:41:50</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">220 g</td>
+            </tr>
+          
+            <tr>
+              <td>2:58:52</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">242 g</td>
+            </tr>
+          
+            <tr>
+              <td>3:15:55</td>
+              <td class="num dim">22 g</td>
+              <td class="num actual">264 g</td>
+            </tr>
+          
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:10px">
+        Spaced evenly rather than crammed late: the gut empties at a rate, and a
+        backlog does not clear once you are working hard. Nothing in the last ten
+        minutes, because it would not be absorbed in time to matter.
+      </p>
+    
+
+    
+      <p class="stat-hint" style="margin-top:14px">For a race this long, 36-48 hours of high-carbohydrate eating beforehand measurably helps. It is about eating more carbohydrate, not more food -- and the training taper is what makes room for it.
+        
+          Aim for 8&ndash;12 g
+          of carbohydrate per kilo of body weight per day, for the two days before.
+        </p>
+    
+
+    <p class="stat-hint" style="margin-top:12px">
+      These are the published consensus ranges (Jeukendrup 2014; the joint
+      position stand of the Academy of Nutrition and Dietetics, Dietitians of
+      Canada and the ACSM, 2016), not personal advice. Gut tolerance is
+      individual and 90 g/h is a trained capacity rather than a starting point
+      &mdash; practise it in training, never first on race day.
+    </p>
+  </section>
+  
+
+  
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Split targets</p>
+      <p class="panel-note">Slightly negative &mdash; 1% steadier out, 1% quicker back</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Checkpoint</th>
+        <th class="num">Projected</th>
+        <th class="num">Goal</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>5K</td>
+            <td class="num time">25:40</td>
+            
+              <td class="num dim">23:20</td>
+            
+          </tr>
+        
+          <tr>
+            <td>10K</td>
+            <td class="num time">51:20</td>
+            
+              <td class="num dim">46:41</td>
+            
+          </tr>
+        
+          <tr>
+            <td>15K</td>
+            <td class="num time">1:16:59</td>
+            
+              <td class="num dim">1:10:01</td>
+            
+          </tr>
+        
+          <tr>
+            <td>20K</td>
+            <td class="num time">1:42:39</td>
+            
+              <td class="num dim">1:33:21</td>
+            
+          </tr>
+        
+          <tr>
+            <td>25K</td>
+            <td class="num time">2:07:55</td>
+            
+              <td class="num dim">1:56:20</td>
+            
+          </tr>
+        
+          <tr>
+            <td>30K</td>
+            <td class="num time">2:33:04</td>
+            
+              <td class="num dim">2:19:12</td>
+            
+          </tr>
+        
+          <tr>
+            <td>35K</td>
+            <td class="num time">2:58:14</td>
+            
+              <td class="num dim">2:42:05</td>
+            
+          </tr>
+        
+          <tr>
+            <td>40K</td>
+            <td class="num time">3:23:23</td>
+            
+              <td class="num dim">3:04:57</td>
+            
+          </tr>
+        
+          <tr>
+            <td>Finish</td>
+            <td class="num time">3:34:26</td>
+            
+              <td class="num dim">3:15:00</td>
+            
+          </tr>
+        
+      </tbody>
+    </table></div>
+  </section>
+  
+
+  <form method="post" action="/Run315/races/2/delete">
+    <button class="btn-quiet" type="submit">Remove this race</button>
+  </form>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

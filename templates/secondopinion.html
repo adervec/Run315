@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Second opinion — Run315{% endblock %}
+{% block body %}
+<style>
+  .versus { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .versus .ours { font-family: var(--display); font-size: 28px; font-weight: 800;
+                  letter-spacing: -0.03em; color: var(--measured); }
+  .versus .theirs { font-family: var(--display); font-size: 28px; font-weight: 800;
+                    letter-spacing: -0.03em; color: var(--muted); }
+  .versus .vs { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .band-agree { color: var(--ahead); }
+  .band-near { color: #b07d2b; }
+  .band-differ { color: var(--behind); }
+  .keyline { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+             text-transform: uppercase; color: var(--muted); }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">This app against your watch</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Dashboard</a>
+    </div>
+  </header>
+
+  {% if not review %}
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Nothing to compare yet</p></div>
+      <div class="empty">
+        <p>Garmin computes its own threshold, VO2max and race predictions by a
+          different method from this app, on the same runs. Once a sync has
+          picked them up they appear here side by side.</p>
+        <p>Not every watch reports all of them, and several need a chest strap
+          or a few weeks of running before Garmin will commit to a number.</p>
+      </div>
+      <a class="btn" href="{{ url_for('index') }}">Back to the dashboard</a>
+    </section>
+  {% else %}
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Where the two methods land</p>
+      <p class="panel-note">{{ review['comparisons'] }} compared &middot;
+        {{ review['disagreements'] }} genuinely apart</p>
+    </div>
+    <div class="empty">
+      <p>Two estimates agreeing is worth more than either alone. Two disagreeing
+        tells you which question to ask. Neither of them is ground truth &mdash;
+        this app infers your threshold from the top of your hard running, Garmin
+        infers it from the shape of your heart rate against your speed, and both
+        are guesses about the same underlying thing.</p>
+    </div>
+
+    {% if review['threshold_hr'] %}
+      {% set t = review['threshold_hr'] %}
+      <div class="grid-2" style="margin-top:6px">
+        <div>
+          <p class="keyline">Threshold heart rate</p>
+          <div class="versus">
+            <span class="ours">{{ t['ours']|round|int }}</span>
+            <span class="vs">this app</span>
+            <span class="theirs">{{ t['theirs']|round|int }}</span>
+            <span class="vs">Garmin</span>
+          </div>
+          <p class="stat-hint band-{{ t['band'] }}">
+            {{ '%+.0f'|format(t['difference']) }} bpm apart &middot; {{ t['band'] }}</p>
+        </div>
+        <div><p class="stat-hint">{{ t['note'] }}</p></div>
+      </div>
+    {% endif %}
+
+    {% if review['threshold_pace'] %}
+      {% set p = review['threshold_pace'] %}
+      <div class="grid-2" style="margin-top:18px">
+        <div>
+          <p class="keyline">Threshold pace</p>
+          <div class="versus">
+            <span class="ours">{{ fmt_pace(p['ours'], 1000) }}</span>
+            <span class="vs">this app</span>
+            <span class="theirs">{{ fmt_pace(p['theirs'], 1000) }}</span>
+            <span class="vs">Garmin</span>
+          </div>
+          <p class="stat-hint band-{{ p['band'] }}">
+            {{ '%+.1f'|format(p['relative'] * 100) }}% &middot; {{ p['band'] }}</p>
+        </div>
+        <div><p class="stat-hint">Garmin's threshold pace detection moved from a
+          chest-strap protocol to automatic detection from wrist heart rate in
+          late 2024. Independent validation of the wrist-based version is thin,
+          and one study measured it reading nearly 12% slow.</p></div>
+      </div>
+    {% endif %}
+  </section>
+
+  {% if review['races'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Race projections</p>
+      <p class="panel-note">two models, same runs</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Distance</th><th class="num">This app</th><th class="num">Garmin</th>
+        <th class="num">Apart</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for r in review['races'] %}
+          <tr>
+            <td>{{ '%.1f'|format(r['distance_m'] / 1000) }} km</td>
+            <td class="num actual">{{ fmt_time(r['ours']) }}</td>
+            <td class="num dim">{{ fmt_time(r['theirs']) }}</td>
+            <td class="num band-{{ r['band'] }}">{{ '%+.1f'|format(r['relative'] * 100) }}%</td>
+            <td><span class="band-{{ r['band'] }}">{{ r['band'] }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% if review['race_summary'] %}
+      <p class="verdict" style="margin-top:14px">{{ review['race_summary'] }}</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Garmin's own, with no equivalent here</p>
+    </div>
+    <div class="digest">
+      {% if review['garmin']['vo2max'] %}
+      <div class="stat">
+        <div class="stat-value">{{ '%.1f'|format(review['garmin']['vo2max']) }}</div>
+        <div class="stat-label">VO2max &middot; Garmin</div>
+        <div class="stat-hint">This app computes none on purpose.</div>
+      </div>
+      {% endif %}
+      {% if review['garmin']['endurance_score'] %}
+      <div class="stat">
+        <div class="stat-value">{{ review['garmin']['endurance_score']|round|int }}</div>
+        <div class="stat-label">Endurance score</div>
+      </div>
+      {% endif %}
+      {% if review['garmin']['hill_score'] %}
+      <div class="stat">
+        <div class="stat-value">{{ review['garmin']['hill_score']|round|int }}</div>
+        <div class="stat-label">Hill score</div>
+        <div class="stat-hint"><a href="{{ url_for('climbing_page') }}">Our version</a>
+          tests the energy model instead.</div>
+      </div>
+      {% endif %}
+    </div>
+    <p class="stat-hint" style="margin-top:12px">
+      No VO2max is computed here, and that is deliberate. A VO2max derived from
+      heart rate and pace is a lossy compression of the heart-rate/pace
+      relationship into one number using a population economy curve &mdash; it
+      adds a familiar unit and a false precision, not information. Garmin's
+      carries a mean error around 5&ndash;8% with a chest strap, and worse at both
+      ends of the fitness range.
+    </p>
+  </section>
+
+  {% endif %}
+</div>
+{% endblock %}

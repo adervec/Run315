@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Second opinion — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<style>
+  .versus { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .versus .ours { font-family: var(--display); font-size: 28px; font-weight: 800;
+                  letter-spacing: -0.03em; color: var(--measured); }
+  .versus .theirs { font-family: var(--display); font-size: 28px; font-weight: 800;
+                    letter-spacing: -0.03em; color: var(--muted); }
+  .versus .vs { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .band-agree { color: var(--ahead); }
+  .band-near { color: #b07d2b; }
+  .band-differ { color: var(--behind); }
+  .keyline { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+             text-transform: uppercase; color: var(--muted); }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">This app against your watch</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
+    </div>
+  </header>
+
+  
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Where the two methods land</p>
+      <p class="panel-note">6 compared &middot;
+        0 genuinely apart</p>
+    </div>
+    <div class="empty">
+      <p>Two estimates agreeing is worth more than either alone. Two disagreeing
+        tells you which question to ask. Neither of them is ground truth &mdash;
+        this app infers your threshold from the top of your hard running, Garmin
+        infers it from the shape of your heart rate against your speed, and both
+        are guesses about the same underlying thing.</p>
+    </div>
+
+    
+      
+      <div class="grid-2" style="margin-top:6px">
+        <div>
+          <p class="keyline">Threshold heart rate</p>
+          <div class="versus">
+            <span class="ours">175</span>
+            <span class="vs">this app</span>
+            <span class="theirs">171</span>
+            <span class="vs">Garmin</span>
+          </div>
+          <p class="stat-hint band-agree">
+            +4 bpm apart &middot; agree</p>
+        </div>
+        <div><p class="stat-hint">Both methods put your threshold within a few beats of the same place, which is about as much agreement as either can offer.</p></div>
+      </div>
+    
+
+    
+      
+      <div class="grid-2" style="margin-top:18px">
+        <div>
+          <p class="keyline">Threshold pace</p>
+          <div class="versus">
+            <span class="ours">4:09 /km</span>
+            <span class="vs">this app</span>
+            <span class="theirs">4:19 /km</span>
+            <span class="vs">Garmin</span>
+          </div>
+          <p class="stat-hint band-near">
+            -3.8% &middot; near</p>
+        </div>
+        <div><p class="stat-hint">Garmin's threshold pace detection moved from a
+          chest-strap protocol to automatic detection from wrist heart rate in
+          late 2024. Independent validation of the wrist-based version is thin,
+          and one study measured it reading nearly 12% slow.</p></div>
+      </div>
+    
+  </section>
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Race projections</p>
+      <p class="panel-note">two models, same runs</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Distance</th><th class="num">This app</th><th class="num">Garmin</th>
+        <th class="num">Apart</th><th></th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>5.0 km</td>
+            <td class="num actual">19:20</td>
+            <td class="num dim">19:17</td>
+            <td class="num band-agree">+0.3%</td>
+            <td><span class="band-agree">agree</span></td>
+          </tr>
+        
+          <tr>
+            <td>10.0 km</td>
+            <td class="num actual">40:32</td>
+            <td class="num dim">40:18</td>
+            <td class="num band-agree">+0.6%</td>
+            <td><span class="band-agree">agree</span></td>
+          </tr>
+        
+          <tr>
+            <td>21.1 km</td>
+            <td class="num actual">1:29:59</td>
+            <td class="num dim">1:28:54</td>
+            <td class="num band-agree">+1.2%</td>
+            <td><span class="band-agree">agree</span></td>
+          </tr>
+        
+          <tr>
+            <td>42.2 km</td>
+            <td class="num actual">3:08:41</td>
+            <td class="num dim">3:04:09</td>
+            <td class="num band-near">+2.5%</td>
+            <td><span class="band-near">near</span></td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+    
+      <p class="verdict" style="margin-top:14px">The two models agree at some distances and not others, which points at the shape of the curve rather than at its level -- the fitted fade exponent is where to look.</p>
+    
+  </section>
+  
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Garmin's own, with no equivalent here</p>
+    </div>
+    <div class="digest">
+      
+      <div class="stat">
+        <div class="stat-value">52.0</div>
+        <div class="stat-label">VO2max &middot; Garmin</div>
+        <div class="stat-hint">This app computes none on purpose.</div>
+      </div>
+      
+      
+      <div class="stat">
+        <div class="stat-value">7100</div>
+        <div class="stat-label">Endurance score</div>
+      </div>
+      
+      
+      <div class="stat">
+        <div class="stat-value">68</div>
+        <div class="stat-label">Hill score</div>
+        <div class="stat-hint"><a href="/Run315/climbing">Our version</a>
+          tests the energy model instead.</div>
+      </div>
+      
+    </div>
+    <p class="stat-hint" style="margin-top:12px">
+      No VO2max is computed here, and that is deliberate. A VO2max derived from
+      heart rate and pace is a lossy compression of the heart-rate/pace
+      relationship into one number using a population economy curve &mdash; it
+      adds a familiar unit and a false precision, not information. Garmin's
+      carries a mean error around 5&ndash;8% with a chest strap, and worse at both
+      ends of the fitness range.
+    </p>
+  </section>
+
+  
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

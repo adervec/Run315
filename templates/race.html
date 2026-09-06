@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+{% set lanes = {'high': 3, 'medium': 2, 'low': 1, 'none': 0} %}
+{% block title %}{{ race['name'] }} — Run315{% endblock %}
+{% block body %}
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Race plan</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">{{ race['date'] }} &middot; {{ '%.2f'|format(race['distance_m'] / 1000) }} km</p>
+    </div>
+    <h2 class="race-title">{{ race['name'] }}</h2>
+
+    {% if race['date'] < now.date() %}
+      <p class="stat-hint">Run {{ (now.date() - race['date']).days }} days ago.</p>
+    {% elif projection %}
+      <div class="race-headline">
+        <div>
+          <div class="projected">{{ fmt_time(projection['seconds']) }}
+            <small>{{ fmt_pace(projection['seconds'], race['distance_m']) }}</small></div>
+          <div class="stat-label" style="margin-top:8px">Projected finish</div>
+          <div class="lanes" title="Confidence: {{ projection['confidence'] }}">
+            {% for i in range(3) %}
+              <span class="lane {% if i < lanes[projection['confidence']] %}on{% endif %}"></span>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if race['goal_s'] %}
+          {% set diff = projection['seconds'] - race['goal_s'] %}
+          <div>
+            <div class="projected {{ 'behind' if diff > 0 else 'ahead' }}">
+              {{ '+' if diff > 0 else '−' }}{{ fmt_time(diff|abs) }}
+              <small>goal {{ fmt_time(race['goal_s']) }}</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              {{ 'Short of your goal' if diff > 0 else 'Ahead of your goal' }}</div>
+          </div>
+        {% endif %}
+
+        <div>
+          <div class="projected measured">{{ projection['days_to_race'] }}
+            <small>days to go</small></div>
+          <div class="stat-label" style="margin-top:8px">
+            Trend {{ '%+.1f'|format((projection['trend_factor'] - 1) * 100) }}%{% if calibration %}
+            &middot; your bias {{ '%+.1f'|format((calibration['factor'] - 1) * 100) }}%{% endif %}</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty"><p>Not enough running data to project this one yet. Sync your
+        history, then run something hard.</p></div>
+    {% endif %}
+  </section>
+
+  {% if race['date'] < now.date() %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Result</p>
+    </div>
+    {% if race['actual_s'] %}
+      <div class="race-headline">
+        <div>
+          <div class="projected measured">{{ fmt_time(race['actual_s']) }}
+            <small>{{ fmt_pace(race['actual_s'], race['distance_m']) }}</small></div>
+          <div class="stat-label" style="margin-top:8px">Finish time</div>
+        </div>
+        {% if race['predicted_s'] %}
+          {% set gap = race['actual_s'] - race['predicted_s'] %}
+          <div>
+            <div class="projected {{ 'behind' if gap > 0 else 'ahead' }}">
+              {{ '+' if gap > 0 else '−' }}{{ fmt_time(gap|abs) }}
+              <small>projected {{ fmt_time(race['predicted_s']) }}</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              {{ 'Slower' if gap > 0 else 'Faster' }} than projected</div>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="empty"><p>This race is in the past. Enter your finish time and every
+        future projection learns from how this one went.</p></div>
+    {% endif %}
+    <form method="post" action="{{ url_for('race_result', race_id=race['id']) }}" class="form-row" style="margin-top:14px">
+      <div class="field"><label for="actual">{{ 'Correct the finish time' if race['actual_s'] else 'Finish time' }}</label>
+        <input type="text" id="actual" name="actual" placeholder="1:29:30" pattern="[0-9:.]*" required></div>
+      <button class="btn" type="submit">Save result</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if form %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Race-day readiness</p>
+      <p class="panel-note">If you hold your current {{ '%.0f'|format(form['avg_daily_load']) }} load per day</p>
+    </div>
+    <div class="grid-half">
+      <div>
+        <div class="stat">
+          <div class="stat-value">{{ form['tsb_no_taper']|signed }}</div>
+          <div class="stat-label">Form on race day &middot; no taper</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">{{ form['tsb_with_taper']|signed }}</div>
+          <div class="stat-label">Form with a {{ form['taper_days'] }}-day taper</div>
+          <div class="stat-hint">Fitness would still be {{ '%.0f'|format(form['ctl_race_day']) }}.</div>
+        </div>
+      </div>
+      <div class="empty">
+        <p>Form above about +10 on the day is where most people race well. Cutting
+          volume to roughly 55% for the last {{ form['taper_days'] }} days moves you from
+          {{ form['tsb_no_taper']|signed }} to {{ form['tsb_with_taper']|signed }}
+          without losing meaningful fitness.</p>
+        {% if form['tsb_with_taper'] < 5 %}
+          <p>You are carrying a lot of fatigue for a race this close. Either back off
+            harder than the standard taper, or treat this one as a training day.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ---------- the course ---------- #}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">The course</p>
+      {% if course_stats %}
+        <p class="panel-note">{{ '%.2f'|format(course_stats['length_m'] / 1000) }} km
+          &middot; {{ course_stats['climb_m']|round|int }} m up
+          &middot; {{ course_stats['drop_m']|round|int }} m down</p>
+      {% endif %}
+    </div>
+
+    {% if course_stats %}
+      {% if course_mismatch %}
+        <div class="flash flash-error" style="margin-bottom:14px">
+          This course is {{ '%.0f'|format(course_mismatch|abs * 100) }}%
+          {{ 'longer' if course_mismatch > 0 else 'shorter' }} than the race distance
+          ({{ '%.2f'|format(course_stats['length_m'] / 1000) }} km against
+          {{ '%.2f'|format(race['distance_m'] / 1000) }} km). The plan below spreads
+          your target over the course as attached, so check you uploaded the right one.
+        </div>
+      {% endif %}
+      {% if profile_points %}
+        <svg class="chart profile" viewBox="0 0 680 110" preserveAspectRatio="none"
+             role="img" aria-label="Course elevation profile">
+          <polygon points="0,110 {{ profile_points }} 680,110" fill="#0b6e79" fill-opacity="0.12"/>
+          <polyline points="{{ profile_points }}" fill="none" stroke="#0b6e79"
+                    stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <div class="chart-legend">
+          <span>Start</span>
+          <span style="margin:0 auto">
+            {{ '%.0f'|format((course_stats['difficulty'] - 1) * 100) }}% harder than flat
+          </span>
+          <span>Finish</span>
+        </div>
+      {% else %}
+        <div class="empty"><p>This course has no elevation data, so the pacing below
+          is even rather than gradient-aware.</p></div>
+      {% endif %}
+
+      {% if hard %}
+        <p class="stat-hint" style="margin-top:14px"><b>Where it bites:</b></p>
+        <ul class="climb-list">
+          {% for h in hard[:4] %}
+            <li><b>{{ '%.1f'|format(h['from_m'] / 1000) }}&ndash;{{ '%.1f'|format(h['to_m'] / 1000) }} km</b>
+              &middot; {{ h['climb_m']|round|int }} m at {{ '%.1f'|format(h['grade'] * 100) }}%</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('race_course_delete', race_id=race['id']) }}"
+            style="margin-top:12px">
+        <button class="btn-quiet" type="submit">Remove this course</button>
+      </form>
+    {% else %}
+      <div class="empty">
+        <p>Attach the course and the pacing below stops being a guess about a flat
+          road. Upload the organiser GPX, or point at a run where you covered the
+          same ground.</p>
+      </div>
+      <form method="post" action="{{ url_for('race_course', race_id=race['id']) }}"
+            enctype="multipart/form-data" class="form-row">
+        <input type="hidden" name="source" value="gpx">
+        <div class="field field-grow"><label for="gpx">Course GPX</label>
+          <input type="file" id="gpx" name="gpx" accept=".gpx,application/gpx+xml" required></div>
+        <button class="btn" type="submit">Attach course</button>
+      </form>
+      {% if past_runs %}
+        <form method="post" action="{{ url_for('race_course', race_id=race['id']) }}"
+              class="form-row" style="margin-top:10px">
+          <input type="hidden" name="source" value="activity">
+          <div class="field field-grow"><label for="fromact">Or use a run</label>
+            <select id="fromact" name="garmin_id">
+              {% for r in past_runs %}
+                <option value="{{ r['garmin_id'] }}">{{ r['start'][:10] }} &middot;
+                  {{ '%.2f'|format((r['distance_m'] or 0) / 1000) }} km</option>
+              {% endfor %}
+            </select></div>
+          <button class="btn btn-ghost" type="submit">Use that track</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  {# ---------- the plan ---------- #}
+  {% if plan and race['date'] >= now.date() %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Race plan</p>
+      <p class="panel-note">Even effort, not even pace
+        {%- if race['goal_s'] %} &middot; for {{ fmt_time(race['goal_s']) }}
+        {%- else %} &middot; for the projection{% endif %}</p>
+    </div>
+    <div class="empty"><p>Each kilometre is scaled by what its gradient actually
+      costs, then the whole plan is normalised to land on the target. Running the
+      hills at your flat pace is how a race gets away from you.</p></div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Km</th><th class="num">Grade</th><th class="num">Target</th>
+        <th class="num">Split</th><th class="num">Elapsed</th>
+      </tr></thead>
+      <tbody>
+        {% for p in plan %}
+          <tr>
+            <td>{{ p['n'] }}{% if p['distance_m'] < 900 %}<span class="dim">
+              ({{ p['distance_m']|round|int }} m)</span>{% endif %}</td>
+            <td class="num {{ 'behind' if p['grade'] and p['grade'] > 0.02 else 'ahead' if p['grade'] and p['grade'] < -0.02 else 'dim' }}">
+              {%- if p['grade'] is not none %}{{ '%+.1f'|format(p['grade'] * 100) }}%
+              {%- else %}&mdash;{% endif %}</td>
+            <td class="num time">{{ fmt_pace(p['target_pace'], 1000) }}</td>
+            <td class="num dim">{{ fmt_time(p['target_s']) }}</td>
+            <td class="num actual">{{ fmt_time(p['cumulative_s']) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% endif %}
+
+  {# ---------- the training block ---------- #}
+  {% if training_plan %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Training block</p>
+      <p class="panel-note">{{ plan_stats['weeks'] }} weeks
+        &middot; peaks at {{ '%.0f'|format(plan_stats['peak_week_m'] / 1000) }} km
+        in week {{ plan_stats['peak_week_n'] }}</p>
+    </div>
+
+    <div class="empty"><p>Built from what you are running now, not from a template.
+      Volume rises across the block, backs off every fourth week, and the heaviest
+      week lands just before the taper. Every session is a band off your own curve,
+      so it stays right as you get fitter.</p></div>
+
+    {% for note in plan_notes %}
+      <div class="flash flash-error" style="margin-bottom:10px">{{ note }}</div>
+    {% endfor %}
+
+    {% if plan_review %}
+      <div class="grid-2" style="margin:14px 0 4px">
+        <div>
+          <div class="stat">
+            <div class="stat-value {{ 'behind' if plan_review['drift'] == 'under' else 'ahead' if plan_review['on_target'] >= plan_review['weeks'] * 0.6 }}">
+              {{ '%.0f'|format(plan_review['share'] * 100) }}<small class="unit">%</small>
+            </div>
+            <div class="stat-label">Of the plan, actually run</div>
+            <div class="stat-hint">{{ plan_review['on_target'] }} of
+              {{ plan_review['weeks'] }} finished weeks on target &middot;
+              {{ plan_review['long_runs_done'] }}/{{ plan_review['long_runs_planned'] }}
+              long runs done.</div>
+          </div>
+        </div>
+        <div><p class="stat-hint">{{ plan_review['note'] }}</p></div>
+      </div>
+    {% endif %}
+
+    <div class="plan-strip">
+      {% set top = plan_stats['peak_week_m'] %}
+      {% for w in training_plan %}
+        <span class="plan-week ph-{{ w['phase'] }}"
+              style="height:{{ '%.0f'|format(14 + 46 * (w['distance_m'] / top)) }}px"
+              title="Week {{ w['week'] }} ({{ w['phase'] }}): {{ '%.0f'|format(w['distance_m'] / 1000) }} km, long run {{ '%.1f'|format(w['long_run_m'] / 1000) }} km"></span>
+      {% endfor %}
+    </div>
+    <div class="polar-key" style="margin-top:8px">
+      <span><i class="ph-base"></i>Base</span>
+      <span><i class="ph-build"></i>Build</span>
+      <span><i class="ph-peak"></i>Peak</span>
+      <span><i class="ph-taper"></i>Taper</span>
+    </div>
+
+    <div class="table-scroll" style="margin-top:16px"><table>
+      <thead><tr>
+        <th>Week</th><th>Phase</th><th class="num">Volume</th>
+        <th class="num">Long run</th><th>Key sessions</th>
+      </tr></thead>
+      <tbody>
+        {% for w in training_plan %}
+          <tr>
+            <td>{{ w['week'] }}<span class="dim"> &middot; {{ w['to_go'] }} to go</span></td>
+            <td>
+              <span class="phase-dot ph-{{ w['phase'] }}"></span>{{ w['phase']|capitalize }}
+              {%- if w['easy_week'] %} <span class="dim">easy</span>{% endif %}
+            </td>
+            <td class="num actual">{{ '%.0f'|format(w['distance_m'] / 1000) }} km</td>
+            <td class="num dim">{{ '%.1f'|format(w['long_run_m'] / 1000) }} km</td>
+            <td>
+              {% for name, desc, band in w['sessions'] %}
+                <div class="session">
+                  <b>{{ name }}</b>
+                  {%- if band %} <span class="time">{{ fmt_time(band[0]) }}&ndash;{{ fmt_pace(band[1], 1000) }}</span>{% endif %}
+                  <br><span class="dim">{{ desc }}</span>
+                </div>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      A schedule, not a prescription. It has no idea whether you slept, and the
+      readiness read on the dashboard is the thing that should override it.
+    </p>
+  </section>
+  {% endif %}
+
+  {# ---------- fuelling ---------- #}
+  {% if fuel and fuel['carbs']['per_hour_high'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Fuelling</p>
+      <p class="panel-note">for {{ fmt_time(fuel['duration_s']) }} of running</p>
+    </div>
+
+    <div class="digest">
+      <div class="stat">
+        <div class="stat-value">{{ fuel['carbs']['per_hour_low'] }}&ndash;{{ fuel['carbs']['per_hour_high'] }}<small class="unit">g/h</small></div>
+        <div class="stat-label">Carbohydrate</div>
+        <div class="stat-hint">{{ fuel['carbs']['total_low']|round|int }}&ndash;{{ fuel['carbs']['total_high']|round|int }} g over the race.</div>
+      </div>
+      {% if fuel['fluid'] %}
+      <div class="stat">
+        <div class="stat-value">{{ fuel['fluid']['per_hour_low'] }}&ndash;{{ fuel['fluid']['per_hour_high'] }}<small class="unit">ml/h</small></div>
+        <div class="stat-label">Fluid</div>
+        <div class="stat-hint">To thirst, inside that range.</div>
+      </div>
+      {% endif %}
+      {% if fuel['sodium'] %}
+      <div class="stat">
+        <div class="stat-value">{{ fuel['sodium']['per_litre_low'] }}&ndash;{{ fuel['sodium']['per_litre_high'] }}<small class="unit">mg/l</small></div>
+        <div class="stat-label">Sodium</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <p class="stat-hint" style="margin-top:12px">{{ fuel['carbs']['note'] }}</p>
+    {% if fuel['fluid'] %}
+      <p class="stat-hint">{{ fuel['fluid']['note'] }}</p>
+    {% endif %}
+
+    {% if fuel['schedule'] %}
+      <p class="eyebrow" style="margin-top:16px">Roughly when</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>At</th><th class="num">Take</th><th class="num">Running total</th></tr></thead>
+        <tbody>
+          {% for item in fuel['schedule'] %}
+            <tr>
+              <td>{{ fmt_time(item['at_s']) }}</td>
+              <td class="num dim">{{ item['grams'] }} g</td>
+              <td class="num actual">{{ item['cumulative_g'] }} g</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:10px">
+        Spaced evenly rather than crammed late: the gut empties at a rate, and a
+        backlog does not clear once you are working hard. Nothing in the last ten
+        minutes, because it would not be absorbed in time to matter.
+      </p>
+    {% endif %}
+
+    {% if fuel['loading'] %}
+      <p class="stat-hint" style="margin-top:14px">{{ fuel['loading']['note'] }}
+        {% if fuel['loading']['g_per_kg_low'] %}
+          Aim for {{ fuel['loading']['g_per_kg_low'] }}&ndash;{{ fuel['loading']['g_per_kg_high'] }} g
+          of carbohydrate per kilo of body weight per day, for the two days before.
+        {% endif %}</p>
+    {% endif %}
+
+    <p class="stat-hint" style="margin-top:12px">
+      These are the published consensus ranges (Jeukendrup 2014; the joint
+      position stand of the Academy of Nutrition and Dietetics, Dietitians of
+      Canada and the ACSM, 2016), not personal advice. Gut tolerance is
+      individual and 90 g/h is a trained capacity rather than a starting point
+      &mdash; practise it in training, never first on race day.
+    </p>
+  </section>
+  {% endif %}
+
+  {# ---------- the postmortem ---------- #}
+  {% if race['date'] <= now.date() %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Postmortem</p>
+      {% if review %}<p class="panel-note">
+        <a class="quiet-link" href="{{ url_for('activity_detail', garmin_id=review['garmin_id']) }}">the run</a>
+        {%- if review['auto'] %} &middot; matched automatically{% endif %}</p>{% endif %}
+    </div>
+
+    {% if review %}
+      <p class="verdict">{{ review['verdict'] }}</p>
+      <div class="digest">
+        <div class="stat">
+          <div class="stat-value">{{ fmt_time(review['total_s']) }}</div>
+          <div class="stat-label">Ran</div>
+          {% if review['vs_target_s'] is not none %}
+            <div class="stat-hint">
+              <span class="{{ 'behind' if review['vs_target_s'] > 0 else 'ahead' }}">
+                {{ '%+d'|format(review['vs_target_s']|round|int) }}s vs goal</span></div>
+          {% endif %}
+        </div>
+        {% if review['fade'] is not none %}
+        <div class="stat">
+          <div class="stat-value {{ 'risk' if review['fade'] > 0.04 }}">{{ '%+.1f'|format(review['fade'] * 100) }}<small class="unit">%</small></div>
+          <div class="stat-label">Second half vs first</div>
+          {% if review['gap_fade'] is not none %}
+            <div class="stat-hint">{{ '%+.1f'|format(review['gap_fade'] * 100) }}% on effort</div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if review['lost_s'] %}
+        <div class="stat">
+          <div class="stat-value">{{ review['lost_s']|round|int }}<small class="unit">s</small></div>
+          <div class="stat-label">Lost against plan</div>
+          {% if review['uphill_loss_s'] %}
+            <div class="stat-hint">{{ review['uphill_loss_s']|round|int }}s of it on climbs</div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if review['hr_drift'] is not none %}
+        <div class="stat">
+          <div class="stat-value">{{ '%+.0f'|format(review['hr_drift']) }}</div>
+          <div class="stat-label">HR drift, bpm</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="table-scroll" style="margin-top:18px"><table>
+        <thead><tr>
+          <th>Km</th><th class="num">Plan</th><th class="num">Ran</th>
+          <th class="num">Delta</th><th class="num">Grade</th>
+          <th class="num">Effort</th><th class="num">HR</th>
+        </tr></thead>
+        <tbody>
+          {% for r in review['rows'] %}
+            <tr>
+              <td>{{ r['n'] }}</td>
+              <td class="num dim">{{ fmt_pace(r['target_pace'], 1000) if r['target_pace'] else '&mdash;'|safe }}</td>
+              <td class="num actual">{{ fmt_pace(r['pace'], 1000) }}</td>
+              <td class="num">
+                {% if r['delta_s'] is not none %}
+                  <span class="{{ 'behind' if r['delta_s'] > 1 else 'ahead' if r['delta_s'] < -1 else 'dim' }}">
+                    {{ '%+d'|format(r['delta_s']|round|int) }}s</span>
+                {% else %}<span class="dim">&mdash;</span>{% endif %}
+              </td>
+              <td class="num dim">{% if r['grade'] is not none %}{{ '%+.1f'|format(r['grade'] * 100) }}%{% else %}&mdash;{% endif %}</td>
+              <td class="num dim">{{ fmt_pace(r['gap'], 1000) if r['gap'] else '&mdash;'|safe }}</td>
+              <td class="num dim">{{ r['avg_hr']|round|int if r['avg_hr'] else '&mdash;'|safe }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:10px">
+        &ldquo;Effort&rdquo; is the pace adjusted for gradient, so a slow kilometre
+        uphill can be a better effort than a quick one on the flat.
+      </p>
+    {% else %}
+      <div class="empty"><p>No run linked to this race yet. Pick the one you ran and
+        the splits get compared against the plan, kilometre by kilometre.</p></div>
+    {% endif %}
+
+    {% if past_runs %}
+      <form method="post" action="{{ url_for('race_ran', race_id=race['id']) }}"
+            class="form-row" style="margin-top:14px">
+        <div class="field field-grow"><label for="ranact">The run that was this race</label>
+          <select id="ranact" name="garmin_id">
+            <option value="">&mdash; none &mdash;</option>
+            {% for r in past_runs %}
+              <option value="{{ r['garmin_id'] }}"
+                {%- if review and review['garmin_id'] == r['garmin_id'] %} selected{% endif %}>
+                {{ r['start'][:10] }} &middot; {{ '%.2f'|format((r['distance_m'] or 0) / 1000) }} km</option>
+            {% endfor %}
+          </select></div>
+        <button class="btn btn-ghost" type="submit">Link</button>
+      </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if splits and race['date'] >= now.date() %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Split targets</p>
+      <p class="panel-note">Slightly negative &mdash; 1% steadier out, 1% quicker back</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Checkpoint</th>
+        <th class="num">Projected</th>
+        {% if goal_splits %}<th class="num">Goal</th>{% endif %}
+      </tr></thead>
+      <tbody>
+        {% for label, metres, cumulative in splits %}
+          <tr>
+            <td>{{ label }}</td>
+            <td class="num time">{{ fmt_time(cumulative) }}</td>
+            {% if goal_splits %}
+              <td class="num dim">{{ fmt_time(goal_splits[loop.index0][2]) }}</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('delete_race', race_id=race['id']) }}">
+    <button class="btn-quiet" type="submit">Remove this race</button>
+  </form>
+
+</div>
+{% endblock %}

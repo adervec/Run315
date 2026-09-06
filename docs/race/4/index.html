@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring 10K — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Race plan</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">2026-05-31 &middot; 10.00 km</p>
+    </div>
+    <h2 class="race-title">Spring 10K</h2>
+
+    
+      <p class="stat-hint">Run 98 days ago.</p>
+    
+  </section>
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Result</p>
+    </div>
+    
+      <div class="race-headline">
+        <div>
+          <div class="projected measured">42:31
+            <small>4:15 /km</small></div>
+          <div class="stat-label" style="margin-top:8px">Finish time</div>
+        </div>
+        
+          
+          <div>
+            <div class="projected behind">
+              +0:31
+              <small>projected 42:00</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              Slower than projected</div>
+          </div>
+        
+      </div>
+    
+    <form method="post" action="/Run315/races/4/result" class="form-row" style="margin-top:14px">
+      <div class="field"><label for="actual">Correct the finish time</label>
+        <input type="text" id="actual" name="actual" placeholder="1:29:30" pattern="[0-9:.]*" required></div>
+      <button class="btn" type="submit">Save result</button>
+    </form>
+  </section>
+  
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">The course</p>
+      
+    </div>
+
+    
+      <div class="empty">
+        <p>Attach the course and the pacing below stops being a guess about a flat
+          road. Upload the organiser GPX, or point at a run where you covered the
+          same ground.</p>
+      </div>
+      <form method="post" action="/Run315/race/4/course"
+            enctype="multipart/form-data" class="form-row">
+        <input type="hidden" name="source" value="gpx">
+        <div class="field field-grow"><label for="gpx">Course GPX</label>
+          <input type="file" id="gpx" name="gpx" accept=".gpx,application/gpx+xml" required></div>
+        <button class="btn" type="submit">Attach course</button>
+      </form>
+      
+        <form method="post" action="/Run315/race/4/course"
+              class="form-row" style="margin-top:10px">
+          <input type="hidden" name="source" value="activity">
+          <div class="field field-grow"><label for="fromact">Or use a run</label>
+            <select id="fromact" name="garmin_id">
+              
+                <option value="demo-230">2026-05-31 &middot;
+                  19.60 km</option>
+              
+                <option value="demo-229">2026-05-30 &middot;
+                  11.79 km</option>
+              
+            </select></div>
+          <button class="btn btn-ghost" type="submit">Use that track</button>
+        </form>
+      
+    
+  </section>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Postmortem</p>
+      
+    </div>
+
+    
+      <div class="empty"><p>No run linked to this race yet. Pick the one you ran and
+        the splits get compared against the plan, kilometre by kilometre.</p></div>
+    
+
+    
+      <form method="post" action="/Run315/race/4/ran"
+            class="form-row" style="margin-top:14px">
+        <div class="field field-grow"><label for="ranact">The run that was this race</label>
+          <select id="ranact" name="garmin_id">
+            <option value="">&mdash; none &mdash;</option>
+            
+              <option value="demo-230">
+                2026-05-31 &middot; 19.60 km</option>
+            
+              <option value="demo-229">
+                2026-05-30 &middot; 11.79 km</option>
+            
+          </select></div>
+        <button class="btn btn-ghost" type="submit">Link</button>
+      </form>
+    
+  </section>
+  
+
+  
+
+  <form method="post" action="/Run315/races/4/delete">
+    <button class="btn-quiet" type="submit">Remove this race</button>
+  </form>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

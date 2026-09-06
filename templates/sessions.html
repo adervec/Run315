@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Sessions — Run315{% endblock %}
+{% block body %}
+<style>
+  .rep-spark { display: flex; gap: 2px; align-items: flex-end; height: 26px; }
+  .rep-spark i {
+    display: block; width: 5px; background: var(--measured); border-radius: 1px;
+    min-height: 3px;
+  }
+  .rep-spark i.slow { background: var(--behind); }
+  .prog-row { border-top: 1px solid var(--line); padding: 16px 0; }
+  .prog-row:first-child { border-top: none; }
+  .prog-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .prog-dist {
+    font-family: var(--display); font-size: 24px; font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .prog-bars { display: flex; gap: 4px; align-items: flex-end; height: 54px; margin-top: 10px; }
+  .prog-bars span {
+    display: block; width: 22px; background: var(--measured-soft);
+    border-bottom: 3px solid var(--measured); position: relative; border-radius: 2px 2px 0 0;
+  }
+  .prog-bars span.best { border-bottom-color: var(--ahead); background: #dff0e6; }
+  .badge-track {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    background: var(--projected); color: #fff; padding: 1px 6px; border-radius: 2px;
+    vertical-align: middle;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Track &amp; interval sessions &middot; {{ sessions|length }} found</p>
+    <div class="masthead-actions">
+      <form method="post" action="{{ url_for('sessions_rescan') }}">
+        <button class="btn btn-ghost" type="submit">Re-read every run</button>
+      </form>
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Dashboard</a>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+
+  {% if not sessions %}
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">No sessions yet</p></div>
+      <div class="empty">
+        <p>Run315 finds interval work by reading the pace inside each run &mdash; it does
+          not need you to have pressed the lap button. A run counts as a session when
+          its pace is genuinely two-gear: hard bits at least 25 s/km quicker than the
+          jog between them.</p>
+        <p>Sync and analyse some runs, then come back.</p>
+      </div>
+      <a class="btn" href="{{ url_for('index') }}">Go and sync</a>
+    </section>
+  {% else %}
+
+  {% if prescribed %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Your interval pace right now</p>
+      <p class="panel-note">From the fitted curve, not a lookup table</p>
+    </div>
+    <div class="empty"><p>Reps should be landing between
+      <b>{{ fmt_time(prescribed[0]) }}</b> and <b>{{ fmt_pace(prescribed[1], 1000) }}</b>.
+      Sessions below are marked against that.</p></div>
+  </section>
+  {% endif %}
+
+  {% if progression %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Progression</p>
+      <p class="panel-note">Same rep distance, over time</p>
+    </div>
+    {% for g in progression %}
+      <div class="prog-row">
+        <div class="prog-head">
+          <span class="prog-dist">{{ g['distance_m'] }} m</span>
+          <span class="stat-label" style="margin:0">{{ g['count'] }} session{{ 's' if g['count'] != 1 }}</span>
+          <span class="stat-hint" style="margin:0">
+            best {{ fmt_pace(g['best_pace'], 1000) }} on {{ g['best_on'] }}
+            {%- if g['trend'] %} &middot;
+              <span class="{{ 'ahead' if g['trend'] < 0 else 'behind' }}">
+                {{ '%+.0f'|format(g['trend']) }} s/km since the first
+              </span>
+            {%- endif %}
+          </span>
+        </div>
+        {% set slowest = g['sessions']|map(attribute='avg_pace')|max %}
+        {% set fastest = g['sessions']|map(attribute='avg_pace')|min %}
+        <div class="prog-bars">
+          {% for s in g['sessions'] %}
+            {% set span = slowest - fastest %}
+            {% set h = 18 + 34 * ((slowest - s['avg_pace']) / span if span > 0.5 else 0.5) %}
+            <span class="{{ 'best' if s['avg_pace'] == fastest }}"
+                  style="height:{{ '%.0f'|format(h) }}px"
+                  title="{{ s['start'][:10] }} — {{ s['name'] }} at {{ fmt_pace(s['avg_pace'], 1000) }}"></span>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Every session</p>
+      <p class="panel-note">Newest first</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Date</th><th>Session</th><th class="num">Avg rep</th>
+        <th class="num">Spread</th><th class="num">Fade</th>
+        <th class="num">Recovery</th><th>Reps</th>
+      </tr></thead>
+      <tbody>
+        {% for s in sessions %}
+          <tr>
+            <td class="dim">{{ s['start'][:10] }}</td>
+            <td>
+              <a class="quiet-link" href="{{ url_for('activity_detail', garmin_id=s['garmin_id']) }}">{{ s['name'] }}</a>
+              {% if s['on_track'] %} <span class="badge-track">TRACK</span>{% endif %}
+            </td>
+            <td class="num actual">{{ fmt_pace(s['avg_pace'], 1000) }}</td>
+            <td class="num dim">
+              {% if s['consistency'] is not none %}&plusmn;{{ '%.1f'|format(s['consistency'] * 100) }}%{% else %}&mdash;{% endif %}
+            </td>
+            <td class="num">
+              {% if s['fade'] is not none %}
+                <span class="{{ 'behind' if s['fade'] > 0.02 else 'ahead' if s['fade'] < -0.02 else 'dim' }}">
+                  {{ '%+.1f'|format(s['fade'] * 100) }}%</span>
+              {% else %}<span class="dim">&mdash;</span>{% endif %}
+            </td>
+            <td class="num dim">{{ fmt_time(s['avg_recovery_s']) if s['avg_recovery_s'] else '—' }}</td>
+            <td>
+              {% set reps = s['reps'] %}
+              {% set slow = reps|map(attribute='pace')|max %}
+              {% set fast = reps|map(attribute='pace')|min %}
+              <span class="rep-spark">
+                {% for r in reps %}
+                  {% set span = slow - fast %}
+                  <i class="{{ 'slow' if span > 1 and r['pace'] > fast + span * 0.75 }}"
+                     style="height:{{ '%.0f'|format(8 + 18 * ((slow - r['pace']) / span if span > 1 else 0.5)) }}px"
+                     title="Rep {{ r['n'] }}: {{ '%.0f'|format(r['distance_m']) }} m in {{ fmt_time(r['seconds']) }} ({{ fmt_pace(r['pace'], 1000) }})"></i>
+                {% endfor %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:12px">
+      Spread is how even the reps were &mdash; 0% is metronomic. Fade compares the
+      second half of the set with the first; negative means you finished faster
+      than you started.
+    </p>
+  </section>
+
+  {% endif %}
+</div>
+{% endblock %}

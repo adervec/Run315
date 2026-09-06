@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<style>
+  .wear { display: block; height: 8px; background: #e7ebf0; border-radius: 4px;
+          overflow: hidden; margin-top: 6px; }
+  .wear i { display: block; height: 100%; background: var(--measured); }
+  .wear i.warn { background: #b07d2b; }
+  .wear i.gone { background: var(--behind); }
+  .shoe-name { font-weight: 600; font-size: 16px; }
+  .shoe-sub { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .retired td { opacity: 0.55; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Gear &amp; conditions</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
+    </div>
+  </header>
+
+  
+    
+  
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Shoes</p>
+      <p class="panel-note">Mileage counted from your own runs</p>
+    </div>
+
+    
+      <div class="table-scroll"><table>
+        <thead><tr>
+          <th>Pair</th><th class="num">Distance</th><th class="num">Runs</th>
+          <th class="num">Left</th><th>Life</th>
+        </tr></thead>
+        <tbody>
+          
+            <tr class="">
+              <td>
+                <span class="shoe-name">Pegasus 40</span>
+                <span class="break-chip k-exhaustion">replace</span>
+                
+                
+                  <br><span class="shoe-sub">2025-09-07
+                    &rarr; 2026-07-23</span>
+                
+              </td>
+              <td class="num actual">1605 km</td>
+              <td class="num dim">138</td>
+              <td class="num behind">0 km</td>
+              <td style="width:32%">
+                <span class="wear">
+                  <i class="gone"
+                     style="width:100%"></i>
+                </span>
+                <span class="shoe-sub">800 km limit</span>
+              </td>
+            </tr>
+          
+            <tr class="">
+              <td>
+                <span class="shoe-name">Endorphin Speed</span>
+                <span class="break-chip k-exhaustion">replace</span>
+                
+                
+                  <br><span class="shoe-sub">2025-09-06
+                    &rarr; 2026-07-22</span>
+                
+              </td>
+              <td class="num actual">792 km</td>
+              <td class="num dim">92</td>
+              <td class="num behind">0 km</td>
+              <td style="width:32%">
+                <span class="wear">
+                  <i class="gone"
+                     style="width:100%"></i>
+                </span>
+                <span class="shoe-sub">700 km limit</span>
+              </td>
+            </tr>
+          
+            <tr class="">
+              <td>
+                <span class="shoe-name">Novablast 4</span>
+                
+                
+                  <br><span class="shoe-sub">2026-07-25
+                    &rarr; 2026-09-06</span>
+                
+              </td>
+              <td class="num actual">400 km</td>
+              <td class="num dim">32</td>
+              <td class="num ">400 km</td>
+              <td style="width:32%">
+                <span class="wear">
+                  <i class=""
+                     style="width:50%"></i>
+                </span>
+                <span class="shoe-sub">800 km limit</span>
+              </td>
+            </tr>
+          
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:12px">
+        Shoes and their replace-at figures come from Garmin. Where you have not set
+        one, 800 km is assumed &mdash; it is a
+        rule of thumb, not a rule.
+      </p>
+    
+  </section>
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Pace against the weather</p>
+      <p class="panel-note">Last 400 days</p>
+    </div>
+    <div class="empty"><p>The same effort is simply slower in the heat. The corrected
+      column is what your summer runs are actually worth, so a July slump stops
+      looking like lost fitness.</p></div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Conditions</th><th class="num">Runs</th><th class="num">Average</th>
+        <th class="num">Raw pace</th><th class="num">Corrected</th><th class="num">Worth</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>Under 5 C</td>
+            <td class="num dim">79</td>
+            <td class="num dim">2 C</td>
+            <td class="num">4:44 /km</td>
+            <td class="num actual">4:44 /km</td>
+            <td class="num dim">&mdash;</td>
+          </tr>
+        
+          <tr>
+            <td>5-13 C</td>
+            <td class="num dim">58</td>
+            <td class="num dim">9 C</td>
+            <td class="num">4:45 /km</td>
+            <td class="num actual">4:45 /km</td>
+            <td class="num dim">&mdash;</td>
+          </tr>
+        
+          <tr>
+            <td>13-20 C</td>
+            <td class="num dim">55</td>
+            <td class="num dim">17 C</td>
+            <td class="num">4:43 /km</td>
+            <td class="num actual">4:42 /km</td>
+            <td class="num ahead">&minus;2s</td>
+          </tr>
+        
+          <tr>
+            <td>20-26 C</td>
+            <td class="num dim">70</td>
+            <td class="num dim">23 C</td>
+            <td class="num">4:45 /km</td>
+            <td class="num actual">4:34 /km</td>
+            <td class="num ahead">&minus;11s</td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+  </section>
+  
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

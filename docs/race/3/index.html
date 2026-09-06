@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Club 10K — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Race plan</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">2026-09-27 &middot; 10.00 km</p>
+    </div>
+    <h2 class="race-title">Club 10K</h2>
+
+    
+      <div class="race-headline">
+        <div>
+          <div class="projected">41:58
+            <small>4:12 /km</small></div>
+          <div class="stat-label" style="margin-top:8px">Projected finish</div>
+          <div class="lanes" title="Confidence: high">
+            
+              <span class="lane on"></span>
+            
+              <span class="lane on"></span>
+            
+              <span class="lane on"></span>
+            
+          </div>
+        </div>
+
+        
+          
+          <div>
+            <div class="projected behind">
+              +2:58
+              <small>goal 39:00</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              Short of your goal</div>
+          </div>
+        
+
+        <div>
+          <div class="projected measured">21
+            <small>days to go</small></div>
+          <div class="stat-label" style="margin-top:8px">
+            Trend -0.1%
+            &middot; your bias +0.6%</div>
+        </div>
+      </div>
+    
+  </section>
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Race-day readiness</p>
+      <p class="panel-note">If you hold your current 66 load per day</p>
+    </div>
+    <div class="grid-half">
+      <div>
+        <div class="stat">
+          <div class="stat-value">-1</div>
+          <div class="stat-label">Form on race day &middot; no taper</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">+16</div>
+          <div class="stat-label">Form with a 14-day taper</div>
+          <div class="stat-hint">Fitness would still be 57.</div>
+        </div>
+      </div>
+      <div class="empty">
+        <p>Form above about +10 on the day is where most people race well. Cutting
+          volume to roughly 55% for the last 14 days moves you from
+          -1 to +16
+          without losing meaningful fitness.</p>
+        
+      </div>
+    </div>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">The course</p>
+      
+    </div>
+
+    
+      <div class="empty">
+        <p>Attach the course and the pacing below stops being a guess about a flat
+          road. Upload the organiser GPX, or point at a run where you covered the
+          same ground.</p>
+      </div>
+      <form method="post" action="/Run315/race/3/course"
+            enctype="multipart/form-data" class="form-row">
+        <input type="hidden" name="source" value="gpx">
+        <div class="field field-grow"><label for="gpx">Course GPX</label>
+          <input type="file" id="gpx" name="gpx" accept=".gpx,application/gpx+xml" required></div>
+        <button class="btn" type="submit">Attach course</button>
+      </form>
+      
+    
+  </section>
+
+  
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Training block</p>
+      <p class="panel-note">3 weeks
+        &middot; peaks at 67 km
+        in week 2</p>
+    </div>
+
+    <div class="empty"><p>Built from what you are running now, not from a template.
+      Volume rises across the block, backs off every fourth week, and the heaviest
+      week lands just before the taper. Every session is a band off your own curve,
+      so it stays right as you get fitter.</p></div>
+
+    
+      <div class="flash flash-error" style="margin-bottom:10px">Under eight weeks is short for a real build -- expect to arrive fit rather than peaked.</div>
+    
+
+    
+      <div class="grid-2" style="margin:14px 0 4px">
+        <div>
+          <div class="stat">
+            <div class="stat-value ahead">
+              125<small class="unit">%</small>
+            </div>
+            <div class="stat-label">Of the plan, actually run</div>
+            <div class="stat-hint">2 of
+              3 finished weeks on target &middot;
+              3/3
+              long runs done.</div>
+          </div>
+        </div>
+        <div><p class="stat-hint">You are tracking the plan closely -- within a tenth on most weeks, which is as close as anyone follows a schedule.</p></div>
+      </div>
+    
+
+    <div class="plan-strip">
+      
+      
+        <span class="plan-week ph-base"
+              style="height:56px"
+              title="Week 1 (base): 61 km, long run 15.8 km"></span>
+      
+        <span class="plan-week ph-build"
+              style="height:60px"
+              title="Week 2 (build): 67 km, long run 20.1 km"></span>
+      
+        <span class="plan-week ph-taper"
+              style="height:30px"
+              title="Week 3 (taper): 23 km, long run 5.9 km"></span>
+      
+    </div>
+    <div class="polar-key" style="margin-top:8px">
+      <span><i class="ph-base"></i>Base</span>
+      <span><i class="ph-build"></i>Build</span>
+      <span><i class="ph-peak"></i>Peak</span>
+      <span><i class="ph-taper"></i>Taper</span>
+    </div>
+
+    <div class="table-scroll" style="margin-top:16px"><table>
+      <thead><tr>
+        <th>Week</th><th>Phase</th><th class="num">Volume</th>
+        <th class="num">Long run</th><th>Key sessions</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>1<span class="dim"> &middot; 3 to go</span></td>
+            <td>
+              <span class="phase-dot ph-base"></span>Base
+            </td>
+            <td class="num actual">61 km</td>
+            <td class="num dim">15.8 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Steady</b> <span class="time">4:35&ndash;4:51 /km</span>
+                  <br><span class="dim">20-30 min continuous, comfortably hard</span>
+                </div>
+              
+                <div class="session">
+                  <b>Strides</b> <span class="time">3:46&ndash;3:58 /km</span>
+                  <br><span class="dim">6 x 20 s relaxed and fast off a jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>2<span class="dim"> &middot; 2 to go</span></td>
+            <td>
+              <span class="phase-dot ph-build"></span>Build
+            </td>
+            <td class="num actual">67 km</td>
+            <td class="num dim">20.1 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Threshold</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">3 x 8 min with 2 min jog</span>
+                </div>
+              
+                <div class="session">
+                  <b>Intervals</b> <span class="time">4:00&ndash;4:12 /km</span>
+                  <br><span class="dim">6 x 3 min hard with 2 min jog</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>3<span class="dim"> &middot; 1 to go</span></td>
+            <td>
+              <span class="phase-dot ph-taper"></span>Taper
+            </td>
+            <td class="num actual">23 km</td>
+            <td class="num dim">5.9 km</td>
+            <td>
+              
+                <div class="session">
+                  <b>Sharpener</b> <span class="time">4:17&ndash;4:27 /km</span>
+                  <br><span class="dim">10 min easy, 6 x 90 s at race effort, 10 min easy</span>
+                </div>
+              
+            </td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      A schedule, not a prescription. It has no idea whether you slept, and the
+      readiness read on the dashboard is the thing that should override it.
+    </p>
+  </section>
+  
+
+  
+  
+
+  
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Split targets</p>
+      <p class="panel-note">Slightly negative &mdash; 1% steadier out, 1% quicker back</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Checkpoint</th>
+        <th class="num">Projected</th>
+        <th class="num">Goal</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>1K</td>
+            <td class="num time">4:14</td>
+            
+              <td class="num dim">3:56</td>
+            
+          </tr>
+        
+          <tr>
+            <td>2K</td>
+            <td class="num time">8:29</td>
+            
+              <td class="num dim">7:53</td>
+            
+          </tr>
+        
+          <tr>
+            <td>3K</td>
+            <td class="num time">12:43</td>
+            
+              <td class="num dim">11:49</td>
+            
+          </tr>
+        
+          <tr>
+            <td>4K</td>
+            <td class="num time">16:57</td>
+            
+              <td class="num dim">15:45</td>
+            
+          </tr>
+        
+          <tr>
+            <td>5K</td>
+            <td class="num time">21:12</td>
+            
+              <td class="num dim">19:42</td>
+            
+          </tr>
+        
+          <tr>
+            <td>6K</td>
+            <td class="num time">25:21</td>
+            
+              <td class="num dim">23:33</td>
+            
+          </tr>
+        
+          <tr>
+            <td>7K</td>
+            <td class="num time">29:30</td>
+            
+              <td class="num dim">27:25</td>
+            
+          </tr>
+        
+          <tr>
+            <td>8K</td>
+            <td class="num time">33:40</td>
+            
+              <td class="num dim">31:17</td>
+            
+          </tr>
+        
+          <tr>
+            <td>9K</td>
+            <td class="num time">37:49</td>
+            
+              <td class="num dim">35:08</td>
+            
+          </tr>
+        
+          <tr>
+            <td>Finish</td>
+            <td class="num time">41:58</td>
+            
+              <td class="num dim">39:00</td>
+            
+          </tr>
+        
+      </tbody>
+    </table></div>
+  </section>
+  
+
+  <form method="post" action="/Run315/races/3/delete">
+    <button class="btn-quiet" type="submit">Remove this race</button>
+  </form>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

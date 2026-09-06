@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Club parkrun — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Race plan</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">2026-09-05 &middot; 5.00 km</p>
+    </div>
+    <h2 class="race-title">Club parkrun</h2>
+
+    
+      <p class="stat-hint">Run 1 days ago.</p>
+    
+  </section>
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Result</p>
+    </div>
+    
+      <div class="race-headline">
+        <div>
+          <div class="projected measured">19:20
+            <small>3:52 /km</small></div>
+          <div class="stat-label" style="margin-top:8px">Finish time</div>
+        </div>
+        
+          
+          <div>
+            <div class="projected ahead">
+              −0:08
+              <small>projected 19:28</small></div>
+            <div class="stat-label" style="margin-top:8px">
+              Faster than projected</div>
+          </div>
+        
+      </div>
+    
+    <form method="post" action="/Run315/races/6/result" class="form-row" style="margin-top:14px">
+      <div class="field"><label for="actual">Correct the finish time</label>
+        <input type="text" id="actual" name="actual" placeholder="1:29:30" pattern="[0-9:.]*" required></div>
+      <button class="btn" type="submit">Save result</button>
+    </form>
+  </section>
+  
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">The course</p>
+      
+        <p class="panel-note">4.99 km
+          &middot; 72 m up
+          &middot; 71 m down</p>
+      
+    </div>
+
+    
+      
+      
+        <svg class="chart profile" viewBox="0 0 680 110" preserveAspectRatio="none"
+             role="img" aria-label="Course elevation profile">
+          <polygon points="0,110 0.0,104.0 139.4,12.4 275.4,62.7 411.4,74.3 547.4,6.0 680.0,102.8 680,110" fill="#0b6e79" fill-opacity="0.12"/>
+          <polyline points="0.0,104.0 139.4,12.4 275.4,62.7 411.4,74.3 547.4,6.0 680.0,102.8" fill="none" stroke="#0b6e79"
+                    stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <div class="chart-legend">
+          <span>Start</span>
+          <span style="margin:0 auto">
+            1% harder than flat
+          </span>
+          <span>Finish</span>
+        </div>
+      
+
+      
+        <p class="stat-hint" style="margin-top:14px"><b>Where it bites:</b></p>
+        <ul class="climb-list">
+          
+            <li><b>0.0&ndash;1.0 km</b>
+              &middot; 31 m at 3.1%</li>
+          
+        </ul>
+      
+
+      <form method="post" action="/Run315/race/6/course/delete"
+            style="margin-top:12px">
+        <button class="btn-quiet" type="submit">Remove this course</button>
+      </form>
+    
+  </section>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Postmortem</p>
+      <p class="panel-note">
+        <a class="quiet-link" href="/Run315/activity/demo-313">the run</a></p>
+    </div>
+
+    
+      <p class="verdict">Evenly run, start to finish.</p>
+      <div class="digest">
+        <div class="stat">
+          <div class="stat-value">19:20</div>
+          <div class="stat-label">Ran</div>
+          
+            <div class="stat-hint">
+              <span class="behind">
+                +12s vs goal</span></div>
+          
+        </div>
+        
+        <div class="stat">
+          <div class="stat-value ">+0.0<small class="unit">%</small></div>
+          <div class="stat-label">Second half vs first</div>
+          
+            <div class="stat-hint">+7.4% on effort</div>
+          
+        </div>
+        
+        
+        <div class="stat">
+          <div class="stat-value">82<small class="unit">s</small></div>
+          <div class="stat-label">Lost against plan</div>
+          
+        </div>
+        
+        
+        <div class="stat">
+          <div class="stat-value">+11</div>
+          <div class="stat-label">HR drift, bpm</div>
+        </div>
+        
+      </div>
+
+      <div class="table-scroll" style="margin-top:18px"><table>
+        <thead><tr>
+          <th>Km</th><th class="num">Plan</th><th class="num">Ran</th>
+          <th class="num">Delta</th><th class="num">Grade</th>
+          <th class="num">Effort</th><th class="num">HR</th>
+        </tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td class="num dim">4:32 /km</td>
+              <td class="num actual">3:52 /km</td>
+              <td class="num">
+                
+                  <span class="ahead">
+                    -46s</span>
+                
+              </td>
+              <td class="num dim">+3.0%</td>
+              <td class="num dim">3:17 /km</td>
+              <td class="num dim">172</td>
+            </tr>
+          
+            <tr>
+              <td>2</td>
+              <td class="num dim">3:30 /km</td>
+              <td class="num actual">3:52 /km</td>
+              <td class="num">
+                
+                  <span class="behind">
+                    +22s</span>
+                
+              </td>
+              <td class="num dim">-1.5%</td>
+              <td class="num dim">4:12 /km</td>
+              <td class="num dim">176</td>
+            </tr>
+          
+            <tr>
+              <td>3</td>
+              <td class="num dim">3:41 /km</td>
+              <td class="num actual">3:52 /km</td>
+              <td class="num">
+                
+                  <span class="behind">
+                    +11s</span>
+                
+              </td>
+              <td class="num dim">-0.6%</td>
+              <td class="num dim">3:59 /km</td>
+              <td class="num dim">179</td>
+            </tr>
+          
+            <tr>
+              <td>4</td>
+              <td class="num dim">4:16 /km</td>
+              <td class="num actual">3:52 /km</td>
+              <td class="num">
+                
+                  <span class="ahead">
+                    -24s</span>
+                
+              </td>
+              <td class="num dim">+2.4%</td>
+              <td class="num dim">3:24 /km</td>
+              <td class="num dim">183</td>
+            </tr>
+          
+            <tr>
+              <td>5</td>
+              <td class="num dim">3:08 /km</td>
+              <td class="num actual">3:52 /km</td>
+              <td class="num">
+                
+                  <span class="behind">
+                    +49s</span>
+                
+              </td>
+              <td class="num dim">-3.4%</td>
+              <td class="num dim">4:39 /km</td>
+              <td class="num dim">186</td>
+            </tr>
+          
+        </tbody>
+      </table></div>
+      <p class="stat-hint" style="margin-top:10px">
+        &ldquo;Effort&rdquo; is the pace adjusted for gradient, so a slow kilometre
+        uphill can be a better effort than a quick one on the flat.
+      </p>
+    
+
+    
+      <form method="post" action="/Run315/race/6/ran"
+            class="form-row" style="margin-top:14px">
+        <div class="field field-grow"><label for="ranact">The run that was this race</label>
+          <select id="ranact" name="garmin_id">
+            <option value="">&mdash; none &mdash;</option>
+            
+              <option value="demo-314">
+                2026-09-06 &middot; 25.36 km</option>
+            
+              <option value="demo-313" selected>
+                2026-09-05 &middot; 5.00 km</option>
+            
+          </select></div>
+        <button class="btn btn-ghost" type="submit">Link</button>
+      </form>
+    
+  </section>
+  
+
+  
+
+  <form method="post" action="/Run315/races/6/delete">
+    <button class="btn-quiet" type="submit">Remove this race</button>
+  </form>
+
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

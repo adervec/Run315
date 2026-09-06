@@ -1,0 +1,3131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sessions — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<style>
+  .rep-spark { display: flex; gap: 2px; align-items: flex-end; height: 26px; }
+  .rep-spark i {
+    display: block; width: 5px; background: var(--measured); border-radius: 1px;
+    min-height: 3px;
+  }
+  .rep-spark i.slow { background: var(--behind); }
+  .prog-row { border-top: 1px solid var(--line); padding: 16px 0; }
+  .prog-row:first-child { border-top: none; }
+  .prog-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .prog-dist {
+    font-family: var(--display); font-size: 24px; font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .prog-bars { display: flex; gap: 4px; align-items: flex-end; height: 54px; margin-top: 10px; }
+  .prog-bars span {
+    display: block; width: 22px; background: var(--measured-soft);
+    border-bottom: 3px solid var(--measured); position: relative; border-radius: 2px 2px 0 0;
+  }
+  .prog-bars span.best { border-bottom-color: var(--ahead); background: #dff0e6; }
+  .badge-track {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    background: var(--projected); color: #fff; padding: 1px 6px; border-radius: 2px;
+    vertical-align: middle;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Track &amp; interval sessions &middot; 52 found</p>
+    <div class="masthead-actions">
+      <form method="post" action="/Run315/sessions/rescan">
+        <button class="btn btn-ghost" type="submit">Re-read every run</button>
+      </form>
+      <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
+    </div>
+  </header>
+
+  
+    
+  
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Your interval pace right now</p>
+      <p class="panel-note">From the fitted curve, not a lookup table</p>
+    </div>
+    <div class="empty"><p>Reps should be landing between
+      <b>4:00</b> and <b>4:12 /km</b>.
+      Sessions below are marked against that.</p></div>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Progression</p>
+      <p class="panel-note">Same rep distance, over time</p>
+    </div>
+    
+      <div class="prog-row">
+        <div class="prog-head">
+          <span class="prog-dist">800 m</span>
+          <span class="stat-label" style="margin:0">5 sessions</span>
+          <span class="stat-hint" style="margin:0">
+            best 3:38 /km on 2026-08-19 &middot;
+              <span class="ahead">
+                -4 s/km since the first
+              </span>
+          </span>
+        </div>
+        
+        
+        <div class="prog-bars">
+          
+            
+            
+            <span class=""
+                  style="height:36px"
+                  title="2026-06-03 — 7 x 800 m at 3:42 /km"></span>
+          
+            
+            
+            <span class=""
+                  style="height:18px"
+                  title="2026-06-10 — 7 x 800 m at 3:47 /km"></span>
+          
+            
+            
+            <span class=""
+                  style="height:29px"
+                  title="2026-07-15 — 7 x 800 m at 3:44 /km"></span>
+          
+            
+            
+            <span class=""
+                  style="height:36px"
+                  title="2026-07-29 — 7 x 800 m at 3:42 /km"></span>
+          
+            
+            
+            <span class="best"
+                  style="height:52px"
+                  title="2026-08-19 — 7 x 800 m at 3:38 /km"></span>
+          
+        </div>
+      </div>
+    
+  </section>
+  
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Every session</p>
+      <p class="panel-note">Newest first</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Date</th><th>Session</th><th class="num">Avg rep</th>
+        <th class="num">Spread</th><th class="num">Fade</th>
+        <th class="num">Recovery</th><th>Reps</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td class="dim">2026-09-02</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-310">8 reps, 250-850 m</a>
+              
+            </td>
+            <td class="num actual">3:36 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:42</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:04 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:53 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:53 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:53 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:53 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:53 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 2:53 (3:36 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 8: 250 m in 0:54 (3:36 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-08-26</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-304">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:39 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:34</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:12 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:06 (3:39 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-08-19</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-298">7 x 800 m</a>
+              
+            </td>
+            <td class="num actual">3:38 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:44</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:05 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:54 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:54 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:54 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:54 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:54 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 2:54 (3:38 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-08-12</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-292">7 reps, 325-875 m</a>
+              
+            </td>
+            <td class="num actual">3:40 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:35</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:13 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 325 m in 1:12 (3:40 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-08-05</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-286">8 reps, 200-800 m</a>
+              
+            </td>
+            <td class="num actual">3:43 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:49</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:59 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:59 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:59 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:59 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:58 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 2:59 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 8: 200 m in 0:45 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-07-29</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-280">7 x 800 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:48</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:57 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:57 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 2:58 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-07-22</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-274">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:37</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:08 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-07-15</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-268">7 x 800 m</a>
+              
+            </td>
+            <td class="num actual">3:44 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:50</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:10 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:59 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:59 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:59 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:59 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:59 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 2:59 (3:44 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-07-08</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-262">6 x ~840 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:41</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:17 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:12 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 3:00 (3:46 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-07-01</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-256">6 reps, 500-875 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:40</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:17 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 500 m in 1:53 (3:45 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-06-24</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-250">7 reps, 600-800 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:51</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 3:00 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 3:00 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 3:00 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 3:00 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 3:00 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 600 m in 2:15 (3:45 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-06-17</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-244">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:48 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:43</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:19 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:13 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:14 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:14 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:14 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:13 (3:48 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-06-10</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-238">7 x 800 m</a>
+              
+            </td>
+            <td class="num actual">3:47 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:53</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 3:01 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 3:02 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 3:02 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 3:02 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 3:01 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 3:01 (3:47 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-06-03</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-232">7 x 800 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:48</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:57 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:57 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 800 m in 2:57 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-05-27</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-226">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:40</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:17 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:12 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:12 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:12 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:12 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:12 (3:45 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-05-20</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-220">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:37</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:09 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-05-13</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-214">6 reps, 575-875 m</a>
+              
+            </td>
+            <td class="num actual">3:43 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:38</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:15 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 575 m in 2:08 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-05-06</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-208">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:40 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:35</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:12 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:07 (3:40 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-04-29</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-202">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:43 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:38</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:15 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:09 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-04-22</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-196">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:40 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:35</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:12 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:07 (3:40 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-04-15</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-190">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:40 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:35</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:12 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:07 (3:40 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:07 (3:40 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-04-08</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-184">6 reps, 625-875 m</a>
+              
+            </td>
+            <td class="num actual">3:39 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:34</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:12 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 625 m in 2:17 (3:39 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-04-01</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-178">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:41 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:36</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:13 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:07 (3:41 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-03-25</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-172">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:39 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:34</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:11 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:06 (3:38 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:06 (3:39 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-03-18</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-166">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:41 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:36</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:08 (3:41 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-03-11</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-160">6 reps, 650-875 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:37</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 650 m in 2:24 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-03-04</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-154">7 reps, 350-850 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:49</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 800 m in 2:58 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 7: 350 m in 1:18 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-02-25</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-148">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:43 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:38</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:15 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:09 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-02-18</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-142">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:38</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:15 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:09 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-02-11</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-136">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:43 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:38</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:15 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:09 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:09 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-02-04</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-130">6 reps, 750-875 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:37</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:09 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 750 m in 2:46 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-01-28</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-124">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:40</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:17 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:45 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-01-21</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-118">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:39 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:34</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:12 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:06 (3:39 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:06 (3:39 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-01-14</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-112">6 reps, 250-875 m</a>
+              
+            </td>
+            <td class="num actual">3:41 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:37</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 250 m in 0:55 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2026-01-07</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-106">6 reps, 225-875 m</a>
+              
+            </td>
+            <td class="num actual">3:42 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:37</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:42 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 225 m in 0:50 (3:42 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-12-31</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-100">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:41 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:36</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:14 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:08 (3:41 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:08 (3:41 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-12-24</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-94">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:40</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:17 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:11 (3:45 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-12-17</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-88">5 reps, 650-875 m</a>
+              
+            </td>
+            <td class="num actual">3:44 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:39</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:16 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:10 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:10 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:10 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 650 m in 2:25 (3:44 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-12-10</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-82">6 reps, 650-875 m</a>
+              
+            </td>
+            <td class="num actual">3:44 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:39</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:16 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 650 m in 2:26 (3:44 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-12-03</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-76">5 reps, 525-875 m</a>
+              
+            </td>
+            <td class="num actual">3:46 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:41</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:18 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 525 m in 1:59 (3:46 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-11-26</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-70">6 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:47 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:42</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:19 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 850 m in 3:13 (3:47 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-11-19</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-64">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:46 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:41</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:18 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:12 (3:46 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-11-12</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-58">6 reps, 275-875 m</a>
+              
+            </td>
+            <td class="num actual">3:45 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.1%</span>
+              
+            </td>
+            <td class="num dim">3:40</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:17 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:45 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 275 m in 1:02 (3:45 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-11-05</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-52">6 reps, 650-875 m</a>
+              
+            </td>
+            <td class="num actual">3:44 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:39</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:16 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 650 m in 2:26 (3:44 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-10-29</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-46">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:43 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:38</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:16 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:10 (3:43 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:10 (3:43 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-10-22</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-40">5 reps, 675-875 m</a>
+              
+            </td>
+            <td class="num actual">3:48 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:43</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:20 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:14 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:14 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:14 (3:48 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 675 m in 2:34 (3:48 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-10-15</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-34">5 reps, 750-875 m</a>
+              
+            </td>
+            <td class="num actual">3:46 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:41</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:18 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 750 m in 2:50 (3:46 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-10-08</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-28">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:44 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:40</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:16 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:11 (3:44 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:11 (3:44 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-10-01</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-22">5 reps, 325-875 m</a>
+              
+            </td>
+            <td class="num actual">3:47 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:42</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:19 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:13 (3:47 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 325 m in 1:14 (3:47 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-09-24</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-16">4 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:46 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:41</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:18 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:12 (3:46 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:12 (3:46 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-09-17</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-10">5 x ~860 m</a>
+              
+            </td>
+            <td class="num actual">3:49 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  +0.0%</span>
+              
+            </td>
+            <td class="num dim">3:44</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:20 (3:49 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:14 (3:49 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:14 (3:49 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:14 (3:49 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:14 (3:49 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td class="dim">2025-09-10</td>
+            <td>
+              <a class="quiet-link" href="/Run315/activity/demo-4">6 reps, 200-875 m</a>
+              
+            </td>
+            <td class="num actual">3:50 /km</td>
+            <td class="num dim">
+              &plusmn;0.0%
+            </td>
+            <td class="num">
+              
+                <span class="dim">
+                  -0.0%</span>
+              
+            </td>
+            <td class="num dim">3:45</td>
+            <td>
+              
+              
+              
+              <span class="rep-spark">
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 1: 875 m in 3:21 (3:50 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 2: 850 m in 3:16 (3:50 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 3: 850 m in 3:16 (3:50 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 4: 850 m in 3:16 (3:50 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 5: 850 m in 3:16 (3:50 /km)"></i>
+                
+                  
+                  <i class=""
+                     style="height:17px"
+                     title="Rep 6: 200 m in 0:46 (3:50 /km)"></i>
+                
+              </span>
+            </td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:12px">
+      Spread is how even the reps were &mdash; 0% is metronomic. Fade compares the
+      second half of the set with the first; negative means you finished faster
+      than you started.
+    </p>
+  </section>
+
+  
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

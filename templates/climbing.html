@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Climbing — Run315{% endblock %}
+{% block body %}
+<style>
+  .landmark { font-family: var(--display); font-size: 34px; font-weight: 800;
+              letter-spacing: -0.035em; line-height: 1.1; color: var(--measured); }
+  .rung { display: flex; align-items: baseline; gap: 10px; padding: 6px 0;
+          border-bottom: 1px solid var(--rule); }
+  .rung:last-child { border-bottom: 0; }
+  .rung b { font-weight: 600; }
+  .rung .h { font-family: var(--mono); font-size: 12px; color: var(--muted);
+             margin-left: auto; }
+  .factor { font-family: var(--display); font-size: 30px; font-weight: 800;
+            letter-spacing: -0.03em; }
+  .up { color: var(--ahead); } .down { color: var(--behind); }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="{{ url_for('index') }}">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Hills, and what they cost you</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="{{ url_for('durability_page') }}">Durability</a>
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">Dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What you have climbed</p>
+      <p class="panel-note">{{ climb['runs'] }} runs &middot; last {{ climb['days'] }} days</p>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="stat">
+          <div class="stat-value">{{ climb['ascent_m']|round|int }}<small class="unit">m</small></div>
+          <div class="stat-label">Total ascent</div>
+        </div>
+        {% if climb['landmark'] %}
+          <p class="landmark" style="margin-top:14px">{{ climb['landmark']['phrase'] }}</p>
+          <p class="stat-hint">{{ climb['landmark']['name'][0]|upper }}{{ climb['landmark']['name'][1:] }} is
+            {{ climb['landmark']['height_m'] }} m, in {{ climb['landmark']['where'] }}.</p>
+        {% endif %}
+      </div>
+      <div>
+        {% if climb['ladder'] %}
+          <p class="eyebrow" style="margin-bottom:8px">Cleared</p>
+          {% for rung in climb['ladder'] %}
+            <div class="rung">
+              <b>{{ rung['name'][0]|upper }}{{ rung['name'][1:] }}</b>
+              <span class="dim">&times;{{ '%.1f'|format(rung['repeats']) }}</span>
+              <span class="h">{{ rung['height_m'] }} m</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+        {% if climb['next_up'] %}
+          <p class="stat-hint" style="margin-top:12px">
+            {{ climb['next_up']['to_go_m']|round|int }} m more and you have climbed
+            {{ climb['next_up']['name'] }}.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% if climb['profile'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">How you climb</p>
+      <p class="panel-note">{{ climb['profile']['runs'] }} hilly runs &middot;
+        {{ climb['profile']['climb_segments'] }} climbing segments</p>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="stat">
+          <div class="stat-value factor {{ 'up' if climb['profile']['factor'] > 1.05 else 'down' if climb['profile']['factor'] < 0.95 }}">
+            {{ '%+.0f'|format((climb['profile']['factor'] - 1) * 100) }}<small class="unit">%</small>
+          </div>
+          <div class="stat-label">Against the energy model</div>
+        </div>
+      </div>
+      <div>
+        <p class="verdict">{{ climb['profile']['verdict'] }}</p>
+      </div>
+    </div>
+    <p class="stat-hint" style="margin-top:12px">
+      Measured inside each run: your speed on the flat sets the reference, and
+      every climbing segment is compared against the speed Minetti's energy-cost
+      model says the same effort should buy on that gradient. Because both halves
+      come from the same run, fitness, weather and how hard you were trying all
+      cancel &mdash; only the gradient is left.
+    </p>
+    <p class="stat-hint">
+      This is the part grade-adjusted pace cannot tell you. GAP <em>applies</em>
+      the model to flatten your splits; this <em>tests</em> it, which is why it can
+      say whether hills are a strength.
+    </p>
+  </section>
+  {% endif %}
+
+  {% if climb['hilliest'] %}
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Your hilliest runs</p>
+      <p class="panel-note">most climbing first</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Run</th><th class="num">Distance</th><th class="num">Ascent</th>
+        <th class="num">Per km</th><th>Ground</th><th class="num">On the climbs</th>
+      </tr></thead>
+      <tbody>
+        {% for h in climb['hilliest'] %}
+          <tr>
+            <td>
+              <a href="{{ url_for('activity_detail', garmin_id=h['garmin_id']) }}">{{ h['name'] }}</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">{{ h['start'].strftime('%Y-%m-%d') }}</span>
+            </td>
+            <td class="num dim">{{ '%.1f'|format(h['distance_m'] / 1000) }} km</td>
+            <td class="num actual">{{ h['ascent_m']|round|int }} m</td>
+            <td class="num dim">
+              {%- if h['terrain'] %}{{ h['terrain']['ascent_per_km']|round|int }} m{% endif %}</td>
+            <td>{% if h['terrain'] %}{{ h['terrain']['difficulty']|capitalize }}{% endif %}</td>
+            <td class="num">
+              <span class="{{ 'ahead' if h['factor'] > 1.05 else 'behind' if h['factor'] < 0.95 else 'dim' }}">
+                {{ '%+.0f'|format((h['factor'] - 1) * 100) }}%</span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:12px">
+      &ldquo;Ground&rdquo; is ascent per kilometre, the same scale hiking guides
+      use. The last column is that run alone against the energy model, so it moves
+      about far more than the average above &mdash; one run is a mood.
+    </p>
+  </section>
+  {% endif %}
+
+  {% if not climb['profile'] %}
+  <section class="panel">
+    <div class="panel-head"><p class="eyebrow">Not enough hills yet</p></div>
+    <div class="empty">
+      <p>Judging how you climb needs runs with both flat and climbing in them, so
+        there is something to compare against. A few rolling runs will do it
+        &mdash; it does not need mountains.</p>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

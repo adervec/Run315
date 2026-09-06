@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Climbing — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<style>
+  .landmark { font-family: var(--display); font-size: 34px; font-weight: 800;
+              letter-spacing: -0.035em; line-height: 1.1; color: var(--measured); }
+  .rung { display: flex; align-items: baseline; gap: 10px; padding: 6px 0;
+          border-bottom: 1px solid var(--rule); }
+  .rung:last-child { border-bottom: 0; }
+  .rung b { font-weight: 600; }
+  .rung .h { font-family: var(--mono); font-size: 12px; color: var(--muted);
+             margin-left: auto; }
+  .factor { font-family: var(--display); font-size: 30px; font-weight: 800;
+            letter-spacing: -0.03em; }
+  .up { color: var(--ahead); } .down { color: var(--behind); }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Hills, and what they cost you</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/durability">Durability</a>
+      <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What you have climbed</p>
+      <p class="panel-note">129 runs &middot; last 180 days</p>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="stat">
+          <div class="stat-value">13121<small class="unit">m</small></div>
+          <div class="stat-label">Total ascent</div>
+        </div>
+        
+          <p class="landmark" style="margin-top:14px">one and a half Everests</p>
+          <p class="stat-hint">Everest is
+            8849 m, in the Himalaya.</p>
+        
+      </div>
+      <div>
+        
+          <p class="eyebrow" style="margin-bottom:8px">Cleared</p>
+          
+            <div class="rung">
+              <b>Everest</b>
+              <span class="dim">&times;1.5</span>
+              <span class="h">8849 m</span>
+            </div>
+          
+            <div class="rung">
+              <b>Denali</b>
+              <span class="dim">&times;2.1</span>
+              <span class="h">6190 m</span>
+            </div>
+          
+            <div class="rung">
+              <b>Mont Blanc</b>
+              <span class="dim">&times;2.7</span>
+              <span class="h">4808 m</span>
+            </div>
+          
+            <div class="rung">
+              <b>The Matterhorn</b>
+              <span class="dim">&times;2.9</span>
+              <span class="h">4478 m</span>
+            </div>
+          
+            <div class="rung">
+              <b>Mount Fuji</b>
+              <span class="dim">&times;3.5</span>
+              <span class="h">3776 m</span>
+            </div>
+          
+        
+        
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">How you climb</p>
+      <p class="panel-note">42 hilly runs &middot;
+        338 climbing segments</p>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="stat">
+          <div class="stat-value factor up">
+            +14<small class="unit">%</small>
+          </div>
+          <div class="stat-label">Against the energy model</div>
+        </div>
+      </div>
+      <div>
+        <p class="verdict">You hold 14% more speed on the climbs than the energy model expects. Hills are a strength.</p>
+      </div>
+    </div>
+    <p class="stat-hint" style="margin-top:12px">
+      Measured inside each run: your speed on the flat sets the reference, and
+      every climbing segment is compared against the speed Minetti's energy-cost
+      model says the same effort should buy on that gradient. Because both halves
+      come from the same run, fitness, weather and how hard you were trying all
+      cancel &mdash; only the gradient is left.
+    </p>
+    <p class="stat-hint">
+      This is the part grade-adjusted pace cannot tell you. GAP <em>applies</em>
+      the model to flatten your splits; this <em>tests</em> it, which is why it can
+      say whether hills are a strength.
+    </p>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Your hilliest runs</p>
+      <p class="panel-note">most climbing first</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Run</th><th class="num">Distance</th><th class="num">Ascent</th>
+        <th class="num">Per km</th><th>Ground</th><th class="num">On the climbs</th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-257">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-07-02</span>
+            </td>
+            <td class="num dim">10.5 km</td>
+            <td class="num actual">178 m</td>
+            <td class="num dim">17 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +13%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-179">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-04-02</span>
+            </td>
+            <td class="num dim">8.1 km</td>
+            <td class="num actual">177 m</td>
+            <td class="num dim">22 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +14%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-261">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-07-07</span>
+            </td>
+            <td class="num dim">9.0 km</td>
+            <td class="num actual">176 m</td>
+            <td class="num dim">20 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +16%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-196">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-04-22</span>
+            </td>
+            <td class="num dim">9.6 km</td>
+            <td class="num actual">175 m</td>
+            <td class="num dim">18 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +23%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-286">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-08-05</span>
+            </td>
+            <td class="num dim">11.5 km</td>
+            <td class="num actual">174 m</td>
+            <td class="num dim">15 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +25%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-225">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-05-26</span>
+            </td>
+            <td class="num dim">10.6 km</td>
+            <td class="num actual">173 m</td>
+            <td class="num dim">16 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +13%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-265">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-07-11</span>
+            </td>
+            <td class="num dim">5.0 km</td>
+            <td class="num actual">169 m</td>
+            <td class="num dim">34 m</td>
+            <td>Steep</td>
+            <td class="num">
+              <span class="ahead">
+                +21%</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <a href="/Run315/activity/demo-231">Run</a>
+              <br><span class="dim" style="font-family:var(--mono);font-size:12px">2026-06-02</span>
+            </td>
+            <td class="num dim">9.3 km</td>
+            <td class="num actual">169 m</td>
+            <td class="num dim">18 m</td>
+            <td>Hilly</td>
+            <td class="num">
+              <span class="ahead">
+                +13%</span>
+            </td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:12px">
+      &ldquo;Ground&rdquo; is ascent per kilometre, the same scale hiking guides
+      use. The last column is that run alone against the energy model, so it moves
+      about far more than the average above &mdash; one run is a mood.
+    </p>
+  </section>
+  
+
+  
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>

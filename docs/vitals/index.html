@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vitals — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+</head>
+<body>
+
+<style>
+  .rbar { display: inline-block; height: 10px; border-radius: 5px; vertical-align: 1px; }
+  .rbar.pos { background: var(--measured); }
+  .rbar.neg { background: var(--behind); }
+  .rnum { font-family: var(--mono); font-size: 13px; }
+  .stages { display: flex; height: 26px; border-radius: 4px; overflow: hidden;
+            margin: 10px 0 6px; }
+  .stages i { display: block; height: 100%; }
+  .st-deep { background: #1b3a6b; } .st-light { background: #7ba7d7; }
+  .st-rem { background: var(--projected); }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 11px;
+          padding: 2px 7px; border-radius: 10px; background: #eef1f5;
+          color: var(--muted); margin: 2px 3px 2px 0; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Everything the watch records off the run</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/durability">Durability</a>
+      <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
+    </div>
+  </header>
+
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What actually responds to your training</p>
+      <p class="panel-note">27 metrics &middot;
+        74 days &middot; 108 correlations tested</p>
+    </div>
+    <div class="empty">
+      <p>Your watch records two dozen things a day. For any given person about
+        three of them genuinely move with training, and which three is
+        individual. These are yours.</p>
+    </div>
+
+    
+      <div class="table-scroll"><table>
+        <thead><tr><th>Signal</th><th>When</th><th class="num">r</th><th></th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td><b>Body battery low point</b></td>
+              <td class="dim">same day</td>
+              <td class="num rnum behind">-0.83</td>
+              <td>
+                <span class="rbar neg"
+                      style="width:100px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">Your body battery low point falls on a hard day itself (r = -0.83). That is the direction that costs you.</td></tr>
+          
+            <tr>
+              <td><b>Average stress</b></td>
+              <td class="dim">next day</td>
+              <td class="num rnum ahead">+0.64</td>
+              <td>
+                <span class="rbar pos"
+                      style="width:77px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">Your average stress rises the day after a hard day (r = +0.64). That is the direction that costs you.</td></tr>
+          
+            <tr>
+              <td><b>Peak stress</b></td>
+              <td class="dim">next day</td>
+              <td class="num rnum ahead">+0.54</td>
+              <td>
+                <span class="rbar pos"
+                      style="width:65px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">Your peak stress rises the day after a hard day (r = +0.54). That is the direction that costs you.</td></tr>
+          
+            <tr>
+              <td><b>Body battery peak</b></td>
+              <td class="dim">next day</td>
+              <td class="num rnum behind">-0.53</td>
+              <td>
+                <span class="rbar neg"
+                      style="width:63px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">Your body battery peak falls the day after a hard day (r = -0.53). That is the direction that costs you.</td></tr>
+          
+            <tr>
+              <td><b>HRV</b></td>
+              <td class="dim">a week later</td>
+              <td class="num rnum behind">-0.51</td>
+              <td>
+                <span class="rbar neg"
+                      style="width:61px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">Your HRV falls about a week after a hard day (r = -0.51). That is the direction that costs you. Careful with this one: training runs on a weekly rhythm, so a seven-day lag lands on almost the same phase as no lag, and the two are hard to tell apart.</td></tr>
+          
+            <tr>
+              <td><b>Garmin readiness</b></td>
+              <td class="dim">two days later</td>
+              <td class="num rnum ahead">+0.47</td>
+              <td>
+                <span class="rbar pos"
+                      style="width:56px"></span>
+              </td>
+            </tr>
+            <tr><td colspan="4" class="stat-hint" style="padding-top:0">Your Garmin readiness rises two days after a hard day (r = +0.47). That is the direction you would hope for.</td></tr>
+          
+        </tbody>
+      </table></div>
+    
+
+    <p class="stat-hint" style="margin-top:14px">
+      Testing 108 correlations at the usual 5% threshold would throw up
+      about 5 false positives from noise alone
+      &mdash; and in fact 36 of yours would have cleared that bar.
+      Everything above is corrected for the number of tests, so the threshold is
+      <strong>r &gt; 0.44</strong> instead.
+    </p>
+    <p class="stat-hint">
+      Two honest caveats. Hard days cluster and bad nights cluster, so your days
+      are not independent and the real evidence is weaker than the arithmetic
+      suggests. And correlation is not causation: a daily record cannot tell you
+      which way the arrow points. Read these as dials worth glancing at, not as
+      findings.
+    </p>
+
+    
+      <p class="stat-hint" style="margin-top:12px">
+        Left out as arithmetic rather than insight:
+        <span class="chip">active calories +0.95</span><span class="chip">total calories +0.93</span><span class="chip">intensity minutes +0.92</span><span class="chip">vigorous minutes +0.89</span><span class="chip">daily steps +0.85</span>
+        &mdash; calories and step counts rise on days you run further because
+        that is what they measure.
+      </p>
+    
+  </section>
+
+  
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">How your nights are built</p>
+      <p class="panel-note">74 nights &middot;
+        6.5 h asleep on average</p>
+    </div>
+    <div class="stages">
+      <i class="st-deep" style="width:20.3%"></i>
+      <i class="st-light" style="width:57.9%"></i>
+      <i class="st-rem" style="width:21.9%"></i>
+    </div>
+    <div class="polar-key">
+      <span><i class="st-deep"></i>Deep 20%</span>
+      <span><i class="st-light"></i>Light 58%</span>
+      <span><i class="st-rem"></i>REM 22%</span>
+    </div>
+    <p class="verdict" style="margin-top:12px">Your nights are built in roughly the usual adult proportions. Sleep staging from a wrist device is an estimate, so read this as a shape rather than a measurement.</p>
+    <p class="stat-hint">Adults typically run 13&ndash;23% deep and 20&ndash;25% REM.
+      Yours are both inside those ranges.</p>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Which way things are heading</p>
+      <p class="panel-note">last fortnight against the one before</p>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th>Metric</th><th class="num">Before</th><th class="num">Recent</th>
+        <th class="num">Change</th><th></th>
+      </tr></thead>
+      <tbody>
+        
+          <tr>
+            <td>Restlessness</td>
+            <td class="num dim">10.2</td>
+            <td class="num actual">15.8</td>
+            <td class="num behind">
+              +5.6</td>
+            <td class="dim">notable</td>
+          </tr>
+        
+          <tr>
+            <td>Sleep score</td>
+            <td class="num dim">74.0</td>
+            <td class="num actual">81.6</td>
+            <td class="num ahead">
+              +7.6</td>
+            <td class="dim">notable</td>
+          </tr>
+        
+          <tr>
+            <td>Time awake</td>
+            <td class="num dim">987.6</td>
+            <td class="num actual">734.8</td>
+            <td class="num ahead">
+              -252.9</td>
+            <td class="dim">notable</td>
+          </tr>
+        
+          <tr>
+            <td>Blood oxygen</td>
+            <td class="num dim">95.4</td>
+            <td class="num actual">95.9</td>
+            <td class="num ahead">
+              +0.5</td>
+            <td class="dim">notable</td>
+          </tr>
+        
+          <tr>
+            <td>Garmin readiness</td>
+            <td class="num dim">61.6</td>
+            <td class="num actual">68.4</td>
+            <td class="num ahead">
+              +6.9</td>
+            <td class="dim">notable</td>
+          </tr>
+        
+          <tr>
+            <td>Overnight stress</td>
+            <td class="num dim">17.8</td>
+            <td class="num actual">19.9</td>
+            <td class="num behind">
+              +2.0</td>
+            <td class="dim">notable</td>
+          </tr>
+        
+          <tr>
+            <td>Breathing rate</td>
+            <td class="num dim">13.0</td>
+            <td class="num actual">13.5</td>
+            <td class="num behind">
+              +0.4</td>
+            <td class="dim"></td>
+          </tr>
+        
+          <tr>
+            <td>Body fat</td>
+            <td class="num dim">12.3</td>
+            <td class="num actual">12.4</td>
+            <td class="num behind">
+              +0.2</td>
+            <td class="dim"></td>
+          </tr>
+        
+          <tr>
+            <td>REM sleep</td>
+            <td class="num dim">4759.6</td>
+            <td class="num actual">5084.7</td>
+            <td class="num ahead">
+              +325.1</td>
+            <td class="dim"></td>
+          </tr>
+        
+          <tr>
+            <td>Sleep length</td>
+            <td class="num dim">7.5</td>
+            <td class="num actual">7.1</td>
+            <td class="num behind">
+              -0.4</td>
+            <td class="dim"></td>
+          </tr>
+        
+      </tbody>
+    </table></div>
+    <p class="stat-hint" style="margin-top:10px">
+      &ldquo;Notable&rdquo; means the change is more than half the metric&rsquo;s
+      own spread &mdash; a blunt filter, but it stops a number wobbling by its
+      usual amount from looking like a development.
+    </p>
+  </section>
+  
+
+  
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Days your body was somewhere else</p>
+      <p class="panel-note">unusual across several signals at once</p>
+    </div>
+    <div class="empty"><p>One metric out of range is noise. Three or four at once,
+      on the same day, is the day you were coming down with something &mdash; and
+      no single chart can show you that.</p></div>
+    
+      <div class="rung" style="display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule)">
+        <b style="font-family:var(--mono)">2026-06-28</b>
+        <span class="dim">3 signals</span>
+        <span style="margin-left:auto">
+          
+            <span class="chip">resting heart rate -2.2&sigma;</span>
+          
+            <span class="chip">lowest blood oxygen -2.1&sigma;</span>
+          
+            <span class="chip">light sleep -2.0&sigma;</span>
+          
+        </span>
+      </div>
+    
+      <div class="rung" style="display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule)">
+        <b style="font-family:var(--mono)">2026-07-18</b>
+        <span class="dim">3 signals</span>
+        <span style="margin-left:auto">
+          
+            <span class="chip">REM sleep +2.6&sigma;</span>
+          
+            <span class="chip">peak stress -2.4&sigma;</span>
+          
+            <span class="chip">average stress -2.1&sigma;</span>
+          
+        </span>
+      </div>
+    
+    <p class="stat-hint" style="margin-top:12px">
+      Days when you simply ran further are excluded &mdash; calories and step
+      counts spiking on a long run is not your body being unusual.
+    </p>
+  </section>
+  
+
+  
+
+  
+</div>
+
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>
