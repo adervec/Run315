@@ -588,6 +588,113 @@
     </form>
   </section>
 
+  {# ---------- folder cowork ---------- #}
+  {# The shared panel every app in this maker's stable shows (https://adervec.github.io/cowork.js),
+     in fs mode: it drives a folder you pick on this device, writes coach/request.json into it and
+     shows whatever an agent writes back to coach/reply.json. Unlike the review above it needs no
+     API key and no server, so it works on the static demo too. #}
+  <section class="panel">
+    <div class="panel-head"><p class="eyebrow">Cowork with an agent</p></div>
+    <p class="panel-note" style="margin-bottom:12px">Hand your load, best efforts and races to an
+      agent through a folder on this device &mdash; CoworkSyncHub, Claude Desktop, or a person.
+      Nothing is uploaded and no key is needed.</p>
+    <div id="coach-host"></div>
+    <pre id="coach-reply" class="review" style="display:none;white-space:pre-wrap"></pre>
+  </section>
+  {# Plain scalars only: the rows here carry dates and sqlite types that will not serialise. #}
+  {% set coach_recent = [] %}
+  {% for a in activities %}{% set _ = coach_recent.append({
+      'name': a['name'], 'type': a['type'], 'date': a['start'].strftime('%Y-%m-%d'),
+      'km': ((a['distance_m'] or 0) / 1000) | round(2),
+      'minutes': ((a['moving_s'] or 0) / 60) | round(0),
+      'avgHr': a['avg_hr'] or None}) %}{% endfor %}
+  {% set coach_races = [] %}
+  {% for race, p in projections %}{% set _ = coach_races.append({
+      'name': race['name'], 'date': race['date'].strftime('%Y-%m-%d'),
+      'daysAway': (race['date'] - now.date()).days}) %}{% endfor %}
+  <script type="application/json" id="coach-payload">{{ {
+    'fitness': {'ctl': summary['ctl'] | round(1), 'atl': summary['atl'] | round(1),
+                'tsb': summary['tsb'] | round(1)} if summary else none,
+    'activityCount': activity_count,
+    'recent': coach_recent,
+    'races': coach_races,
+  } | tojson }}</script>
+  <script>
+    (function () {
+      var host = document.getElementById('coach-host');
+      var out = document.getElementById('coach-reply');
+      if (!host) return;
+      function show(t) { out.textContent = t || ''; out.style.display = t ? 'block' : 'none'; }
+      try { show(localStorage.getItem('run315-coach-reply') || ''); } catch (e) { /* private */ }
+      function hash(t) {
+        var h = 5381;
+        for (var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0;
+        return h.toString(16);
+      }
+      var INSTRUCTIONS = [
+        '# Run315 - coach channel',
+        '',
+        'Read `coach/request.json`:',
+        '',
+        '- `payload.fitness` - CTL (fitness), ATL (fatigue) and TSB (form) today.',
+        '- `payload.activityCount` - how many activities the log holds.',
+        '- `payload.recent` - the last 15 activities: name, type, date, km, minutes, average HR.',
+        '- `payload.races` - races on the calendar and how many days away each is.',
+        '',
+        'Write `coach/reply.json`:',
+        '',
+        '```json',
+        '{ "requestHash": "<copy the request\'s requestHash verbatim>",',
+        '  "reply": "<short markdown: what the load looks like this week, one thing to change',
+        '  in the next fortnight, and whether the projections look earned. Specific, calm, and',
+        '  never medical advice.>" }',
+        '```'
+      ].join('\n');
+      function load() {
+        if (window.cowork) return Promise.resolve(window.cowork);
+        var head = document.head || document.documentElement;
+        if (!head || typeof head.appendChild !== 'function') return Promise.resolve(null);
+        return new Promise(function (res) {
+          try {
+            var s = document.createElement('script');
+            s.src = 'https://adervec.github.io/cowork.js';
+            s.async = true;
+            s.onload = function () { res(window.cowork || null); };
+            s.onerror = function () { res(null); };
+            head.appendChild(s);
+          } catch (e) { res(null); }
+        });
+      }
+      load().then(function (cw) {
+        if (!cw || host.childElementCount) return;
+        cw.mount(host, {
+          app: 'run315',
+          manifest: {protocol: 'cowork-manifest', protocolVersion: 1, app: 'run315',
+            channels: [{name: 'coach', request: ['coach/request.json'],
+                        instructions: 'coach/INSTRUCTIONS.md', replyPath: 'coach/reply.json'}]},
+          files: function () {
+            var payload = {};
+            try { payload = JSON.parse(document.getElementById('coach-payload').textContent); }
+            catch (e) { /* leave it empty rather than fail the send */ }
+            return {
+              'coach/request.json': {protocol: 'run315-coach', protocolVersion: 1,
+                kind: 'coach-request', generatedAt: new Date().toISOString(),
+                requestHash: hash(JSON.stringify(payload)), payload: payload},
+              'coach/INSTRUCTIONS.md': INSTRUCTIONS
+            };
+          },
+          apply: function (ch, reply) {
+            var t = typeof reply === 'string' ? reply
+              : (reply && (reply.reply || (reply.payload && reply.payload.reply)))
+                || JSON.stringify(reply, null, 2);
+            try { localStorage.setItem('run315-coach-reply', t); } catch (e) { /* quota */ }
+            show(t);
+          }
+        });
+      });
+    }());
+  </script>
+
   {# ---------- training calendar ---------- #}
   {% if calendar %}
   <section class="panel">
@@ -631,6 +738,40 @@
       </tbody>
     </table></div>
   </section>
+
+  {# Report finished runs to the maker's app portal (same-origin localStorage, this browser
+     only). Each activity counts once ever - the ids already reported are remembered - and the
+     static demo is excluded, because a synthetic athlete's runs are not yours. #}
+  <script type="application/json" id="portal-runs">{{ activities
+    | map(attribute='garmin_id') | list | tojson }}</script>
+  <script type="application/json" id="portal-run-mins">{{ activities
+    | map(attribute='moving_s') | list | tojson }}</script>
+  <script>
+    // Deferred on purpose: freeze.py appends its banner just before </body>, so #frozen-note
+    // does not exist yet while this script is being parsed.
+    addEventListener('DOMContentLoaded', function () {
+      if (document.getElementById('frozen-note')) return;   // the static demo reports nothing
+      try {
+        var ids = JSON.parse(document.getElementById('portal-runs').textContent || '[]');
+        var secs = JSON.parse(document.getElementById('portal-run-mins').textContent || '[]');
+        var seenKey = 'run315-portal-seen';
+        var seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+        var k = 'portal-activity', log = JSON.parse(localStorage.getItem(k) || '[]');
+        var added = 0;
+        for (var i = 0; i < ids.length; i++) {
+          if (seen.indexOf(ids[i]) >= 0) continue;
+          seen.push(ids[i]);
+          log.push([Math.round(Date.now() / 1000), 'Run315', 'cardio',
+                    Math.max(1, Math.round((secs[i] || 0) / 600))]);
+          added++;
+        }
+        if (added) {
+          localStorage.setItem(k, JSON.stringify(log.slice(-2000)));
+          localStorage.setItem(seenKey, JSON.stringify(seen.slice(-500)));
+        }
+      } catch (e) { /* quota or private mode - ignore */ }
+    });
+  </script>
 
   {% if user['garmin_token'] %}
     <form method="post" action="{{ url_for('garmin_disconnect') }}">

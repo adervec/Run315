@@ -50,7 +50,7 @@
 
   <header class="masthead">
     <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
-    <p class="masthead-meta">intvl &middot; territory &middot; since 2025-09-06</p>
+    <p class="masthead-meta">intvl &middot; territory &middot; since 2025-09-07</p>
     <div class="masthead-actions">
       <a class="btn btn-ghost" href="/Run315/routes/">Routes</a>
       <a class="btn btn-ghost" href="/Run315/">Dashboard</a>
@@ -75,23 +75,23 @@
         <div class="stat-hint">The biggest solid block you own.</div>
       </div>
       <div class="stat">
-        <div class="stat-value">2269</div>
+        <div class="stat-value">2334</div>
         <div class="stat-label">Tiles claimed</div>
-        <div class="stat-hint">97.2 km&sup2;</div>
+        <div class="stat-hint">100.1 km&sup2;</div>
       </div>
       <div class="stat">
-        <div class="stat-value">1762</div>
+        <div class="stat-value">1816</div>
         <div class="stat-label">Largest cluster</div>
         <div class="stat-hint">Connected without a gap.</div>
       </div>
       <div class="stat">
-        <div class="stat-value">211</div>
+        <div class="stat-value">264</div>
         <div class="stat-label">New this month</div>
-        <div class="stat-hint">113 in the last 7 days</div>
+        <div class="stat-hint">73 in the last 7 days</div>
       </div>
       
       <div class="stat">
-        <div class="stat-value">71<small class="unit">%</small></div>
+        <div class="stat-value">74<small class="unit">%</small></div>
         <div class="stat-label">Around home</div>
         <div class="stat-hint">Of the 25&times;25 tiles nearest you.</div>
       </div>
@@ -125,45 +125,45 @@
     </div>
     <div class="target-list">
       
-        <button class="target-chip" data-x="68635" data-y="45892"
-                title="Centre the map here">68635,45892
+        <button class="target-chip" data-x="68640" data-y="45888"
+                title="Centre the map here">68640,45888
           &middot; needs 1</button>
       
-        <button class="target-chip" data-x="68635" data-y="45897"
-                title="Centre the map here">68635,45897
+        <button class="target-chip" data-x="68654" data-y="45901"
+                title="Centre the map here">68654,45901
+          &middot; needs 1</button>
+      
+        <button class="target-chip" data-x="68654" data-y="45909"
+                title="Centre the map here">68654,45909
+          &middot; needs 1</button>
+      
+        <button class="target-chip" data-x="68655" data-y="45894"
+                title="Centre the map here">68655,45894
+          &middot; needs 1</button>
+      
+        <button class="target-chip" data-x="68637" data-y="45896"
+                title="Centre the map here">68637,45896
           &middot; needs 2</button>
       
-        <button class="target-chip" data-x="68641" data-y="45887"
-                title="Centre the map here">68641,45887
+        <button class="target-chip" data-x="68638" data-y="45896"
+                title="Centre the map here">68638,45896
           &middot; needs 2</button>
       
-        <button class="target-chip" data-x="68650" data-y="45889"
-                title="Centre the map here">68650,45889
+        <button class="target-chip" data-x="68640" data-y="45887"
+                title="Centre the map here">68640,45887
           &middot; needs 2</button>
       
-        <button class="target-chip" data-x="68654" data-y="45890"
-                title="Centre the map here">68654,45890
+        <button class="target-chip" data-x="68648" data-y="45891"
+                title="Centre the map here">68648,45891
           &middot; needs 2</button>
       
-        <button class="target-chip" data-x="68654" data-y="45907"
-                title="Centre the map here">68654,45907
+        <button class="target-chip" data-x="68650" data-y="45899"
+                title="Centre the map here">68650,45899
           &middot; needs 2</button>
       
-        <button class="target-chip" data-x="68655" data-y="45909"
-                title="Centre the map here">68655,45909
+        <button class="target-chip" data-x="68650" data-y="45911"
+                title="Centre the map here">68650,45911
           &middot; needs 2</button>
-      
-        <button class="target-chip" data-x="68656" data-y="45901"
-                title="Centre the map here">68656,45901
-          &middot; needs 2</button>
-      
-        <button class="target-chip" data-x="68634" data-y="45891"
-                title="Centre the map here">68634,45891
-          &middot; needs 3</button>
-      
-        <button class="target-chip" data-x="68634" data-y="45894"
-                title="Centre the map here">68634,45894
-          &middot; needs 3</button>
       
     </div>
   </section>
@@ -243,7 +243,56 @@
 })();
 </script>
 
+<footer class="maker-note">
+  More apps by the same maker, all free and local-first &mdash;
+  <a href="https://adervec.github.io/portal/" target="_blank" rel="noopener">adervec.github.io</a>
+</footer>
+<style>
+  .maker-note { max-width: 1100px; margin: 32px auto 24px; padding: 0 18px;
+    font: 13px/1.5 system-ui, sans-serif; color: #7a8290; }
+</style>
 <script>
+  // Let the maker's app portal know (same-origin localStorage) that this app is installed.
+  // The public demo is a synthetic athlete, so it never reports anything — and freeze.py adds
+  // its banner just before 
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>, so the check has to wait for the parsed document.
+  addEventListener('DOMContentLoaded', function () {
+    try {
+      var dm = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'];
+      if (!document.getElementById('frozen-note')
+          && (navigator.standalone || dm.some(function (m) { return matchMedia('(display-mode: ' + m + ')').matches; }))) {
+        var pk = 'portal-installed', reg = JSON.parse(localStorage.getItem(pk) || '{}');
+        reg.Run315 = Date.now();
+        localStorage.setItem(pk, JSON.stringify(reg));
+      }
+    } catch (e) { /* private mode - ignore */ }
+  });
+
   // Installable, and readable on the train. See templates/sw.js.
   if ('serviceWorker' in navigator) {
     addEventListener('load', function () {

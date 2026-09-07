@@ -81,7 +81,7 @@
   
   <section class="panel">
     <div class="panel-head"><p class="eyebrow">Unmatched runs</p></div>
-    <div class="empty"><p>262 runs with GPS
+    <div class="empty"><p>261 runs with GPS
       have not been checked against the trails
       you have loaded.</p></div>
     <form method="post" action="/Run315/trails/match">
@@ -171,7 +171,56 @@
 })();
 </script>
 
+<footer class="maker-note">
+  More apps by the same maker, all free and local-first &mdash;
+  <a href="https://adervec.github.io/portal/" target="_blank" rel="noopener">adervec.github.io</a>
+</footer>
+<style>
+  .maker-note { max-width: 1100px; margin: 32px auto 24px; padding: 0 18px;
+    font: 13px/1.5 system-ui, sans-serif; color: #7a8290; }
+</style>
 <script>
+  // Let the maker's app portal know (same-origin localStorage) that this app is installed.
+  // The public demo is a synthetic athlete, so it never reports anything — and freeze.py adds
+  // its banner just before 
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>, so the check has to wait for the parsed document.
+  addEventListener('DOMContentLoaded', function () {
+    try {
+      var dm = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'];
+      if (!document.getElementById('frozen-note')
+          && (navigator.standalone || dm.some(function (m) { return matchMedia('(display-mode: ' + m + ')').matches; }))) {
+        var pk = 'portal-installed', reg = JSON.parse(localStorage.getItem(pk) || '{}');
+        reg.Run315 = Date.now();
+        localStorage.setItem(pk, JSON.stringify(reg));
+      }
+    } catch (e) { /* private mode - ignore */ }
+  });
+
   // Installable, and readable on the train. See templates/sw.js.
   if ('serviceWorker' in navigator) {
     addEventListener('load', function () {

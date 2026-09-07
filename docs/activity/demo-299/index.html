@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bike — Run315</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/Run315/static/style.css">
+<link rel="manifest" href="/Run315/manifest.webmanifest">
+<meta name="theme-color" content="#101828">
+<link rel="icon" href="/Run315/static/icon-192.png">
+<link rel="apple-touch-icon" href="/Run315/static/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Run315">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="brand"><a href="/Run315/">Run<span>315</span></a></h1>
+    <p class="masthead-meta">Thursday 20 Aug 2026, 16:30</p>
+    <div class="masthead-actions">
+      <a class="btn btn-ghost" href="/Run315/">Back to dashboard</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">cycling</p>
+    </div>
+    <h2 class="race-title">Bike</h2>
+
+    <div class="race-headline">
+      <div>
+        <div class="projected measured">49.43
+          <small>km</small></div>
+      </div>
+      <div>
+        <div class="projected measured">1:40:39
+          <small>moving</small></div>
+      </div>
+      <div>
+        <div class="projected measured">29.5 km/h
+          <small>average</small></div>
+      </div>
+      
+      
+      <div>
+        <div class="projected measured">129
+          <small>avg bpm &middot; max 155</small></div>
+      </div>
+      
+      
+      <div>
+        <div class="projected measured">91
+          <small>training load</small></div>
+      </div>
+      
+    </div>
+  </section>
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  <div class="grid-half">
+    
+
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Signals</p></div>
+      
+      
+        <div class="stat">
+          <div class="stat-value">550</div>
+          <div class="stat-label">Metres climbed</div>
+        </div>
+      
+      
+        <div class="stat">
+          <div class="stat-value">906</div>
+          <div class="stat-label">Calories</div>
+        </div>
+      
+      
+        <div class="empty"><p>No per-second data for this activity yet. It will fill in
+          on the next analysis pass, if Garmin has it.</p></div>
+      
+    </section>
+  </div>
+
+</div>
+
+<footer class="maker-note">
+  More apps by the same maker, all free and local-first &mdash;
+  <a href="https://adervec.github.io/portal/" target="_blank" rel="noopener">adervec.github.io</a>
+</footer>
+<style>
+  .maker-note { max-width: 1100px; margin: 32px auto 24px; padding: 0 18px;
+    font: 13px/1.5 system-ui, sans-serif; color: #7a8290; }
+</style>
+<script>
+  // Let the maker's app portal know (same-origin localStorage) that this app is installed.
+  // The public demo is a synthetic athlete, so it never reports anything — and freeze.py adds
+  // its banner just before 
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>, so the check has to wait for the parsed document.
+  addEventListener('DOMContentLoaded', function () {
+    try {
+      var dm = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'];
+      if (!document.getElementById('frozen-note')
+          && (navigator.standalone || dm.some(function (m) { return matchMedia('(display-mode: ' + m + ')').matches; }))) {
+        var pk = 'portal-installed', reg = JSON.parse(localStorage.getItem(pk) || '{}');
+        reg.Run315 = Date.now();
+        localStorage.setItem(pk, JSON.stringify(reg));
+      }
+    } catch (e) { /* private mode - ignore */ }
+  });
+
+  // Installable, and readable on the train. See templates/sw.js.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', function () {
+      navigator.serviceWorker.register('/Run315/sw.js');
+    });
+  }
+</script>
+
+<div id="frozen-note">
+  <b>Static demo.</b> A synthetic athlete, frozen to files &mdash; every page
+  here is the real app rendering real analysis, but anything that writes
+  (Garmin sync, adding a race, the coach review) is switched off, because a
+  file server has nothing to write to.
+  <a href="https://github.com/adervec/Run315">Source &amp; how to run it for real</a>.
+</div>
+<style>
+  #frozen-note { position: sticky; bottom: 0; z-index: 99;
+    font: 13px/1.5 system-ui, sans-serif; background: #1b1f24; color: #d8dee6;
+    padding: 10px 18px; border-top: 2px solid #f5a623; }
+  #frozen-note a { color: #f5a623; }
+  form.frozen button, form.frozen input[type=submit] { opacity: .45; }
+</style>
+<script>
+  // Nothing here can POST. Stop the form rather than let it 405.
+  document.querySelectorAll('form').forEach(function (f) {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    f.classList.add('frozen');
+    f.addEventListener('submit', function (e) { e.preventDefault(); });
+    f.querySelectorAll('button, input[type=submit]').forEach(function (b) {
+      b.title = 'Disabled in the static demo';
+    });
+  });
+</script>
+</body>
+</html>
