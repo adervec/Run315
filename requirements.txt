@@ -1,6 +1,0 @@
-Flask>=3.0
-Authlib>=1.6
-garminconnect>=0.3.10
-anthropic>=0.60
-python-dotenv>=1.0
-cryptography>=42
