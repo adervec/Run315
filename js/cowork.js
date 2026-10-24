@@ -17,7 +17,7 @@ import { state, save, idbGet, idbSet, putStream, hasStream, getStream, streamIds
 import { put } from './merge.js';
 import { importGarmin, importStrava } from './ingest.js';
 import { queueStream } from './drive.js';
-import { buildBrief, briefMarkdown, deriveActivity } from './derive.js';
+import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
 
 export const PROTOCOL = 'run315-cowork', VERSION = 1;
 export const CHANNELS = [
@@ -263,7 +263,8 @@ export function parseEnvelope(text) {
 async function applyReply(kind, p) {
   if (kind === 'garmin-output' || kind === 'strava-output') {
     const r = kind === 'garmin-output' ? await importGarmin(state, p, putStream) : await importStrava(state, p, putStream, hasStream);
-    for (const id of r.streams) { await queueStream(id); await deriveActivity(state, id); }
+    for (const id of r.streams) await queueStream(id);
+    await deriveAll(state, r.streams);   // two passes: crossings need every run read first
     return { handled: true, note: kind === 'garmin-output'
       ? `${r.activities} activities, ${r.details} with detail, ${r.days} days, ${r.nights} nights` + (r.remaining ? `, ${r.remaining} still to fetch` : '')
       : `${r.activities} activities (${r.linked} linked to Garmin, ${r.inserted} new), ${r.streams.length} streams` + (r.remaining ? `, ${r.remaining} still to fetch` : '') };
