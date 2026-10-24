@@ -93,6 +93,17 @@ This is the merge of three separate projects, and a rebuild of the first as a br
 
 ## What it does
 
+**Asking, and acting on the answers**
+- **Ask & coach**: questions for the agent, answered with the whole export and every stream, **with charts** (agents reply with ```` ```chart ```` specs the app draws); **standing questions** re-asked on a schedule with their history; weekly coach reviews
+- **Experiments**: declare a change, and the app compares before and during (Welch intervals, confounders, never causation)
+- **Plan of the day**: the agent writes today's options from readiness, the week, the block and the **forecast** (Open-Meteo, best window to run, heat-adjusted targets), and learns from what you actually did
+- **Journal**: effort, feel, notes and tags per run, tags per day; Vitals tests them against HRV, resting HR, sleep, body battery and stress, and asks what predicts a good run
+- **Data review**: GPS jumps, heart-rate dropouts, cadence lock, mislabelled sports, elevation spikes and Garmin/Strava near-misses flagged, fixes proposed by the agent, applied only when you approve (to Run315's copy, never the services)
+- **Sources & coverage**: Garmin against Strava for every linked session, and a day-by-day map of which channels exist
+- **Stream explorer**: every channel on one shared axis, synced crosshair, zoom tied to the map, overlay any other run
+- **Calendar & search**, **Achievements** and a "since you last looked" digest, a **Today you can rearrange**
+- **Strava segments** (read-only, for the runs you choose) and **GymTracker strength** sessions read from the shared Drive folder and counted in fatigue and form
+
 **Coaching**
 - Garmin and Strava through the cowork folder; phone and desktop in step through Google Drive
 - Best efforts read from *inside* every run — your fastest 1 km, 5 km, 10 km
