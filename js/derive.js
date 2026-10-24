@@ -371,7 +371,7 @@ export function secondOpinion(st, s) {
   }
   const result = SO.review({ threshold_hr: s.threshold_hr, threshold_pace: s.threshold_pace, races: oursRaces },
     { threshold_hr: theirs.threshold_hr, threshold_pace: theirs.threshold_speed_m_s ? 1000 / theirs.threshold_speed_m_s : null, races: theirs.races });
-  if (!result.comparisons.length) return null;
+  if (!result.comparisons) return null;
   result.garmin = theirs;
   return result;
 }
@@ -476,7 +476,7 @@ export function briefMarkdown(b) {
   if (b.readiness) L.push('', '## Readiness today', `- ${b.readiness.band || ''} ${b.readiness.score != null ? '(' + Math.round(b.readiness.score) + ')' : ''} — ${b.readiness.advice || ''}`);
   if (b.stops) L.push('', '## Interruptions (90 days)', `- ${b.stops.runs} runs: ${b.stops.crossings} crossings, ${b.stops.rests} rests, ${b.stops.climbs} climbs, ${b.stops.exhaustion} fatigue stops; ${t(b.stops.lost_s)} lost`);
   if (b.durability.length) { L.push('', '## Durability (long runs, newest first)'); for (const r of b.durability.slice(0, 6)) L.push(`- ${r.date} ${r.name}: drift ${r.decoupling != null ? ((r.decoupling - 1) * 100).toFixed(1) + '%' : '--'}${r.verdict ? ' — ' + r.verdict : ''}`); }
-  if (b.secondOpinion) L.push('', '## Against Garmin\'s own numbers', '- ' + (b.secondOpinion.summary || b.secondOpinion.comparisons.length + ' comparisons'));
+  if (b.secondOpinion) L.push('', '## Against Garmin\'s own numbers', '- ' + (b.secondOpinion.summary || b.secondOpinion.comparisons + ' comparisons'));
   L.push('', '## Recent activities');
   for (const a of b.recent.slice(0, 12)) L.push(`- ${a.date} ${a.name} (${a.type.replace(/_/g, ' ')}) ${a.km != null ? a.km + ' km' : ''} ${a.minutes != null ? a.minutes + ' min' : ''}${a.avg_hr ? ' · HR ' + Math.round(a.avg_hr) : ''}`);
   L.push('', '## What is missing');

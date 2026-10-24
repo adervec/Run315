@@ -11,7 +11,7 @@ export const title = 'Gear';
 const CSS = `
 .wear { display: block; height: 8px; background: var(--track); border-radius: 4px; overflow: hidden; margin-top: 6px; }
 .wear i { display: block; height: 100%; background: var(--measured); }
-.wear i.warn { background: #b07d2b; }
+.wear i.warn { background: var(--warn); }
 .wear i.gone { background: var(--behind); }
 .shoe-name { font-weight: 600; font-size: 16px; }
 .shoe-sub { font-family: var(--mono); font-size: 12px; color: var(--muted); }

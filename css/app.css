@@ -19,6 +19,7 @@
 
   --ahead: #17694a;
   --behind: #a5321f;
+  --warn: #b07d2b;
 
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
@@ -33,14 +34,14 @@
     --ground: #0d1117; --surface: #161b24; --hover: #1c2330; --track: #232b38; --line: #2b3442;
     --ink: #e8ecf2; --ink-hover: #c9d1dc; --on-ink: #0d1117; --muted: #a0aab8; --faint: #6f7a8a;
     --measured: #3fb8c4; --measured-soft: #12313a; --projected: #a48cff; --projected-soft: #2a2350;
-    --ahead: #4cc28f; --behind: #f07a63; color-scheme: dark;
+    --ahead: #4cc28f; --behind: #f07a63; --warn: #e0a64a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --ground: #0d1117; --surface: #161b24; --hover: #1c2330; --track: #232b38; --line: #2b3442;
   --ink: #e8ecf2; --ink-hover: #c9d1dc; --on-ink: #0d1117; --muted: #a0aab8; --faint: #6f7a8a;
   --measured: #3fb8c4; --measured-soft: #12313a; --projected: #a48cff; --projected-soft: #2a2350;
-  --ahead: #4cc28f; --behind: #f07a63; color-scheme: dark;
+  --ahead: #4cc28f; --behind: #f07a63; --warn: #e0a64a; color-scheme: dark;
 }
 
 /* ---------- the shell: a grouped side nav on desktop, a tab bar on the phone ---------- */
@@ -507,8 +508,8 @@ input:focus { border-color: var(--projected); }
 .k-crossing.break-dot { background: #8b94a3; }
 .k-rest { border-color: var(--projected); }
 .k-rest.break-dot { background: var(--projected); }
-.k-climb { border-color: #b07d2b; }
-.k-climb.break-dot { background: #b07d2b; }
+.k-climb { border-color: var(--warn); }
+.k-climb.break-dot { background: var(--warn); }
 .k-exhaustion { border-color: var(--behind); color: var(--behind); }
 .k-exhaustion.break-dot { background: var(--behind); }
 .k-eased { border-color: var(--line); color: var(--muted); }
@@ -549,7 +550,7 @@ select {
   margin-right: 6px; vertical-align: -2px;
 }
 .p-easy { background: var(--measured); }
-.p-mod { background: #b07d2b; }
+.p-mod { background: var(--warn); }
 .p-hard { background: var(--behind); }
 
 
@@ -589,5 +590,5 @@ select {
 /* ---------- readiness ---------- */
 .band-primed, .band-ready { color: var(--ahead); }
 .band-steady { color: var(--measured); }
-.band-tired { color: #b07d2b; }
+.band-tired { color: var(--warn); }
 .band-depleted { color: var(--behind); }
