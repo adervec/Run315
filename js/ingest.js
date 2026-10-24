@@ -151,6 +151,7 @@ export async function importGarmin(st, p, putStream) {
         distance_m: num(a.distance_m), moving_s: num(a.moving_s), elapsed_s: num(a.elapsed_s),
         avg_hr: num(a.avg_hr), max_hr: num(a.max_hr), elev_gain_m: num(a.elev_gain_m), calories: num(a.calories),
       };
+      Object.assign(rec, (cur && cur.fixed) || {});   // a correction the athlete approved outlives re-imports
       put(st, 'activities', id, rec);
       res.activities++;
     } else if (!cur) continue;   // details for an activity we do not have: nothing to hang them on
@@ -214,12 +215,15 @@ export async function importStrava(st, p, putStream, hasStream) {
           distance_m: num(a.distance), moving_s: num(a.moving_time), elapsed_s: num(a.elapsed_time),
           avg_hr: num(a.average_heartrate), max_hr: num(a.max_heartrate),
           elev_gain_m: num(a.total_elevation_gain), calories: num(a.calories),
+          ...((st.activities[id] && st.activities[id].fixed) || {}),
         });
         if (a.gear_id) put(st, 'activityGear', id, { uuids: ['strava:' + a.gear_id] });
       }
       res.activities++;
     }
     // Segment efforts (only for activities the athlete asked segments for -- they cost a request each).
+    // Mark the run checked even when Strava found none, or it would be asked for forever.
+    if ('segment_efforts' in a && target && st.activities[target.id]) put(st, 'activities', target.id, { ...st.activities[target.id], segments_checked: true });
     for (const e of a.segment_efforts || []) {
       if (!e || e.id == null || !e.segment) continue;
       put(st, 'segmentEfforts', String(e.id), { id: String(e.id), segment_id: String(e.segment.id), segment_name: e.segment.name || e.name,

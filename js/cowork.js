@@ -19,7 +19,7 @@ import { importGarmin, importStrava } from './ingest.js';
 import { queueStream } from './drive.js';
 import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
 import { podContext, importPod } from './pod.js';
-import { reviewContext, importReview } from './datareview.js';
+import { reviewContext, importReview, scanRecord } from './datareview.js';
 
 export const PROTOCOL = 'run315-cowork', VERSION = 1;
 export const CHANNELS = [
@@ -115,7 +115,7 @@ export async function channelContext(key) {
       linked: s.filter(a => a.source === 'garmin').length, stravaOnly: s.filter(a => a.source === 'strava').length,
       // Segment efforts cost a request per activity, so only for the ones the athlete asked for.
       wantSegments: ((state.profile && state.profile.segmentsWanted) || [])
-        .filter(sid => !Object.values(state.segmentEfforts).some(e => e.strava_id === String(sid))).slice(0, 40),
+        .filter(sid => !Object.values(state.activities).some(a => a.strava_id === String(sid) && a.segments_checked)).slice(0, 40),
     };
   }
   if (key === 'analysis') return { requests: dueRequests() };
@@ -207,6 +207,7 @@ Every activity since \`lastActivityStart\` is pulled, all sports, plus streams f
 \`\`\`
 
 - \`context.json\` → \`findings\`: each is something the app found suspicious — a GPS jump, a heart-rate dropout or a cadence lock, an activity type that does not fit its speed, an elevation spike, a Garmin/Strava near-miss pair dedup could not decide — with the evidence attached. Look at the stream (\`../data/streams/<id>.json\`) when it helps.
+- A \`fix\` may set only \`type\`, \`name\`, \`distance_m\`, \`moving_s\`, \`elapsed_s\`, \`elev_gain_m\`, \`avg_hr\`, \`max_hr\` (each finding's \`fixable\` lists them); for a Garmin/Strava near-miss the fix is \`{"merge": true}\`.
 - Propose \`fix\` only when the correction is clear; \`keep\` when the data is right after all; \`ignore\` when it is wrong but harmless. **Nothing is changed automatically** — the athlete approves each one, and approved fixes change Run315's copy only, never Garmin or Strava.
 `;
   return head + `## kind: \`coach-output\` — the weekly review
@@ -330,6 +331,7 @@ async function applyReply(kind, p) {
     const r = kind === 'garmin-output' ? await importGarmin(state, p, putStream) : await importStrava(state, p, putStream, hasStream);
     for (const id of r.streams) await queueStream(id);
     await deriveAll(state, r.streams);   // two passes: crossings need every run read first
+    for (const id of r.streams) scanRecord(state, id, await getStream(id));   // data review: GPS jumps, HR dropouts...
     return { handled: true, note: kind === 'garmin-output'
       ? `${r.activities} activities, ${r.details} with detail, ${r.days} days, ${r.nights} nights` + (r.remaining ? `, ${r.remaining} still to fetch` : '')
       : `${r.activities} activities (${r.linked} linked to Garmin, ${r.inserted} new), ${r.streams.length} streams` + (r.remaining ? `, ${r.remaining} still to fetch` : '') };

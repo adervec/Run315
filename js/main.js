@@ -25,6 +25,7 @@ export const NAV = [
     { route: 'climbing', page: 'climbing', label: 'Climbing' },
     { route: 'second-opinion', page: 'secondopinion', label: 'Second opinion' },
     { route: 'career', page: 'career', label: 'Career' },
+    { route: 'segments', page: 'segments', label: 'Segments' },
   ] },
   { group: 'Explore', items: [
     { route: 'routes', page: 'routes', label: 'Route maker' },
@@ -34,6 +35,8 @@ export const NAV = [
   ] },
   { group: 'Kit & data', items: [
     { route: 'gear', page: 'gear', label: 'Gear' },
+    { route: 'datareview', page: 'datareview', label: 'Data review' },
+    { route: 'sources', page: 'sources', label: 'Sources & coverage' },
     { route: 'sync', page: 'sync', label: 'Sync & cowork' },
   ] },
 ];
