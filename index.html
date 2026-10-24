@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Run315</title>
+<meta name="description" content="GymTracker for cardio: Garmin and Strava, analysed properly, on your own devices.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#101828" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="static/icon-192.png">
+<link rel="apple-touch-icon" href="static/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Run315">
+</head>
+<body>
+<div class="shell">
+  <nav class="nav" id="nav" aria-label="Sections"></nav>
+  <main class="main"><div class="wrap" id="page"><p class="panel-note" style="padding:40px 0">Loading…</p></div>
+    <footer class="maker-note">More apps by the same maker, all free and local-first &mdash;
+      <a href="https://adervec.github.io/portal/" target="_blank" rel="noopener">adervec.github.io</a></footer>
+  </main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Quick sections"></nav>
+<style>
+  .maker-note { max-width: 1100px; margin: 32px auto 24px; padding: 0 18px; font: 13px/1.5 var(--body); color: var(--faint); }
+</style>
+<script type="module" src="js/main.js"></script>
+<script>
+  // Let the maker's portal know (same-origin localStorage) this app is installed.
+  try {
+    var dm = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'];
+    if (navigator.standalone || dm.some(function (m) { return matchMedia('(display-mode: ' + m + ')').matches; })) {
+      var reg = JSON.parse(localStorage.getItem('portal-installed') || '{}');
+      reg.Run315 = Date.now(); localStorage.setItem('portal-installed', JSON.stringify(reg));
+    }
+  } catch (e) { /* private mode */ }
+</script>
+</body>
+</html>

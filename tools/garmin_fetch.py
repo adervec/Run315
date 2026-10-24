@@ -1,50 +1,16 @@
-"""Garmin Connect login (incl. MFA) and activity fetch.
+"""Garmin Connect fetch: activities, every per-sample channel, laps, weather, gear,
+the daily sweep and Garmin's own estimates. Used by garmin-export.py.
 
-Garmin has no consumer OAuth, so we log in once with the user's credentials and
-keep only the resulting session tokens -- the password is never stored.
+Garmin has no consumer OAuth, so garmin-export.py logs in once and keeps only the
+session tokens (shared with garmin_mcp's ~/.garminconnect) -- never the password.
 """
 import logging
-import secrets
 from datetime import datetime
 
 from garminconnect import Garmin
 from garminconnect.activity_details import parse_activity_detail_metrics
 
 log = logging.getLogger(__name__)
-
-# ponytail: single-process in-memory hold for half-finished MFA logins. The
-# Garmin client keeps the MFA state on itself, so the same object has to survive
-# between the two requests. Move to Redis if this ever runs multi-worker.
-_PENDING = {}
-
-
-def start_login(email, password):
-    """-> ('mfa', handle) if a code is needed, else ('ok', token_string)."""
-    api = Garmin(email=email, password=password, return_on_mfa=True)
-    needs_mfa, _ = api.login()
-    if needs_mfa == "needs_mfa":
-        handle = secrets.token_urlsafe(16)
-        _PENDING[handle] = api
-        return "mfa", handle
-    return "ok", api.client.dumps()
-
-
-def finish_login(handle, code):
-    """Complete an MFA login. -> token_string."""
-    api = _PENDING.pop(handle, None)
-    if api is None:
-        raise ValueError("That verification session expired -- please connect again.")
-    api.resume_login({}, code.strip())
-    return api.client.dumps()
-
-
-def connect(token_string):
-    """Resume a stored session. -> (Garmin, refreshed_token_string)."""
-    api = Garmin()
-    api.login(token_string)
-    # Tokens rotate on refresh; hand the fresh blob back so the caller can store it.
-    return api, api.client.dumps()
-
 
 def _seconds(activity, *keys):
     for k in keys:
@@ -590,9 +556,8 @@ def fetch_activity_gear(api, activity_id):
     return [str(g.get("uuid")) for g in raw if g.get("uuid")]
 
 
-def fetch_activities(token_string, start_date, end_date=None):
-    """-> (activities, refreshed_token_string). Dates are `date` objects."""
-    api, fresh_token = connect(token_string)
+def fetch_activities(api, start_date, end_date=None):
+    """-> [activity]. Dates are `date` objects."""
     raw = api.get_activities_by_date(
         start_date.strftime("%Y-%m-%d"),
         (end_date or datetime.now().date()).strftime("%Y-%m-%d"),
@@ -603,4 +568,4 @@ def fetch_activities(token_string, start_date, end_date=None):
         if n:
             out.append(n)
     log.info("garmin: fetched %d activities since %s", len(out), start_date)
-    return out, fresh_token
+    return out

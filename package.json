@@ -1,0 +1,10 @@
+{
+  "name": "run315",
+  "private": true,
+  "type": "module",
+  "description": "Run315 - GymTracker for cardio. Static browser app; dev tooling only.",
+  "scripts": {
+    "test": "node --import ./test/tz.mjs --test \"test/**/*.test.mjs\"",
+    "serve": "python -m http.server 8315"
+  }
+}
