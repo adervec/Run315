@@ -248,7 +248,7 @@ function recordPanels(prs) {
           <span style="margin-left:auto">slower as distance grows →</span><span>${(prs[prs.length - 1][0] / 1000).toFixed(1)} km</span></div>`
       : html`<div class="empty"><p>Two or more best efforts are needed to draw the curve.</p></div>`}
     </section>
-    <section class="panel"><div class="panel-head"><p class="eyebrow">Personal records</p><p class="panel-note">Last 180 days</p></div>
+    <section class="panel"><div class="panel-head"><p class="eyebrow">Personal records</p><p class="panel-note">All time, from inside every run</p></div>
       <div class="table-scroll"><table>
         <thead><tr><th>Distance</th><th class="num">Best</th><th class="num">Pace</th><th class="num">Set</th></tr></thead>
         <tbody>${prs.map(([dist, secs, when]) => html`<tr><td>${(dist / 1000).toFixed(2)} km</td>
