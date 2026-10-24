@@ -31,7 +31,7 @@ test('requests out, replies in, once', async () => {
 
   assert.ok(await cowork.exportNow(false));
   const manifest = JSON.parse(await read(root, 'cowork.json'));
-  assert.deepEqual(manifest.channels.map(c => c.name), ['garmin', 'strava', 'analysis', 'coach']);
+  assert.deepEqual(manifest.channels.map(c => c.name), ['garmin', 'strava', 'analysis', 'coach', 'pod', 'datareview']);
   const ctx = JSON.parse(await read(root, 'garmin/context.json'));
   assert.equal(ctx.payload.lastActivityStart, null);                      // empty device: ask for everything
   assert.match(await read(root, 'BRIEF.md'), /No activities yet/);
