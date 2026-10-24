@@ -1,36 +1,89 @@
 # Run315
 
-One self-hosted app for coaching, routing, trail completion and territory — the
-parts of Strava premium you actually miss, plus the parts it never had.
+GymTracker for cardio. Every Garmin and Strava number you have — per-second streams,
+laps, weather, gear, sleep stages, HRV, body battery, Garmin's own estimates — in one
+place, analysed properly, and handed to an AI agent for as deep a dig as you care to ask
+for. Coaching, routing, trail completion and territory: the parts of Strava premium you
+actually miss, plus the parts it never had.
 
-**[Live demo](https://adervec.github.io/Run315/)** — a synthetic athlete's year, frozen to static files. Every page is the real app doing real analysis; only the buttons that write are switched off.
+**[Open it](https://adervec.github.io/Run315/)** — press *Load demo athlete* to look around
+with a synthetic year of training.
 
-This is the merge of three separate projects:
+It is a static web app: no server, no account. Your data lives in your browser, syncs
+between phone and desktop through Google Drive's private app folder, and arrives from
+Garmin and Strava through a **cowork folder** on the desktop — the same protocol as
+[GymTracker](https://adervec.github.io/GymTracker/) and every other app in
+[CoworkSyncHub](https://github.com/adervec/CoworkSyncHub).
+
+## How data gets in, and out
+
+```
+ Garmin Connect ─┐  tools/garmin-export.py             ┌─ app-export.json, data/streams/*.json
+                 ├▶ tools/strava-export.py ─▶ inbox ─▶ Run315 (desktop) ─▶ brief.json, BRIEF.md
+ Strava ─────────┘  (run by the agent / the hub)        └─ context.json per channel: what is missing
+                                                               │
+                                                Google Drive appDataFolder
+                                                               │
+                                                         Run315 (phone)
+```
+
+The cowork folder has four channels, each an `INSTRUCTIONS.md` + `context.json`, replies
+into `<channel>/inbox/`:
+
+| Channel | What the agent does |
+|---|---|
+| `garmin` | runs `tools/garmin-export.py`, which backfills exactly what `context.json` says is missing: new activities, every per-sample channel the watch recorded, laps, weather, gear, the daily sweep, overnight HRV / resting HR / sleep, Garmin's own estimates |
+| `strava` | runs `tools/strava-export.py` (all sports, streams). The app links each Strava activity to the Garmin activity it duplicates and inserts the rest |
+| `analysis` | answers the questions you queue on **Ask** — with the whole export and every stream on disk, so "go deep" is a real option |
+| `coach` | writes the weekly review |
+
+Each request carries a `requestHash` the reply echoes; an agent that cannot finish writes
+`error-<date>.json` with a reason, which shows in the run log. The exporters ship inside
+the folder (`tools/`), so it is self-contained. With **CoworkSyncHub**:
+`python coworkhub.py add run315 manifest "<folder>"` and the hub sweeps it like any other
+app. With **Claude Desktop / Cowork**: point it at the folder and ask it to do the Run315
+channels.
+
+No folder? Put your own Anthropic key in *Sync & cowork* and **Ask** answers straight from
+the browser (Claude Opus 5.5 through the official SDK; the key never leaves the device
+except to api.anthropic.com).
+
+Each activity's stream is analysed **once**, on the desktop that imported it, and what the
+analysis finds — best efforts, reps, stops, map tiles, zones, durability, climbing, a
+thinned track — syncs. So the phone shows every number without downloading a stream; the
+activity page fetches the stream from Drive only when you open it.
+
+### First run
+
+1. Desktop (Chrome or Edge): *Sync & cowork* → **Choose folder**, then **Connect Google Drive**.
+2. Once, in a terminal: `pip install garminconnect`, and
+   `python <folder>/tools/strava-export.py --auth` (a Strava API application with callback
+   domain `localhost`). Garmin logs in on the first export and keeps only session tokens,
+   shared with garmin_mcp's `~/.garminconnect`.
+3. Let the hub or Claude run the channels. The first year arrives over a few sweeps (40
+   activity details per run, newest first); the app keeps asking for the rest.
+4. Phone: open the same URL, **Connect Google Drive**, install it from the share menu.
+
+This is the merge of three separate projects, and a rebuild of the first as a browser app:
 
 | Was | Is now |
 |---|---|
-| **Run315** — Garmin analytics, race projections, AI coach | the dashboard, `/race/<id>`, `/activity/<id>` |
-| **RouteMaster** — standalone GPX route maker | `/routes`, server-persisted per user |
-| **TrailTracker** — offline trail-completion PWA | `/trails`, matching engine in `trails.py` |
-| *(new)* **intvl** — the territory game | `/intvl` |
-| *(new)* **track & interval analysis** | `/sessions` |
-| *(new)* **stop & slow-down analysis** | on every activity page |
-| *(new)* **race strategy & postmortem** | `/race/<id>` |
-| *(new)* **shoe mileage & weather correction** | `/gear` |
-| *(new)* **zone distribution & running form** | dashboard, activity pages |
-| *(new)* **readiness, training plans, route repeats** | dashboard, `/race/<id>`, `/routes/repeats` |
-| *(new)* **durability / decoupling** | `/durability` |
-| *(new)* **climbing: how hills cost you** | `/climbing` |
-| *(new)* **second opinion vs Garmin** | `/second-opinion` |
-| *(new)* **career ledger and year in review** | `/career` |
-| *(new)* **plan adherence, heat acclimatisation** | `/race/<id>`, dashboard |
-| *(new)* **race fuelling** | `/race/<id>` |
-| *(new)* **vitals: what responds to training** | `/vitals` |
+| **Run315** — Garmin analytics, race projections, AI coach | Today, Races, Activities, Ask |
+| **RouteMaster** — standalone GPX route maker | Route maker, saved routes synced |
+| **TrailTracker** — offline trail-completion PWA | Trails |
+| *(new)* **intvl** — the territory game | Territory |
+| *(new)* **track & interval analysis** | Track & intervals |
+| *(new)* **stop & slow-down analysis** | every activity page |
+| *(new)* **race strategy, postmortem, plan adherence, fuelling** | a race's page |
+| *(new)* **shoe mileage & weather correction** | Gear |
+| *(new)* **zones, running form, readiness, heat** | Today, activity pages |
+| *(new)* **durability, climbing, second opinion, career, vitals, route repeats** | their own pages |
+
 
 ## What it does
 
 **Coaching**
-- Google sign-in, Garmin Connect sync (incl. MFA), background refresh
+- Garmin and Strava through the cowork folder; phone and desktop in step through Google Drive
 - Best efforts read from *inside* every run — your fastest 1 km, 5 km, 10 km
 - Fitness / Fatigue / Form (CTL, ATL, TSB) from a self-calibrating load model
 - Race projections with confidence, split targets, and taper planning
@@ -175,55 +228,9 @@ This is the merge of three separate projects:
 - And the question the game actually asks: *which tiles do I run to make the
   square bigger* — answered, ranked by cheapest
 
-## Run it
-
-Python 3.12 or newer (`garminconnect` 0.3.x needs it).
-
-```bash
-python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python
-.venv/Scripts/python app.py
-```
-
-`.env` already has a generated `SECRET_KEY`. Fill in the rest as you need it:
-
-| Variable | Needed for | Where to get it |
-|---|---|---|
-| `SECRET_KEY` | sessions + Garmin token encryption | already generated |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | sign-in | Google Cloud Console → Credentials → OAuth client ID → **Web application**. Redirect URI `http://127.0.0.1:5000/auth/callback` |
-| `ANTHROPIC_API_KEY` | the coach review | console.anthropic.com |
-
-Everything else works without those two. Optional: `SYNC_INTERVAL_HOURS` (6),
-`DETAIL_BATCH` (40), `DATABASE_PATH`, `PORT`, `HTTPS`.
-
-### See it without any credentials
-
-```bash
-.venv/Scripts/python app.py --demo
-```
-
-A synthetic athlete with a year of training, five races, ~1,750 best efforts and
-GPS tracks around Zurich — enough to light up every page. The demo builds each
-run's pace profile and GPS track and puts them through the *real* extractors, so
-what you see is the production code path.
-
-### Connecting Garmin
-
-Garmin has no consumer OAuth, so you sign in once with your Garmin credentials.
-Only the resulting **session token** is kept, encrypted with a key derived from
-`SECRET_KEY`; the password is never written anywhere. MFA is handled. Rotating
-`SECRET_KEY` invalidates stored tokens — you just reconnect.
-
-After each sync, Run315 fetches detail streams for runs it has not analysed
-(newest first, `DETAIL_BATCH` at a time) in a background thread. Those streams
-carry time, distance, heart rate, **GPS, elevation and running dynamics**
-(cadence, stride length, ground contact, vertical oscillation) — which is what
-feeds best efforts, the activity map, trail matching, intvl, the stop analysis
-and the form work. Weather and gear are pulled per activity in the same pass.
-
 ## How it works
 
-`fitness.py`, `territory.py` and `trails.py` are pure functions with no I/O, so
+`fitness.js`, `territory.js` and `trails.js` are pure functions with no I/O, so
 each is readable and testable on its own.
 
 ### Race projection
@@ -277,7 +284,7 @@ because a GPS lap of a 400 m oval routinely measures 385–415 m.
 
 ### Route layers
 
-The catalogue in `pois.py` is the single source of truth: the Overpass selector
+The catalogue in `pois.js` is the single source of truth: the Overpass selector
 for each layer is *generated* from the same tag rules used to label the results,
 so the query and the labelling cannot drift apart.
 
@@ -683,96 +690,45 @@ the 28-day weekly average; above ~1.5 is where overuse injuries cluster.
 ## Tests
 
 ```bash
-.venv/Scripts/python test_fitness.py     # the coaching model: 32 checks
-.venv/Scripts/python test_territory.py   # tiles, squares, clusters: 16 checks
-.venv/Scripts/python test_trails.py      # matching and coverage: 21 checks
-.venv/Scripts/python test_intervals.py   # rep detection, track sensing: 14 checks
-.venv/Scripts/python test_stops.py       # stop classification: 15 checks
-.venv/Scripts/python test_pois.py        # layer catalogue and parsing: 10 checks
-.venv/Scripts/python test_racecraft.py   # pacing and postmortem: 19 checks
-.venv/Scripts/python test_weather.py     # heat correction: 9 checks
-.venv/Scripts/python test_zones.py       # zones and polarisation: 23 checks
-.venv/Scripts/python test_form.py        # running dynamics: 28 checks
-.venv/Scripts/python test_plan.py        # plan generation: 13 checks
-.venv/Scripts/python test_recovery.py    # readiness: 26 checks
-.venv/Scripts/python test_repeats.py     # route matching: 21 checks
-.venv/Scripts/python test_durability.py  # decoupling, critical speed: 16 checks
-.venv/Scripts/python test_terrain.py     # climbing cost, book time: 13 checks
-.venv/Scripts/python test_landmarks.py   # ascent, in things you can picture: 7 checks
-.venv/Scripts/python test_secondopinion.py  # us against Garmin: 9 checks
-.venv/Scripts/python test_recap.py       # career ledger, year on year: 10 checks
-.venv/Scripts/python test_adherence.py   # plan vs actual: 12 checks
-.venv/Scripts/python test_fuelling.py    # carbs, fluid, sodium: 9 checks
-.venv/Scripts/python test_vitals.py      # correlation, correction, outliers: 15 checks
-.venv/Scripts/python test_app.py         # parsing, routes, integration: 40 checks
+npm test
 ```
 
-380 checks. No framework, no fixtures — run the files. `test_app.py` never touches
-the network; Overpass is a free volunteer service and a test suite has no
-business hammering it.
+Every analysis module's Python test suite was ported with it (`test/<module>.test.mjs`,
+same cases, same numbers), plus the importers and the sync merge (`ingest.test.mjs`), the
+whole demo path from Garmin reply to brief (`pipeline.test.mjs`), and a render of every
+page against the demo athlete and against an empty device (`pages.test.mjs`). Nothing
+beyond `node --test`; no network.
 
 ## Layout
 
-| File | What it is |
+| Path | What it is |
 |---|---|
-| `app.py` | Flask: auth, sync, backfill, races, activities, trails, intvl, APIs, demo seed |
-| `fitness.py` | The coaching model. Pure, no dependencies |
-| `territory.py` | The intvl game. Pure, no dependencies |
-| `intervals.py` | Rep detection and track analysis. Pure, no dependencies |
-| `stops.py` | Why a run got interrupted. Pure, no dependencies |
-| `pois.py` | The map-layer catalogue and Overpass queries. Pure, no dependencies |
-| `racecraft.py` | Course pacing and race postmortem. Pure, no dependencies |
-| `weather.py` | Heat correction for pace. Pure, no dependencies |
-| `zones.py` | HR zone time and training polarisation. Pure, no dependencies |
-| `form.py` | Running dynamics. Pure, no dependencies |
-| `plan.py` | Training block generation. Pure, no dependencies |
-| `recovery.py` | Readiness from overnight data. Pure, no dependencies |
-| `repeats.py` | Repeated-route detection. Pure, builds on `territory.py` |
-| `durability.py` | Decoupling and critical speed. Pure, builds on `racecraft.py` |
-| `terrain.py` | Climbing cost and book time. Pure, builds on `racecraft.py` |
-| `landmarks.py` | Ascent, in things you can picture. Pure, no dependencies |
-| `secondopinion.py` | Our estimates against Garmin's. Pure, no dependencies |
-| `recap.py` | Career ledger and year on year. Pure, no dependencies |
-| `adherence.py` | Plan against reality. Pure, no dependencies |
-| `fuelling.py` | Carbohydrate, fluid and sodium. Pure, no dependencies |
-| `vitals.py` | Correlating daily metrics against load. Pure, stdlib only |
-| `trails.py` | Trail matching and coverage. Pure, no dependencies |
-| `garmin.py` | Garmin login (incl. MFA), activities, detail streams |
-| `coach.py` | Builds the prompt and calls Claude |
-| `static/routes.js` | The route planner |
-| `templates/` | dashboard, race, activity, trails, intvl, routes, login |
-
-## APIs
-
-| Endpoint | Returns |
-|---|---|
-| `GET /api/summary` | fitness, calibration, races, projections, paces, zones, PRs, weekly, territory |
-| `GET /api/tiles` | claimed tiles, max square, growth targets |
-| `GET /api/trails` | trail geometry with covered sections |
-| `GET /api/poi-layers`, `POST /api/pois` | the layer catalogue, and what is along a route |
-| `GET /api/routes`, `POST`, `DELETE /api/routes/<id>` | saved routes |
-| `GET /export.csv` | every activity |
+| `index.html`, `css/app.css` | the shell; light and dark from the same tokens |
+| `js/main.js` | boot, router, nav |
+| `js/pages/*.js` | one module per page: `render(params)` returns HTML, `mount(el)` wires it |
+| `js/derive.js` | per-activity derivation, every aggregate the pages read, the brief |
+| `js/lib/*.js` | the analysis — pure, no dependencies |
+| `js/merge.js` | the synced state and the per-record merge (newest edit wins, tombstones) |
+| `js/store.js` | IndexedDB: state, streams, re-fetchable cache |
+| `js/drive.js` | Google Drive appDataFolder sync (GymTracker's OAuth client) |
+| `js/cowork.js` | the cowork folder: manifest, requests, inbox, run log, schedule |
+| `js/ingest.js` | Garmin and Strava replies into state, one activity per session |
+| `js/ai.js` | the own-key Claude transport |
+| `js/demo.js` | the synthetic athlete, as a Garmin reply |
+| `tools/` | `garmin-export.py` (+ `garmin_fetch.py`), `strava-export.py` |
 
 ## Outside services
 
-All free, all unauthenticated, none with an SLA:
+All called from the browser, none with an SLA: **Overpass** (trail geometry, route layers;
+two mirrors, cached a week in IndexedDB), **BRouter** (route snapping), **OpenStreetMap
+tiles**, **Google Drive**, and **Anthropic** only with your own key.
 
-- **Overpass** (`overpass-api.de`, `overpass.kumi.systems`) — trail geometry and
-  route layers. Server-side, two attempts per mirror with backoff, sequential not
-  raced, area capped at 0.45 square degrees, corridor capped at 80 points, a
-  week-long cache, a per-user in-flight lock, and a descriptive `User-Agent`.
-- **BRouter** (`brouter.de`) — route snapping. Called from the browser.
-- **OpenStreetMap tiles** — basemaps.
 
 ## Known limits
 
-- Sync, backfill and matching run in threads in the web process — fine for one
-  person, not for a multi-worker deployment.
-- Half-finished MFA logins are held in memory and do not survive a restart.
 - Best efforts come from Garmin's charted stream (≤2000 samples), so on a very
   long activity short efforts are interpolated between samples.
 - Only running feeds the race projection; cycling and swimming count toward load.
-- `/api/trails` caps at 3000 segments; paginate by bbox if you outgrow it.
 - The route planner dropped RouteMaster's map notes, personal heatmap and
   custom-profile emphasis toggles — the territory map covers the heatmap's job,
   and the rest need their own tables.
@@ -848,37 +804,11 @@ All free, all unauthenticated, none with an SLA:
 
 ## Installing it
 
-Run315 is a PWA: install it from the browser's address bar on desktop, or
-Share -> Add to Home Screen on iOS, and it opens standalone with its own icon.
+A PWA: install from the address bar on the desktop, or Share → Add to Home Screen on the
+phone. The service worker serves the shell from cache (stale-while-revalidate), so it opens
+instantly and offline; the data is in IndexedDB anyway.
 
-`templates/manifest.webmanifest` and `templates/sw.js` are Jinja templates
-rather than static files, so `url_for` decides the paths and the same code
-serves a real install at `/` and the frozen demo under `/Run315/`. The service
-worker has to live at the mount root -- one served from `/static/` could only
-ever control `/static/`.
+## Publishing
 
-Pages are network-first: this app shows *your* data, and a stale dashboard is
-worse than a spinner, so the cache only comes out when the network is gone.
-Anything that writes -- a sync, a new race, signing out -- drops the cached
-pages, which is also what stops the offline copy outliving your session.
-Icons come from `icons.py`: a 5x7 bitmap font and a hand-rolled PNG writer,
-which is less than a build dependency for two files that never change.
-
-## Publishing the demo
-
-GitHub Pages serves files, not Flask, so `freeze.py` seeds the synthetic
-athlete, signs in as them with a test client, crawls every internal link and
-writes what comes back:
-
-```bash
-BASE_PATH=/Run315 python freeze.py     # -> docs/, ~130 pages
-python -m http.server -d docs          # check it locally first
-git add docs && git commit -m "refresh demo" && git push
-```
-
-Pages is served from `main` on `/docs`, so a push is the deploy. `BASE_PATH`
-is the project-page prefix; leave it empty for a user page or a custom domain.
-
-Frozen pages carry a banner saying so, and every POST form is disabled rather
-than left to 405 when someone presses it. The route builder still routes --
-BRouter is a public API -- it just cannot save.
+`.github/workflows/pages.yml` runs `npm test` on every push and publishes `main` to GitHub
+Pages only when it is green (Settings → Pages → Source: **GitHub Actions**).

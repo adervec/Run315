@@ -191,8 +191,10 @@ A two-way bridge between the Run315 web app and an AI agent (any agent that can 
 export function manifest() {
   return { protocol: 'cowork-manifest', protocolVersion: 1, app: 'run315',
     channels: CHANNELS.map(c => ({ name: c.key, request: [c.key + '/context.json'], instructions: c.key + '/INSTRUCTIONS.md',
-      replyDir: c.key + '/inbox', replyPrefix: 'output-', replyProtocol: PROTOCOL, replyKind: c.replyKind,
-      ...(c.key === 'garmin' || c.key === 'strava' ? { sources: [c.key] } : {}) })) };
+      replyDir: c.key + '/inbox', replyPrefix: 'output-', replyProtocol: PROTOCOL, replyKind: c.replyKind })) };
+  // ponytail: no hub "sources" -- the hub's shared Garmin pull is GymTracker's biometrics-only
+  // script; the garmin/strava channels run Run315's own exporters. Declare one if the hub grows
+  // a full-history source.
 }
 
 // The exporters ship with the app (same origin), so the folder is self-contained.
