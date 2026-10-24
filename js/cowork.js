@@ -418,7 +418,7 @@ export function startScheduler() {
 // ---- asking questions (the analysis channel's queue) ----
 // opts.standing: re-answered every opts.everyDays (default 7) with the history kept, so a verdict can be watched move.
 export function ask(q, note = '', opts = {}) {
-  const id = 'q' + Date.now().toString(36);
+  const id = 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   put(state, 'analysisRequests', id, { id, q: String(q).trim(), note, created: new Date().toISOString(),
     status: opts.standing ? 'standing' : 'open', standing: !!opts.standing, everyDays: opts.everyDays || 7, history: [] });
   save('ask');
