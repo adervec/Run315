@@ -100,7 +100,7 @@ function forecastPanel(fc, opts) {
   if (!fc.location) return html`<section class="panel">${head}<div class="empty"><p>Where do you run from? No home is set and no run
     has a GPS track yet. Set it under Options below and the forecast follows.</p></div></section>`;
   if (!fc.forecast) return html`<section class="panel">${head}<div class="empty"><p>${_wxError ? 'Forecast unavailable: ' + _wxError : 'Fetching the forecast…'}</p></div></section>`;
-  const b = fc.best, t = fc.today, bestHours = new Set(), nowH = new Date().getHours();
+  const b = fc.best, t = fc.today, bestHours = new Set(), nowH = (fc.wall || new Date()).getHours();
   if (b) for (let h = b.startHour; h < b.startHour + b.minutes / 60; h++) bestHours.add(h);
   return html`<section class="panel">${head}
     ${t ? html`<p class="stat-hint">${r0(t.min_c)}–${r0(t.max_c)} °C${t.max_dew_c != null ? ', dew point up to ' + r0(t.max_dew_c) + ' °C' : ''}${t.max_rain_pct ? ', rain chance up to ' + t.max_rain_pct + '%' : ''}${t.max_wind_kph != null ? ', wind up to ' + r0(t.max_wind_kph) + ' km/h' : ''}.</p>` : ''}

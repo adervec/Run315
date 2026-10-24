@@ -143,17 +143,24 @@ function blockWeek(st, s, now, today) {
 }
 
 // ---- the forecast, as the context and the page read it ----
+// The wall-clock time at the forecast's location (Open-Meteo returns its IANA zone).
+export function wallClock(f, now = new Date()) {
+  if (!f || !f.tz) return now;
+  try { return new Date(now.toLocaleString('en-US', { timeZone: f.tz })); } catch { return now; }
+}
 export function forecastToday(st, now = new Date(), opts = normOptions(st.profile?.podOptions)) {
   const loc = defaultLocation(st);
   if (!loc) return { location: null };
   const f = cachedForecast(loc.lat, loc.lon, now.getTime());
   if (!f) return { location: loc, forecast: null };
-  const today = dayKey(now);
+  // "Today" and "from now" are the forecast place's, not this device's: a laptop on another
+  // continent's clock must not ask about a day that is already over where the athlete runs.
+  const wall = wallClock(f, now), today = dayKey(wall);
   const inHours = f.hours.filter(r => r.day === today && r.hour >= opts.hours.from && r.hour < opts.hours.to);
-  return { location: loc, forecast: f, fetchedAt: f.fetchedAt, today: daySummary(f.hours, today),
+  return { location: loc, forecast: f, fetchedAt: f.fetchedAt, today: daySummary(f.hours, today), wall,
     hours: inHours,
-    best: bestWindow(f.hours, { day: today, ...opts.hours, minutes: opts.availableMinutes.min, notBefore: isoLocal(now) }),
-    bestLong: bestWindow(f.hours, { day: today, ...opts.hours, minutes: opts.availableMinutes.max, notBefore: isoLocal(now) }) };
+    best: bestWindow(f.hours, { day: today, ...opts.hours, minutes: opts.availableMinutes.min, notBefore: isoLocal(wall) }),
+    bestLong: bestWindow(f.hours, { day: today, ...opts.hours, minutes: opts.availableMinutes.max, notBefore: isoLocal(wall) }) };
 }
 
 const actRow = a => ({ date: dayKey(a.start), name: a.name || null, sport: normSport(a.type), minutes: Math.round(minutesOf(a)),
