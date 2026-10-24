@@ -29,7 +29,7 @@ export const CHANNELS = [
 const HISTORY_DAYS = 365, HANDLE_KEY = 'coworkFolder';
 const SCHEDULE_DEFAULTS = { pushMin: 60, checkMin: 5 };
 
-export const supported = () => 'showDirectoryPicker' in window;
+export const supported = () => typeof window !== 'undefined' && 'showDirectoryPicker' in window;
 const cfg = () => (state.local.cowork = state.local.cowork || { enabled: false, schedules: { ...SCHEDULE_DEFAULTS } });
 const local = () => (state.local.coworkLocal = state.local.coworkLocal || { ledger: {}, declared: {}, runs: [], lastRuns: {}, streamsWritten: [] });
 

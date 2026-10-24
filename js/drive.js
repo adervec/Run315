@@ -18,6 +18,7 @@ const ORIGINS = ['https://adervec.github.io'];
 const API = 'https://www.googleapis.com/drive/v3/files', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
 export function originAllowed() {
+  if (typeof location === 'undefined') return false;
   const h = location.hostname;
   return h === 'localhost' || h === '127.0.0.1' || ORIGINS.includes(location.origin);
 }

@@ -21,7 +21,15 @@ function db() {
   });
   return _db;
 }
+// No IndexedDB (node, the page smoke tests): a Map per store, same interface.
+const _mem = {};
 async function tx(store, mode, fn) {
+  if (typeof indexedDB === 'undefined') {
+    const m = _mem[store] || (_mem[store] = new Map());
+    const s = { get: k => ({ result: m.get(k) }), put: (v, k) => { m.set(k, v); return { result: k }; },
+      delete: k => { m.delete(k); return {}; }, getAllKeys: () => ({ result: [...m.keys()] }) };
+    return fn(s).result;
+  }
   const d = await db();
   return new Promise((res, rej) => {
     const t = d.transaction(store, mode), s = t.objectStore(store);

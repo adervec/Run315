@@ -93,7 +93,7 @@ export function toast(msg, ms = 3200) {
 // Inject a page's own CSS once.
 const _css = new Set();
 export function useCss(id, css) {
-  if (_css.has(id) || !css) return;
+  if (_css.has(id) || !css || typeof document === 'undefined') return;
   _css.add(id);
   const s = document.createElement('style'); s.dataset.page = id; s.textContent = css; document.head.appendChild(s);
 }
