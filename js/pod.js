@@ -10,3 +10,7 @@ export function importPod(st, p) {
   put(st, 'pod', p.date, { ...(st.pod[p.date] || {}), date: p.date, rationale: p.rationale || '', plans: p.plans });
   return { handled: true, note: p.plans.length + ' plans for ' + p.date };
 }
+
+// Today's panel (Today page hook). STUB until the Plan of the Day work lands.
+export function podPanel() { return ''; }
+export function mountPodPanel(el) {}

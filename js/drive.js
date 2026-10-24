@@ -90,6 +90,10 @@ async function writeJson(name, obj) {
   if (!r.ok) throw new Error('Drive write ' + r.status);
 }
 
+// Another app's file in the shared appDataFolder (same OAuth client), read-only. GymTracker's
+// gymtracker-state.json is the one Run315 reads; it never writes there.
+export async function readAppFile(name) { return driveOn() ? readJson(name) : null; }
+
 let _busy = false;
 function stamp(patch) { Object.assign(meta(), patch); save('cloud-meta'); }
 

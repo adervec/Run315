@@ -25,6 +25,7 @@ import { dayKey, addDayKey, fromDay } from './lib/dt.js';
 import { samplesFromChannels } from './ingest.js';
 import { put } from './merge.js';
 import { getStream, rev } from './store.js';
+import { strengthActivities } from './strength.js';
 
 export const DERIVE_VERSION = 1;
 export const DEFAULT_SHOE_LIFE_M = 700000, SHOE_WARN_SHARE = 0.8;
@@ -44,7 +45,8 @@ function memo(name, fn) {
 
 // ---- loaders ----
 // Activities as the analysis modules expect them: `start` a Date, newest first.
-export const activities = st => memo('acts', () => Object.values(st.activities)
+// GymTracker's strength sessions join them (read-only, when connected) so they count in load.
+export const activities = st => memo('acts', () => [...Object.values(st.activities), ...strengthActivities()]
   .map(a => ({ ...a, start: new Date(a.start) }))
   .sort((a, b) => b.start - a.start));
 export const runs = st => activities(st).filter(isRun);

@@ -11,3 +11,7 @@ export function importReview(st, p) {
   for (const x of props) if (x && x.id) put(st, 'dataReview', String(x.id), { ...(st.dataReview[x.id] || {}), id: String(x.id), proposal: x });
   return { handled: true, note: props.length + ' proposals' };
 }
+
+// Activity page hook: ask Strava for this activity's segment efforts. STUB.
+export function segmentsButton(id) { return ''; }
+export function mountSegmentsButton(el, id) {}
