@@ -3,6 +3,8 @@
 import { state, streamIds, getStream } from '../store.js';
 import * as D from '../derive.js';
 import { html, pageHead, useCss } from '../ui.js';
+import * as J from '../journal.js';
+import { HIGHER_IS_WORSE, MIN_POINTS } from '../lib/vitals.js';
 
 export const title = 'Vitals';
 
@@ -179,11 +181,109 @@ async function channelCoverage() {
   return rows;
 }
 
+// ---- the journal against the watch ----
+// The section above asks what the body does after training. This one asks what it does
+// after the things only the athlete can report -- a late coffee, a long flight, a bad
+// week at work -- and whether the felt effort of a run lines up with the night around it.
+// Same machinery (vitals.js pearson/criticalR, Bonferroni over every test actually run),
+// and the same caution, more so: tags are sparse, chosen after the fact, and cluster.
+const JLAG = { 0: 'same day', 1: 'next day' };
+const fmtV = v => (v == null ? '--' : Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1));
+
+function journalFindingNote(f) {
+  const when = f.lag === 0 ? 'on the same day as' : 'the day after';
+  const worse = (f.r > 0) === HIGHER_IS_WORSE.has(f.metric);
+  if (f.diff) {
+    return html`Your ${f.metricLabel} averages ${fmtV(f.diff.on)} ${when} a day tagged ${f.label}
+      (${f.diff.n_on} days) against ${fmtV(f.diff.off)} otherwise (${f.diff.n_off} days)
+      — ${worse ? 'the direction that costs you' : 'the direction you would hope for'}.`;
+  }
+  return html`Your ${f.metricLabel} ${f.r > 0 ? 'rises' : 'falls'} ${when} a day with higher ${f.label}
+    (r = ${sgn(f.r, 2)}, ${f.days} days).`;
+}
+
+function journalCorrelationsPanel(jc) {
+  const crit = jc.critical_r != null ? jc.critical_r.toFixed(2) : '--';
+  const tagNames = Object.keys(jc.tags).map(k => k.slice(4));
+  const rare = Object.entries(jc.tagCounts).filter(([k]) => !jc.tags[k]).map(([k, n]) => `${k.slice(4)} (${n})`);
+  return html`<section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What your journal lines up with</p>
+      <p class="panel-note">${jc.journaledDays} journaled days · ${jc.tested} correlations tested · exploratory</p>
+    </div>
+    <div class="empty"><p>Your own entries — effort, feel and the tags on runs and days —
+      against what the watch measured that day and the next: HRV, resting heart rate,
+      sleep score, body battery and stress.</p></div>
+    ${!jc.tested ? html`<p class="verdict">Not enough overlap yet. Each pairing needs ${MIN_POINTS}
+        days with both a journal entry and a watch reading, and none has that many.
+        <a class="quiet-link" href="#/journal">Rate a few more runs</a>, and tag the days that were unusual.</p>`
+    : jc.findings.length ? html`<div class="table-scroll"><table>
+      <thead><tr><th>Journal</th><th>Watch</th><th>When</th><th class="num">r</th><th></th></tr></thead>
+      <tbody>${jc.findings.map(f => html`
+        <tr>
+          <td><b>${cap(f.label)}</b></td>
+          <td>${f.metricLabel}</td>
+          <td class="dim">${JLAG[f.lag]}</td>
+          <td class="num rnum ${f.r > 0 ? 'ahead' : 'behind'}">${sgn(f.r, 2)}</td>
+          <td><span class="rbar ${f.r > 0 ? 'pos' : 'neg'}" style="width:${Math.round(Math.abs(f.r) * 120)}px"></span></td>
+        </tr>
+        <tr><td colspan="5" class="stat-hint" style="padding-top:0">${journalFindingNote(f)}</td></tr>`)}
+      </tbody></table></div>`
+    : html`<p class="verdict">Nothing clears the bar. With ${jc.tested} tests run, a correlation has to
+        reach ${crit} before it is worth believing, and none of your journal's does.</p>`}
+    ${jc.tested ? html`<p class="stat-hint" style="margin-top:14px">
+      Corrected for all ${jc.tested} tests, so the threshold is <strong>r &gt; ${crit}</strong>;
+      uncorrected, ${jc.uncorrected} would have looked significant, against about
+      ${Math.round(jc.tested * 0.05)} expected from noise alone.</p>` : ''}
+    <p class="stat-hint">Exploratory, and weaker than it looks: days are not independent (bad
+      nights and hard weeks cluster), tags are things you chose to write down — often
+      <em>because</em> the day felt off — and a tag only counts as absent on days you journaled
+      something. None of this says which way the arrow points.</p>
+    <p class="stat-hint">${tagNames.length ? html`Tags tested: ${tagNames.map(t => html`<span class="chip">${t}</span>`)}` : 'No tag is common enough to test yet.'}
+      ${rare.length ? html` Too rare to test (need ${J.MIN_TAG_DAYS} days with and without): ${rare.join(', ')}.` : ''}</p>
+  </section>`;
+}
+
+function predictorsPanel(p) {
+  const t0 = p.results.find(x => x.threshold != null);
+  return html`<section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">What predicts a good run</p>
+      <p class="panel-note">${p.n} runs with a feel rating</p>
+    </div>
+    ${p.needed ? html`<div class="empty"><p>How a run felt (1–5 in the journal) against the night
+        before, the weather and the week behind it. That needs at least ${J.MIN_FEEL_RUNS} rated runs;
+        ${p.n ? `you have ${p.n}, so ${p.needed} more.` : 'you have none yet.'}</p></div>
+        <a class="btn btn-ghost" href="#/journal">Rate your runs</a>`
+    : !p.results.length ? html`<p class="verdict">${p.n} rated runs, but too few of them have the
+        night before, the weather or the week's load recorded to test anything yet.</p>`
+    : html`<div class="table-scroll"><table>
+        <thead><tr><th>Before the run</th><th class="num">Runs</th><th class="num">r with feel</th><th class="num">95% interval</th><th></th></tr></thead>
+        <tbody>${p.results.map(x => html`<tr>
+          <td>${cap(x.label)}</td>
+          <td class="num dim">${x.n}</td>
+          <td class="num rnum ${x.clears ? (x.r > 0 ? 'ahead' : 'behind') : 'dim'}">${x.r == null ? '--' : sgn(x.r, 2)}</td>
+          <td class="num dim">${x.ci ? sgn(x.ci[0], 2) + ' to ' + sgn(x.ci[1], 2) : '--'}</td>
+          <td class="dim">${x.clears ? 'clears the bar' : ''}</td>
+        </tr>`)}</tbody></table></div>
+      <p class="stat-hint" style="margin-top:10px">“Clears the bar” means past the threshold
+        corrected for the ${p.tested} predictors tested${t0 ? ` (about r = ${t0.threshold.toFixed(2)} at ${t0.n} runs)` : ''}.
+        The interval is uncorrected and shows how wide the uncertainty still is: an interval
+        that spans zero is a shrug, whatever the r.</p>
+      <p class="stat-hint">Feel is a five-point rating, so this is a rough fit. The night before
+        is the one Garmin files under the run's morning; load is the model's, summed over the
+        seven days before. These predictors move together (a hard week costs sleep and HRV at
+        once), so two of them lighting up may be one effect. Association only.</p>`}
+  </section>`;
+}
+
 export function render() {
   useCss('vitals', CSS);
   const report = D.vitalsReport(state);
+  const journal = html`${journalCorrelationsPanel(J.journalCorrelations(D.dailyRows(state), J.journalDaily(state)))}
+    ${predictorsPanel(J.runPredictors(J.feelRuns(state)))}`;
   const head = pageHead('Vitals', 'Everything the watch records off the run',
-    html`<a class="btn btn-ghost" href="#/durability">Durability</a>`);
+    html`<a class="btn btn-ghost" href="#/journal">Journal</a> <a class="btn btn-ghost" href="#/durability">Durability</a>`);
   if (!report) return html`${head}
     <section class="panel">
       <div class="panel-head"><p class="eyebrow">Not enough days yet</p></div>
@@ -194,9 +294,11 @@ export function render() {
       </div>
       <a class="btn" href="#/sync">Set up sync</a>
     </section>
+    ${journal}
     <div id="vitals-coverage"></div>`;
   return html`${head}
     ${correlations(report)}
+    ${journal}
     ${report.sleep ? sleep(report.sleep) : ''}
     ${report.trends && report.trends.length ? trends(report.trends) : ''}
     ${report.odd_days && report.odd_days.length ? oddDays(report.odd_days) : ''}

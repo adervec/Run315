@@ -18,6 +18,7 @@ export const NAV = [
     { route: 'ask', page: 'ask', label: 'Ask & coach', tab: 'Ask' },
     { route: 'experiments', page: 'experiments', label: 'Experiments' },
     { route: 'vitals', page: 'vitals', label: 'Vitals' },
+    { route: 'journal', page: 'journal', label: 'Journal' },
     { route: 'durability', page: 'durability', label: 'Durability' },
     { route: 'climbing', page: 'climbing', label: 'Climbing' },
     { route: 'second-opinion', page: 'secondopinion', label: 'Second opinion' },
