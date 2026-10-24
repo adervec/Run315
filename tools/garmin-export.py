@@ -7,6 +7,10 @@ envelope Run315 imports from its cowork inbox: activities with every per-sample 
 the watch recorded, laps, weather, gear, the daily sweep (steps, stress, body battery,
 SpO2, sleep stages...), overnight HRV / resting HR / sleep, and Garmin's own estimates.
 
+READ-ONLY: Run315 takes from Garmin to analyse and never gives back. Every call goes
+through ReadOnly below, which refuses anything but get_* -- nothing is created, renamed,
+uploaded or deleted on your Garmin account.
+
 UNOFFICIAL: this uses the community `garminconnect` library against Garmin Connect's
 private endpoints with your own login. Personal data only, at your own risk; Garmin may
 change or block the endpoints at any time.
@@ -40,13 +44,24 @@ import garmin_fetch as G  # noqa: E402
 PROTOCOL, VERSION = "run315-cowork", 1
 
 
+class ReadOnly:
+    """The Garmin client with every write removed: only get_* calls (and the tokens) pass."""
+    def __init__(self, api):
+        self._api = api
+
+    def __getattr__(self, name):
+        if name.startswith("get_") or name == "client":
+            return getattr(self._api, name)
+        raise PermissionError("garmin-export is read-only; refused Garmin.%s" % name)
+
+
 def login():
     from garminconnect import Garmin
     store = os.path.expanduser(os.environ.get("GARMINTOKENS") or "~/.garminconnect")
     try:
         api = Garmin()
         api.login(store)
-        return api
+        return ReadOnly(api)
     except Exception:
         pass
     email = os.environ.get("GARMIN_EMAIL") or input("Garmin email: ").strip()
@@ -62,7 +77,7 @@ def login():
         api.client.dump(store)
     except Exception as e:
         print("warning: could not save tokens to %s (%s)" % (store, e), file=sys.stderr)
-    return api
+    return ReadOnly(api)
 
 
 def day_range(first, last):

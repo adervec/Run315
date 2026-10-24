@@ -27,6 +27,17 @@ Garmin and Strava through a **cowork folder** on the desktop — the same protoc
                                                          Run315 (phone)
 ```
 
+**Read-only by design.** Run315 takes from Garmin and Strava to analyse and never writes
+back: `strava-export.py` asks Strava only for read scopes and refuses any request but a read,
+`garmin-export.py` wraps the Garmin client so only `get_*` calls get through, and every
+channel's instructions forbid the agent from changing anything on either service, even when
+a connector offers the tools.
+
+Duplicates are folded away on every import, whichever service arrived first: a Strava
+activity is matched to its Garmin twin by the Garmin id Strava keeps (`external_id`), else
+by start time (10 min) and distance (15%); a second Strava upload of a linked session is
+dropped.
+
 The cowork folder has four channels, each an `INSTRUCTIONS.md` + `context.json`, replies
 into `<channel>/inbox/`:
 

@@ -49,3 +49,51 @@ test('stream shapes', () => {
   assert.deepEqual(ch.cadence_spm, [170, 172]);
   assert.deepEqual(samplesFromChannels(ch)[1], [1, 3, null, 47.1, 8.1, null, 172, null, null, null]);
 });
+
+import { dedupe, garminIdFromStrava } from '../js/ingest.js';
+
+test('dedupe: the Garmin id Strava kept is an exact match, even when the clocks disagree', async () => {
+  assert.equal(garminIdFromStrava({ external_id: 'garmin_push_10012345678' }), '10012345678');
+  assert.equal(garminIdFromStrava({ external_id: 'iphone-abc.fit' }), null);
+  const st = emptyState(), s = sink();
+  // Garmin says 07:00 local; Strava filed it an hour off (a travel timezone) -- the window alone would miss it.
+  await importGarmin(st, { activities: [{ garmin_id: 10012345678, name: 'Run', type: 'running', start: '2026-08-18T07:00:00', distance_m: 10000 }] }, s.put);
+  const r = await importStrava(st, { activities: [{ id: 77, name: 'Run', sport_type: 'Run', start_date_local: '2026-08-18T08:00:00Z',
+    distance: 10010, external_id: 'garmin_push_10012345678' }] }, s.put, s.has);
+  assert.equal(r.linked, 1);
+  assert.deepEqual(Object.keys(st.activities), ['g10012345678']);
+});
+
+test('dedupe: a second Strava upload of a linked session is dropped', async () => {
+  const st = emptyState(), s = sink();
+  await importGarmin(st, { activities: [{ garmin_id: 1, name: 'Run', type: 'running', start: '2026-08-18T07:00:00', distance_m: 8000 }] }, s.put);
+  await importStrava(st, { activities: [
+    { id: 10, name: 'Run', sport_type: 'Run', start_date_local: '2026-08-18T07:00:30Z', distance: 8000 },
+    { id: 11, name: 'Run (copy)', sport_type: 'Run', start_date_local: '2026-08-18T07:01:00Z', distance: 7990 }] }, s.put, s.has);
+  assert.deepEqual(Object.keys(st.activities), ['g1']);
+  assert.equal(st.activities.g1.strava_id, '10');
+});
+
+test('dedupe: two Strava-only copies keep one; a later Garmin import absorbs it and its derived data', async () => {
+  const st = emptyState(), s = sink();
+  await importStrava(st, { activities: [
+    { id: 20, name: 'Ride', sport_type: 'Ride', start_date_local: '2026-08-19T17:00:00Z', distance: 30000, gear_id: 'b1' },
+    { id: 21, name: 'Ride', sport_type: 'Ride', start_date_local: '2026-08-19T17:02:00Z', distance: 30100 }] }, s.put, s.has);
+  assert.deepEqual(Object.keys(st.activities), ['s20']);
+  st.derived.s20 = { u: 'x', tiles: [[1, 2]] };
+  await importGarmin(st, { activities: [{ garmin_id: 5, name: 'Ride', type: 'cycling', start: '2026-08-19T17:00:10', distance_m: 30050 }] }, s.put);
+  assert.deepEqual(Object.keys(st.activities), ['g5']);
+  assert.equal(st.activities.g5.strava_id, '20');
+  assert.equal(st.derived.s20, undefined, 'no orphaned tiles double-counting territory');
+  assert.deepEqual(st.activityGear.g5.uuids, ['strava:b1']);
+  assert.equal(dedupe(st), 0, 'idempotent');
+});
+
+test('dedupe: different sessions the same morning stay apart', async () => {
+  const st = emptyState(), s = sink();
+  await importGarmin(st, { activities: [{ garmin_id: 2, name: 'Run', type: 'running', start: '2026-08-20T07:00:00', distance_m: 5000 }] }, s.put);
+  await importStrava(st, { activities: [
+    { id: 30, name: 'Walk', sport_type: 'Walk', start_date_local: '2026-08-20T07:05:00Z', distance: 1200 },   // 5 min apart, a quarter the distance
+    { id: 31, name: 'Ride', sport_type: 'Ride', start_date_local: '2026-08-20T09:00:00Z', distance: 5000 }] }, s.put, s.has);
+  assert.deepEqual(Object.keys(st.activities).sort(), ['g2', 's30', 's31']);
+});

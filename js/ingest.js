@@ -6,7 +6,8 @@
 // is the record of truth (it has the wide channel capture, laps, weather, gear); Strava
 // adds its id, name and suffer score to the matching Garmin record, and only becomes its
 // own activity when nothing on Garmin's side matches -- a phone-recorded run, a ride on
-// another device. Matching is by start time and distance, and works in either order.
+// another device. Matching is by the Garmin id Strava kept, else by start time and
+// distance, and dedupe() re-runs after every import so the order never matters.
 import { put, remove } from './merge.js';
 import { normalise as normaliseWeather } from './lib/weather.js';
 
@@ -35,18 +36,56 @@ const localIso = s => (s ? String(s).replace(' ', 'T').slice(0, 19) : null);
 const minutesApart = (a, b) => Math.abs(new Date(a) - new Date(b)) / 60000;
 const num = v => (v == null || v === '' || !isFinite(+v) ? null : +v);
 
-// The activity on the other side that is this same session, or null.
-function findTwin(st, start, distance, wantSource) {
+// The activity on the other side that is this same session, or null: started within
+// MATCH_WINDOW_MIN of it, and (when both know their distance) within 15% of its length.
+function findTwin(st, start, distance, wantSource, exceptId) {
   let best = null, bestGap = Infinity;
   for (const a of Object.values(st.activities)) {
-    if (a.source !== wantSource) continue;
-    if (wantSource === 'garmin' && a.strava_id) continue;
+    if (a.source !== wantSource || a.id === exceptId) continue;
     const gap = minutesApart(a.start, start);
     if (gap > MATCH_WINDOW_MIN || gap >= bestGap) continue;
     if (distance && a.distance_m && Math.abs(a.distance_m / distance - 1) > DISTANCE_TOLERANCE) continue;
     best = a; bestGap = gap;
   }
   return best;
+}
+// Strava keeps the uploader's own id: a watch sync arrives as "garmin_push_<activityId>"
+// (or garmin_ping_, or the bare id in a .fit name). That is an exact match, not a guess.
+export function garminIdFromStrava(a) {
+  const m = /garmin[_a-z]*?_?(\d{6,})/i.exec(String(a.external_id || ''));
+  return m ? m[1] : null;
+}
+
+// One session, one activity -- whatever order Garmin and Strava arrived in. Runs after
+// every import. Each Strava-only activity is folded into its Garmin twin (by the Garmin id
+// Strava kept, else by start time and distance); a second Strava upload of a session that
+// is already linked is dropped as the duplicate it is. -> how many records it removed.
+export function dedupe(st) {
+  let removed = 0;
+  const drop = s => {
+    remove(st, 'activities', s.id);
+    if (st.derived[s.id]) remove(st, 'derived', s.id);
+    if (st.activityGear[s.id]) remove(st, 'activityGear', s.id);
+    removed++;
+  };
+  for (const s of Object.values(st.activities)) {
+    if (s.source !== 'strava' || !st.activities[s.id]) continue;
+    const hinted = s.garmin_hint && st.activities['g' + s.garmin_hint];
+    const g = hinted || findTwin(st, s.start, s.distance_m, 'garmin');
+    if (g) {
+      if (!g.strava_id || g.strava_id === s.strava_id) {
+        const gear = st.activityGear[s.id], ggear = st.activityGear[g.id];
+        if (gear && !ggear) put(st, 'activityGear', g.id, gear);
+        put(st, 'activities', g.id, { ...g, strava_id: s.strava_id, strava_name: s.strava_name, suffer_score: s.suffer_score, kudos: s.kudos });
+      }
+      drop(s);
+      continue;
+    }
+    // Two Strava-only copies of one session (re-uploaded, or recorded by two apps): keep the first.
+    const other = findTwin(st, s.start, s.distance_m, 'strava', s.id);
+    if (other) drop(String(other.strava_id) > String(s.strava_id) ? other : s);
+  }
+  return removed;
 }
 
 // The legacy 10-wide sample view of a channel capture, as garmin_fetch.streams_from_channels:
@@ -110,13 +149,6 @@ export async function importGarmin(st, p, putStream) {
         distance_m: num(a.distance_m), moving_s: num(a.moving_s), elapsed_s: num(a.elapsed_s),
         avg_hr: num(a.avg_hr), max_hr: num(a.max_hr), elev_gain_m: num(a.elev_gain_m), calories: num(a.calories),
       };
-      if (!cur) {   // absorb a Strava-only twin that arrived first
-        const twin = findTwin(st, start, rec.distance_m, 'strava');
-        if (twin) {
-          Object.assign(rec, { strava_id: twin.strava_id, strava_name: twin.strava_name, suffer_score: twin.suffer_score });
-          remove(st, 'activities', twin.id);
-        }
-      }
       put(st, 'activities', id, rec);
       res.activities++;
     } else if (!cur) continue;   // details for an activity we do not have: nothing to hang them on
@@ -144,6 +176,7 @@ export async function importGarmin(st, p, putStream) {
   }
   for (const pr of p.personalRecords || []) if (pr && pr.type_id != null) put(st, 'personalRecords', String(pr.type_id), pr);
   res.remaining = p.remainingDetail || 0;
+  res.deduped = dedupe(st);
   return res;
 }
 
@@ -156,8 +189,12 @@ export async function importStrava(st, p, putStream, hasStream) {
     let target = Object.values(st.activities).find(x => x.strava_id === sid) || null;
     if (!a.streams_only) {
       const start = localIso(a.start_date_local || a.start_date), type = stravaType(a);
+      const hint = garminIdFromStrava(a);
+      if (!target && hint && st.activities['g' + hint]) target = st.activities['g' + hint];
       if (!target) target = findTwin(st, start, num(a.distance), 'garmin');
-      const extra = { strava_id: sid, strava_name: a.name, suffer_score: num(a.suffer_score), kudos: num(a.kudos_count) };
+      // A Garmin activity already linked to a different Strava id: this one is a re-upload.
+      if (target && target.source === 'garmin' && target.strava_id && target.strava_id !== sid) { res.duplicates = (res.duplicates || 0) + 1; continue; }
+      const extra = { strava_id: sid, strava_name: a.name, suffer_score: num(a.suffer_score), kudos: num(a.kudos_count), ...(hint ? { garmin_hint: hint } : {}) };
       if (target && target.source === 'garmin') {
         if (!target.strava_id) res.linked++;
         put(st, 'activities', target.id, { ...target, ...extra });
@@ -187,5 +224,6 @@ export async function importStrava(st, p, putStream, hasStream) {
       retired: !!g.retired, source: 'strava' });
   }
   res.remaining = p.remainingStreams || 0;
+  res.deduped = dedupe(st);
   return res;
 }

@@ -5,6 +5,10 @@ Strava's API needs a client secret for the token exchange and is not CORS-enable
 browser app cannot call it; this runs locally with your own API application (Strava's
 terms allow that for your own data). Standard library only.
 
+READ-ONLY: Run315 takes from Strava to analyse and never gives back. It asks Strava only
+for read scopes (read, activity:read_all, profile:read_all), so even a bug here could not
+change, upload or delete anything; the only POST is the OAuth token exchange.
+
 ONE-TIME SETUP
   1. https://www.strava.com/settings/api -> create an application,
      "Authorization Callback Domain" = localhost. Note the Client ID and Secret.
@@ -40,6 +44,9 @@ PROTOCOL, VERSION = "run315-cowork", 1
 
 
 def _req(url, token=None, data=None, method=None):
+    # The one write-shaped request allowed is OAuth's own token endpoint.
+    if (data or method not in (None, "GET")) and url != TOKEN_URL:
+        raise PermissionError("strava-export is read-only; refused %s %s" % (method or "POST", url))
     headers = {"Authorization": "Bearer " + token} if token else {}
     body = urllib.parse.urlencode(data).encode() if data else None
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
