@@ -13,6 +13,8 @@ import * as FU from '../lib/fuelling.js';
 import { pyRound } from '../lib/py.js';
 import { dayKey, addDays, addDayKey, daysBetween } from '../lib/dt.js';
 import { fetchStream } from '../drive.js';
+import { cachedForecast, forecastFor, shouldFetch, defaultLocation } from '../forecast.js';
+import { penalty } from '../lib/weather.js';
 import { html, pageHead, emptyState, fmtTime, fmtPace, signed, toast, useCss } from '../ui.js';
 import { LANES, parseGoal } from './races.js';
 
@@ -146,16 +148,49 @@ function model(race, now) {
     }
   }
 
-  // Fuelling hangs off the projected finish time, so it needs no new inputs.
-  // ponytail: no race-day forecast source, so conditions are left unknown and
-  // the fluid range stays at its temperate default.
-  const fuel = projection && projection.seconds ? FU.plan(projection.seconds) : null;
+  // Inside a week the forecast reaches race day, so the goal pace can be read in the
+  // conditions it will actually be run in.
+  const wx = raceWeather(race, today, target);
+
+  // Fuelling hangs off the projected finish time; the fluid and sodium ranges also take
+  // the race-morning temperature once the forecast has it (temperate default before).
+  const fuel = projection && projection.seconds ? FU.plan(projection.seconds, wx && wx.morningTemp != null ? wx.morningTemp : null) : null;
 
   // Runs around race day: the candidates for "this was the race".
   const pastRuns = race.date <= today ? D.runs(state)
     .filter(a => { const d = dayKey(a.start); return d >= addDayKey(race.date, -1) && d <= addDayKey(race.date, 1); }).slice(0, 12) : [];
   return { today, s, projection, cal, form, splits, goalSplits, course, courseStats, plan, hard, mismatch,
-    trainingPlan, planStats, planNotes, planReview, fuel, pastRuns };
+    trainingPlan, planStats, planNotes, planReview, fuel, pastRuns, wx };
+}
+
+// ---------- race-day weather ----------
+export const FORECAST_DAYS_OUT = 7;
+let _wxError = null;
+export const RACE_HOURS = [6, 14];   // start times worth showing: nobody's start time is stored, so the morning
+// Where the race is: the course start if one is attached, else the athlete's usual
+// start point. -> {lat, lon, source} | null
+export function raceLocation(race, st) {
+  const p = race.course && race.course.points && race.course.points[0];
+  if (p && isFinite(p[0]) && isFinite(p[1])) return { lat: p[0], lon: p[1], source: 'course start' };
+  return defaultLocation(st);
+}
+// Race-day hours with what each start time would cost the target pace. Pure apart from the
+// sync forecast cache. -> null (race not this week) | {loc, rows: [...] | null, morningTemp}
+export function raceWeather(race, today, targetS, st = state) {
+  const days = daysBetween(today, race.date);
+  if (days < 0 || days > FORECAST_DAYS_OUT) return null;
+  const loc = raceLocation(race, st);
+  if (!loc) return { loc: null, rows: null, morningTemp: null, days };
+  const f = cachedForecast(loc.lat, loc.lon);
+  if (!f) return { loc, rows: null, morningTemp: null, days };
+  const goalPace = targetS && race.distance_m ? targetS / (race.distance_m / 1000) : null;
+  const rows = f.hours.filter(r => r.day === race.date && r.hour >= RACE_HOURS[0] && r.hour <= RACE_HOURS[1]).map(r => {
+    const p = penalty(r.temp, r.rh, r.dew);
+    return { ...r, penalty: p, pace: goalPace ? goalPace * (1 + p) : null, finish: targetS ? targetS * (1 + p) : null };
+  });
+  const morning = rows.filter(r => r.hour >= 7 && r.hour <= 11).map(r => r.temp).sort((a, b) => a - b);
+  return { loc, rows: rows.length ? rows : null, fetchedAt: f.fetchedAt, goalPace, targetS, days,
+    morningTemp: morning.length ? morning[Math.floor(morning.length / 2)] : null };
 }
 
 // ---------- sections ----------
@@ -400,6 +435,35 @@ function postmortemPanel(race, m, review, ranId, missing) {
   </section>`;
 }
 
+function weatherPanel(race, m) {
+  const w = m.wx;
+  if (!w) return '';
+  const head = html`<div class="panel-head"><p class="eyebrow">Race-day forecast</p>
+    <p class="panel-note">${w.loc ? (w.loc.source === 'course start' ? 'at the course start' : 'near your ' + w.loc.source) : ''}${w.rows ? ' · Open-Meteo' : ''}</p></div>`;
+  if (!w.loc) return html`<section class="panel">${head}<div class="empty"><p>No location to forecast: attach the course,
+    or set where you run from on <a class="quiet-link" href="#/pod">Plan of the day</a>.</p></div></section>`;
+  if (!w.rows) return html`<section class="panel">${head}<div class="empty"><p>${_wxError ? 'Forecast unavailable: ' + _wxError : 'Fetching the forecast for ' + race.date + '…'}</p></div></section>`;
+  const worst = Math.max(...w.rows.map(r => r.penalty));
+  const heat = D.heatState(state);
+  return html`<section class="panel">${head}
+    <div class="table-scroll"><table>
+      <thead><tr><th>Start</th><th class="num">Temp</th><th class="num">Dew pt</th><th class="num">Rain</th><th class="num">Wind</th>
+        <th class="num">Heat cost</th>${w.goalPace ? html`<th class="num">Pace</th><th class="num">Finish</th>` : ''}</tr></thead>
+      <tbody>${w.rows.map(r => html`<tr>
+        <td>${String(r.hour).padStart(2, '0')}:00</td>
+        <td class="num">${Math.round(r.temp)}°</td><td class="num dim">${r.dew != null ? Math.round(r.dew) + '°' : '—'}</td>
+        <td class="num dim">${r.rain != null ? r.rain + '%' : '—'}</td><td class="num dim">${r.wind != null ? Math.round(r.wind) : '—'}</td>
+        <td class="num ${r.penalty >= 0.02 ? 'behind' : 'dim'}">${r.penalty >= 0.005 ? '+' + (r.penalty * 100).toFixed(1) + '%' : '—'}</td>
+        ${w.goalPace ? html`<td class="num time">${fmtPace(r.pace, 1000)}</td><td class="num dim">${fmtTime(r.finish)}</td>` : ''}
+      </tr>`)}</tbody></table></div>
+    <p class="stat-hint" style="margin-top:10px">${w.goalPace ? `The ${race.goal_s ? 'goal' : 'projected'} pace of ${fmtPace(w.goalPace, 1000)} in neutral conditions, slowed by what each start
+      hour's temperature, humidity and dew point cost. ` : ''}${worst < 0.005 ? 'Cool all morning: no correction worth making.'
+      : 'From a population heat curve, not one fitted to you: run the early kilometres by effort and heart rate, and let the pace come to you.'}
+      ${worst >= 0.02 && heat && heat.band === 'none' ? ' Nothing hot in your recent training, so expect the heat to cost at least this much.' : ''}
+      A forecast ${w.days} day${w.days === 1 ? '' : 's'} out moves; it is refreshed hourly while this page is open.</p>
+  </section>`;
+}
+
 function splitsPanel(race, m) {
   if (!m.splits.length || race.date < m.today) return '';
   const g = m.goalSplits;
@@ -436,6 +500,7 @@ export async function render(params = {}) {
     ${headline(race, m)}
     ${race.date < m.today ? resultPanel(race) : ''}
     ${formPanel(m.form)}
+    ${race.date >= m.today ? weatherPanel(race, m) : ''}
     ${coursePanel(race, m)}
     ${planPanel(race, m)}
     ${blockPanel(m)}
@@ -458,6 +523,12 @@ export function mount(el, params = {}) {
     put(state, 'races', id, { ...race(), predicted_s: p.seconds });
     save('edit');
   }
+
+  // Race-day forecast: fetched when the race is this week and this device has none cached.
+  const w = raceWeather(race(), dayKey(now), null);
+  if (w && w.loc && !w.rows && shouldFetch(w.loc.lat, w.loc.lon))
+    forecastFor(w.loc.lat, w.loc.lon).then(() => { _wxError = null; if (el.isConnected) return redraw(); })
+      .catch(e => { _wxError = e.message || String(e); if (el.isConnected) return redraw(); });
 
   const on = (sel, ev, fn) => { const n = el.querySelector(sel); if (n) n[ev] = fn; };
   on('[data-form="result"]', 'onsubmit', ev => {

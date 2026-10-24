@@ -10,9 +10,11 @@ import * as cowork from './cowork.js';
 export const NAV = [
   { group: 'Train', items: [
     { route: '', page: 'today', label: 'Today', tab: 'Today' },
+    { route: 'pod', page: 'pod', label: 'Plan of the day' },
     { route: 'activities', page: 'activities', label: 'Activities', tab: 'Log' },
     { route: 'sessions', page: 'sessions', label: 'Track & intervals' },
     { route: 'races', page: 'races', label: 'Races', tab: 'Races' },
+    { route: 'strength', page: 'strength', label: 'Strength (GymTracker)' },
   ] },
   { group: 'Analyse', items: [
     { route: 'ask', page: 'ask', label: 'Ask & coach', tab: 'Ask' },
@@ -107,7 +109,7 @@ async function boot() {
   let pending = null;
   onChange(why => {
     if (why === 'theme') applyTheme();
-    if (['cloud', 'cowork-import', 'demo', 'theme', 'derive'].includes(why)) { clearTimeout(pending); pending = setTimeout(route, 150); }
+    if (['cloud', 'cloud-strength', 'cowork-import', 'demo', 'theme', 'derive'].includes(why)) { clearTimeout(pending); pending = setTimeout(route, 150); }
     else if (why === 'cloud-meta') renderNav(parseHash().route);
   });
   addEventListener('hashchange', route);

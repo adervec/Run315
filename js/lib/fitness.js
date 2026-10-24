@@ -99,7 +99,9 @@ export function fmtEffort(activity) {
 // The 95th percentile of activity-average HR sits close to lactate threshold
 // for anyone who does the occasional hard session -- no user input needed.
 export function thresholds(activities) {
-  const thrHr = percentile(activities.map(a => a.avg_hr), 0.95);
+  // Sessions that bring their own load (GymTracker's strength work) stay out of threshold HR:
+  // lifting heart rate says nothing about the top of a run.
+  const thrHr = percentile(activities.filter(a => typeof a.load !== 'number').map(a => a.avg_hr), 0.95);
   const bySport = new Map();
   for (const a of activities) {
     const d = a.distance_m, t = a.moving_s;
@@ -116,6 +118,7 @@ export function thresholds(activities) {
 
 // TSS-style load: hours * intensity^2 * 100.
 export function activityLoad(activity, thrHr, thrSpd) {
+  if (typeof activity.load === 'number') return activity.load;   // precomputed (strength sessions)
   const secs = activity.moving_s || activity.elapsed_s || 0;
   const hours = secs / 3600.0;
   if (hours <= 0) return 0.0;
@@ -137,7 +140,7 @@ export function activityLoad(activity, thrHr, thrSpd) {
 export function dailyLoads(activities, thrHr, thrSpd) {
   const out = {};
   for (const a of activities) {
-    if (!CARDIO_TYPES.has(a.type) || !a.start) continue;
+    if (!(CARDIO_TYPES.has(a.type) || typeof a.load === 'number') || !a.start) continue;
     const day = dayKey(a.start);
     out[day] = (out[day] ?? 0.0) + activityLoad(a, thrHr, thrSpd);
   }
@@ -351,7 +354,7 @@ export function weeklyTotals(activities, now, weeks = 12) {
   const first = addDayKey(monday, -7 * (weeks - 1));
   const buckets = {};
   for (const a of activities) {
-    if (!CARDIO_TYPES.has(a.type) || !a.start) continue;
+    if (!(CARDIO_TYPES.has(a.type) || typeof a.load === 'number') || !a.start) continue;
     const wk = weekStart(a.start);
     if (!(first <= wk && wk <= monday)) continue;
     const [km, hrs, load] = buckets[wk] ?? [0.0, 0.0, 0.0];
@@ -782,7 +785,7 @@ export function weekDigest(activities, now, thrHr, thrSpd) {
     let km = 0.0, hrs = 0.0, load = 0.0;
     const runs = [];
     for (const a of activities) {
-      if (!CARDIO_TYPES.has(a.type) || !a.start) continue;
+      if (!(CARDIO_TYPES.has(a.type) || typeof a.load === 'number') || !a.start) continue;
       const d = dayKey(a.start);
       if (!(start <= d && d < end)) continue;
       km += (a.distance_m || 0) / 1000.0;
