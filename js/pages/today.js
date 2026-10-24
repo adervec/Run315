@@ -1,13 +1,20 @@
 // The dashboard: the start list, this week, this morning, form and fitness, what the
 // model believes you could race today, the efforts it is built on, the coach's review
 // and the log. app.py's index() glue lives here.
-import { state, save } from '../store.js';
+//
+// It is a list of panels the athlete can hide and reorder (PANELS below), led by
+// "Since you last looked": what arrived, what the cowork agent brought, what is missing.
+import { state, save, rev } from '../store.js';
 import { put } from '../merge.js';
 import * as D from '../derive.js';
 import * as F from '../lib/fitness.js';
 import { dayKey } from '../lib/dt.js';
 import * as ai from '../ai.js';
 import * as cowork from '../cowork.js';
+import * as E from '../events.js';
+import { podPanel, mountPodPanel } from '../pod.js';
+import { dayTagsWidget, mountDayTags } from '../journal.js';
+import { strengthPanel } from '../strength.js';
 import { html, raw, pageHead, emptyState, fmtTime, fmtPace, signed, day, typeLabel, ago, md, polyline, toast, useCss } from '../ui.js';
 import { split, startRow, pastTable, calibrationNote, raceForm, wireRaceForms } from './races.js';
 
@@ -19,6 +26,25 @@ const CSS = `
 .data-status .kv { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; margin: 0 0 10px; }
 .data-status .kv b { font-weight: 600; }
 .today-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ev-list { list-style: none; margin: 0; padding: 0; }
+.ev-list .ev { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.ev-list .ev:first-child { border-top: 0; }
+.ev-kind { font: 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--measured); align-self: center; }
+.ev-when { font: 11px var(--mono); color: var(--faint); text-align: right; align-self: center; }
+.ev-title { grid-column: 1 / -1; color: var(--ink); font-weight: 600; text-decoration: none; }
+.ev-title:hover { text-decoration: underline; }
+.ev-detail { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+.ev-trend .ev-kind, .ev-race .ev-kind { color: var(--projected); }
+.ev-plain { margin: 4px 0 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
+.ev-plain li { margin: 3px 0; }
+.ev-plain b { color: var(--ink); font-weight: 600; }
+.layout-list { list-style: none; margin: 0; padding: 0; }
+.layout-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.layout-list li.off .layout-name { color: var(--faint); text-decoration: line-through; }
+.layout-name { font-weight: 600; }
+.layout-list .dim { font-size: 12px; }
+.layout-btns { margin-left: auto; display: inline-flex; gap: 4px; }
+.layout-btns .btn { min-width: 40px; }
 `;
 
 const pct = (v, d = 0) => (v * 100).toFixed(d);
@@ -321,6 +347,113 @@ function recentPanel(acts) {
       </tr>`)}</tbody></table></div></section>`;
 }
 
+// ---------- since you last looked ----------
+// What is new on this device since the dashboard was last on screen for a few
+// seconds: the events that arrived, what the cowork sweeps brought in, and what is
+// still missing. lastSeen is device-local on purpose -- having looked on the phone is
+// no reason for the desktop to skip the news.
+const SEEN_AFTER_MS = 4000;
+function digestPanel(c) {
+  const d = E.digest(c.events, { lastSeen: state.local.lastSeen || null, now: c.now, coworkRuns: cowork.runs(), gaps: D.gaps(state, c.now) });
+  // The latest note per channel: an inbox polled every five minutes is not five pieces of news.
+  const byChannel = new Map();
+  for (const r of d.cowork) if (!byChannel.has(r.channel)) byChannel.set(r.channel, r);
+  const nothing = !d.events.length && !byChannel.size;
+  return html`<section class="panel digest-panel">
+    <div class="panel-head"><p class="eyebrow">Since you last looked</p>
+      <p class="panel-note">${d.first ? 'First look on this device: the last two weeks' : 'Last looked ' + ago(d.since)}</p></div>
+    ${nothing ? html`<p class="stat-hint">Nothing new${d.first ? ' in the last two weeks' : ' since then'}.</p>` : ''}
+    ${d.events.length ? eventList(d.events.slice(0, 8)) : ''}
+    ${d.events.length > 8 ? html`<p class="stat-hint"><a class="quiet-link" href="#/achievements">${d.events.length - 8} more</a></p>` : ''}
+    ${byChannel.size ? html`<p class="eyebrow" style="margin-top:14px">From the cowork folder</p>
+      <ul class="ev-plain">${[...byChannel.values()].map(r => html`<li><b>${r.channel}</b> · ${r.note} <span class="dim">· ${ago(r.at)}</span></li>`)}</ul>` : ''}
+    ${d.gaps.length ? html`<p class="eyebrow" style="margin-top:14px">Still missing</p>
+      <ul class="ev-plain">${d.gaps.map(g => html`<li>${g}</li>`)}</ul>` : ''}
+  </section>`;
+}
+function mountDigest(el) {
+  setTimeout(() => {
+    if (!el.isConnected || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return;
+    state.local.lastSeen = new Date().toISOString();
+    save('local');
+  }, SEEN_AFTER_MS);
+}
+
+const KIND = { best: 'Best effort', longest: 'Long run', streak: 'Streak', career: 'Career', tiles: 'Territory', square: 'Territory',
+  trail: 'Trails', race: 'Race', trend: 'Readiness' };
+export function eventList(evs) {
+  return html`<ul class="ev-list">${evs.map(e => html`<li class="ev ev-${e.kind}">
+    <span class="ev-kind">${KIND[e.kind] || e.kind}</span><span class="ev-when">${day(String(e.at).slice(0, 10))}</span>
+    <a class="ev-title" href="${e.link || '#/achievements'}">${e.title}</a>
+    ${e.detail ? html`<span class="ev-detail">${e.detail}</span>` : ''}</li>`)}</ul>`;
+}
+function achievementsPanel(c) {
+  if (!c.events.length) return '';
+  return html`<section class="panel">
+    <div class="panel-head"><p class="eyebrow">Achievements</p>
+      <p class="panel-note"><a class="quiet-link" href="#/achievements">All ${c.events.length}</a></p></div>
+    ${eventList(c.events.slice(0, 6))}
+  </section>`;
+}
+
+// ---------- the dashboard as panels ----------
+// Every section is a panel {id, title, render(ctx), mount?(el, ctx)}; the athlete hides
+// and reorders them, and the layout syncs as profile.layout = {order, hidden}. A panel
+// that renders '' (no data yet, or another module's hook still a stub) simply is not there.
+function hook(fn) {
+  try { const s = String(fn() ?? ''); return s.trim() ? raw(s) : ''; } catch (e) { console.warn('hook', e); return ''; }
+}
+const needS = f => c => (c.s ? f(c) : '');
+// journal.js's day widget is bare markup; it gets its panel here.
+function dayPanel(c) {
+  const w = hook(() => dayTagsWidget(c.today));
+  return w ? html`<section class="panel"><div class="panel-head"><p class="eyebrow">Today</p>
+    <p class="panel-note">Tag the day: illness, travel, sleep… <a class="quiet-link" href="#/calendar">Calendar</a></p></div>${w}</section>` : '';
+}
+export const PANELS = [
+  { id: 'digest', title: 'Since you last looked', render: digestPanel, mount: mountDigest },
+  { id: 'start', title: 'Start list', render: c => startList(c.now) },
+  { id: 'pod', title: 'Plan of the day', render: () => hook(() => podPanel()), mount: el => mountPodPanel(el) },
+  { id: 'daytags', title: 'Today’s tags', render: dayPanel, mount: (el, c) => mountDayTags(el, c.today) },
+  { id: 'week', title: 'This week', render: needS(c => weekPanel(c.digest)) },
+  { id: 'ready', title: 'This morning', render: needS(c => readyPanel(D.readinessToday(state, c.s.tsb))) },
+  { id: 'heat', title: 'Heat', render: needS(c => heatPanel(D.heatState(state, c.now))) },
+  { id: 'zones', title: 'How hard you train', render: needS(c => zonePanel(D.zoneSummary(state, c.s.threshold_hr, 12, c.now))) },
+  { id: 'territory', title: 'Territory', render: needS(c => territoryPanel(D.tileSummary(state, c.now))) },
+  { id: 'strength', title: 'Strength (GymTracker)', render: () => hook(() => strengthPanel()) },
+  { id: 'fitness', title: 'Fitness and freshness', render: needS(c => fitnessPanel(c.s)) },
+  { id: 'model', title: 'If you raced today', render: needS(c => modelPanels(c.s)) },
+  { id: 'records', title: 'Pace curve and records', render: needS(() => recordPanels(D.personalRecords(state))) },
+  { id: 'paces', title: 'Training paces and zones', render: needS(c => prescriptionPanels(c.s)) },
+  { id: 'achievements', title: 'Achievements', render: achievementsPanel },
+  { id: 'review', title: 'Coach review', render: needS(() => reviewPanel()) },
+  { id: 'log', title: 'Training log', render: needS(c => calendarPanel(c.s, c.now)) },
+  { id: 'recent', title: 'Recent activity', render: c => recentPanel(c.acts.slice(0, 15)) },
+  { id: 'data', title: 'Data', render: () => dataStatus() },
+];
+
+// The saved order, with panels added since it was saved slotted in after the panel that
+// precedes them by default (so a new panel appears where it was designed to, not last).
+export function arrange(ids, layout) {
+  const out = (layout && Array.isArray(layout.order) ? layout.order : []).filter((id, i, a) => ids.includes(id) && a.indexOf(id) === i);
+  ids.forEach((id, k) => {
+    if (out.includes(id)) return;
+    const prev = ids.slice(0, k).reverse().find(p => out.includes(p));
+    out.splice(prev ? out.indexOf(prev) + 1 : 0, 0, id);
+  });
+  return out;
+}
+const layoutOf = () => (state.profile && state.profile.layout) || { order: [], hidden: [] };
+function saveLayout(layout) {
+  state.profile = { ...state.profile, layout: { order: layout.order, hidden: [...new Set(layout.hidden)] }, u: new Date().toISOString() };
+  save('edit');
+}
+
+let _edit = false, _ctx = null;
+function renderPanel(p, c) {
+  try { return String(p.render(c) || ''); } catch (e) { console.error('panel ' + p.id, e); return ''; }
+}
+
 export function render() {
   useCss('today', CSS);
   const now = new Date(), acts = D.activities(state);
@@ -330,24 +463,32 @@ export function render() {
         <a class="btn btn-ghost" href="#/sync">Set up sync</a></div>`)}
     ${startList(now)}`;
   const s = D.summary(state, now);
-  const digest = s ? F.weekDigest(acts, now, s.threshold_hr, F.thresholds(acts)[1]) : null;
-  return html`
-    ${pageHead('Today', `${acts.length} activities · last import ${ago(lastImport())}`)}
-    ${startList(now)}
-    ${s ? html`
-      ${weekPanel(digest)}
-      ${readyPanel(D.readinessToday(state, s.tsb))}
-      ${heatPanel(D.heatState(state, now))}
-      ${zonePanel(D.zoneSummary(state, s.threshold_hr, 12, now))}
-      ${territoryPanel(D.tileSummary(state, now))}
-      ${fitnessPanel(s)}
-      ${modelPanels(s)}
-      ${recordPanels(D.personalRecords(state))}
-      ${prescriptionPanels(s)}
-      ${reviewPanel()}
-      ${calendarPanel(s, now)}` : ''}
-    ${recentPanel(acts.slice(0, 15))}
-    ${dataStatus()}`;
+  const c = _ctx = { now, today: dayKey(now), acts, s, digest: s ? F.weekDigest(acts, now, s.threshold_hr, F.thresholds(acts)[1]) : null,
+    events: E.cachedEvents(state, D, rev) };
+  const layout = layoutOf(), hidden = new Set(layout.hidden || []);
+  const byId = new Map(PANELS.map(p => [p.id, p]));
+  const order = arrange(PANELS.map(p => p.id), layout);
+  const head = pageHead('Today', `${acts.length} activities · last import ${ago(lastImport())}`,
+    html`<button class="btn btn-ghost" type="button" data-act="layout">${_edit ? 'Done' : 'Edit layout'}</button>`);
+  if (_edit) {
+    return html`${head}<section class="panel layout-edit">
+      <div class="panel-head"><p class="eyebrow">Layout</p><p class="panel-note">Synced to your other devices</p></div>
+      <ol class="layout-list">${order.map((id, i) => {
+        const p = byId.get(id), off = hidden.has(id), empty = !off && !renderPanel(p, c).trim();
+        return html`<li class="${off ? 'off' : ''}" data-id="${id}"><span class="layout-name">${p.title}</span>
+          <span class="dim">${off ? 'hidden' : empty ? 'nothing to show right now' : ''}</span>
+          <span class="layout-btns">
+            <button class="btn btn-quiet" type="button" data-move="-1" ${i === 0 ? raw('disabled') : ''} aria-label="Move ${p.title} up">↑</button>
+            <button class="btn btn-quiet" type="button" data-move="1" ${i === order.length - 1 ? raw('disabled') : ''} aria-label="Move ${p.title} down">↓</button>
+            <button class="btn btn-quiet" type="button" data-toggle aria-pressed="${String(!off)}">${off ? 'Show' : 'Hide'}</button></span></li>`;
+      })}</ol>
+      <p style="margin-top:12px"><button class="btn btn-quiet" type="button" data-act="layout-reset">Back to the default layout</button></p>
+    </section>`;
+  }
+  return html`${head}${order.filter(id => !hidden.has(id)).map(id => {
+    const body = renderPanel(byId.get(id), c);
+    return body.trim() ? html`<div class="dash" data-panel="${id}">${raw(body)}</div>` : '';
+  })}`;
 }
 
 // Report finished runs to the maker's app portal (same-origin localStorage, this
@@ -375,6 +516,13 @@ function reportToPortal() {
 
 export function mount(el) {
   const redraw = () => { el.innerHTML = String(render()); mount(el); };
+  const lay = el.querySelector('[data-act="layout"]');
+  if (lay) lay.onclick = () => { _edit = !_edit; redraw(); };
+  if (_edit) { wireLayout(el, redraw); return; }
+  for (const p of PANELS) {
+    const box = p.mount && el.querySelector(`[data-panel="${p.id}"]`);
+    if (box) { try { p.mount(box, _ctx); } catch (e) { console.warn('panel mount ' + p.id, e); } }
+  }
   wireRaceForms(el, redraw);
   reportToPortal();
   const demo = el.querySelector('[data-act="demo"]');
@@ -402,4 +550,29 @@ export function mount(el) {
     } catch (e) { toast('The AI review failed: ' + (e.message || e)); console.error(e); }
     redraw();
   };
+}
+
+function wireLayout(el, redraw) {
+  const ids = PANELS.map(p => p.id);
+  el.querySelectorAll('.layout-list li').forEach(li => {
+    const id = li.dataset.id;
+    li.querySelectorAll('[data-move]').forEach(bt => { bt.onclick = () => {
+      const l = layoutOf(), order = arrange(ids, l), i = order.indexOf(id), j = i + Number(bt.dataset.move);
+      if (i < 0 || j < 0 || j >= order.length) return;
+      [order[i], order[j]] = [order[j], order[i]];
+      saveLayout({ order, hidden: l.hidden || [] });
+      redraw();
+      const again = el.querySelector(`.layout-list li[data-id="${id}"] [data-move="${bt.dataset.move}"]`);
+      if (again && !again.disabled) again.focus();
+    }; });
+    const tg = li.querySelector('[data-toggle]');
+    if (tg) tg.onclick = () => {
+      const l = layoutOf(), hidden = new Set(l.hidden || []);
+      if (hidden.has(id)) hidden.delete(id); else hidden.add(id);
+      saveLayout({ order: arrange(ids, l), hidden: [...hidden] });
+      redraw();
+    };
+  });
+  const rs = el.querySelector('[data-act="layout-reset"]');
+  if (rs) rs.onclick = () => { saveLayout({ order: [], hidden: [] }); toast('Back to the default layout.'); redraw(); };
 }

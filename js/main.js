@@ -12,6 +12,8 @@ export const NAV = [
     { route: '', page: 'today', label: 'Today', tab: 'Today' },
     { route: 'pod', page: 'pod', label: 'Plan of the day' },
     { route: 'activities', page: 'activities', label: 'Activities', tab: 'Log' },
+    { route: 'calendar', page: 'calendar', label: 'Calendar' },
+    { route: 'achievements', page: 'achievements', label: 'Achievements' },
     { route: 'sessions', page: 'sessions', label: 'Track & intervals' },
     { route: 'races', page: 'races', label: 'Races', tab: 'Races' },
     { route: 'strength', page: 'strength', label: 'Strength (GymTracker)' },
