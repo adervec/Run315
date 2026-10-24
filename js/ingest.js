@@ -137,7 +137,10 @@ export async function importGarmin(st, p, putStream) {
   for (const r of p.metrics || []) putDay(st, 'metrics', r);
   for (const g of p.gear || []) {
     if (!g || !g.uuid) continue;
-    put(st, 'gear', String(g.uuid), { ...(st.gear[g.uuid] || {}), ...g, uuid: String(g.uuid) }); res.gear++;
+    const cur = st.gear[g.uuid] || {};
+    // ponytail: a replace-at figure already on the record wins (the user may have set it on the
+    // gear page); Garmin's only fills an empty one. A user_limit flag if Garmin edits must win too.
+    put(st, 'gear', String(g.uuid), { ...cur, ...g, uuid: String(g.uuid), limit_m: cur.limit_m ?? g.limit_m ?? null }); res.gear++;
   }
   for (const pr of p.personalRecords || []) if (pr && pr.type_id != null) put(st, 'personalRecords', String(pr.type_id), pr);
   res.remaining = p.remainingDetail || 0;
