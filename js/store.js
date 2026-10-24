@@ -46,12 +46,16 @@ export async function loadState() {
   try { saved = await idbGet('kv', STATE_KEY); } catch (e) { console.warn('state load failed', e); }
   state = normalize(saved);
   state.local = state.local || {};
+  rev++;
   return state;
 }
 
 let _saveTimer = null;
+// Bumped on every save: derive.js memoises its expensive model fits on it.
+export let rev = 0;
 // Persist (debounced) and tell everyone; `why` lets the cloud layer skip its own writes.
 export function save(why = 'edit') {
+  rev++;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => { idbSet('kv', STATE_KEY, state).catch(e => console.warn('state save failed', e)); }, 250);
   listeners.forEach(fn => { try { fn(why); } catch (e) { console.error(e); } });
@@ -63,9 +67,10 @@ export function mergeIn(remote) {
   const local = state.local;
   state = mergeState(state, remote);
   state.local = local;
+  rev++;
 }
 export const payload = () => syncPayload(state);
-export function replaceState(next) { const local = state.local; state = normalize(next); state.local = local; }
+export function replaceState(next) { const local = state.local; state = normalize(next); state.local = local; rev++; }
 
 // ---- streams ----
 export const getStream = id => idbGet('streams', id);
