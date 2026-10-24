@@ -23,7 +23,7 @@ export const SYNCED = [
   'derived',         // activity id -> what the analysis read out of its stream (efforts, reps, stops, tiles)
   'races',           // id -> {id, name, date, distance_m, goal_s, actual_s, predicted_s, garmin_id, course}
   'routes',          // id -> {id, name, profile, rtype, pts}
-  'trailAreas',      // id -> {id, name, bbox, loaded_at, seg_count}
+  'trailAreas',      // id -> {id, name, bbox, loaded_at, seg_count, ways, cover, gains, matched_at}
   'reviews',         // id -> {id, created_at, markdown, source}
   'analysisRequests',// id -> {id, q, note, created, status, answer, answeredAt}
 ];
