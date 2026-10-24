@@ -2,6 +2,7 @@
 // renderer for agent replies, and the SVG plumbing the charts share. No framework --
 // pages are functions that return HTML strings, and the router swaps them in.
 import { fmtTime, fmtPace } from './lib/fitness.js';
+import { renderChart } from './charts.js';
 export { fmtTime, fmtPace };
 
 // ---- templating: html`...` escapes every interpolation unless it is raw() or another html`` ----
@@ -39,7 +40,23 @@ export function ago(iso) {
 }
 
 // ---- markdown: escape-first, for agent and coach replies (headings, bullets, bold, code, tables) ----
+// Fenced blocks first: ```chart {spec} ``` becomes a drawn chart (js/charts.js), any other
+// fence a <pre>; the prose between them goes through mdText.
 export function md(text) {
+  const parts = String(text ?? '').split(/```(\w*)[ \t]*\n([\s\S]*?)```/);
+  let out = '';
+  for (let i = 0; i < parts.length; i += 3) {
+    out += mdText(parts[i]).s;
+    if (i + 2 >= parts.length) break;
+    const lang = parts[i + 1], body = parts[i + 2];
+    if (lang === 'chart') {
+      try { out += renderChart(JSON.parse(body)); continue; } catch (e) { out += `<p class="chart-note">A chart that could not be drawn (${esc(e.message)}):</p>`; }
+    }
+    out += `<pre class="review">${esc(body)}</pre>`;
+  }
+  return raw('<div class="md">' + out + '</div>');
+}
+function mdText(text) {
   const out = []; let list = false, table = null;
   const inline = l => l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`(.+?)`/g, '<code>$1</code>')
     .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
@@ -64,7 +81,7 @@ export function md(text) {
   }
   flushTable();
   if (list) out.push('</ul>');
-  return raw('<div class="md">' + out.join('') + '</div>');
+  return raw(out.join(''));
 }
 
 // ---- charts ----

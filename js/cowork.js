@@ -18,6 +18,8 @@ import { put } from './merge.js';
 import { importGarmin, importStrava } from './ingest.js';
 import { queueStream } from './drive.js';
 import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
+import { podContext, importPod } from './pod.js';
+import { reviewContext, importReview } from './datareview.js';
 
 export const PROTOCOL = 'run315-cowork', VERSION = 1;
 export const CHANNELS = [
@@ -25,6 +27,8 @@ export const CHANNELS = [
   { key: 'strava', replyKind: 'strava-output' },
   { key: 'analysis', replyKind: 'analysis-output' },
   { key: 'coach', replyKind: 'coach-output' },
+  { key: 'pod', replyKind: 'pod-output' },
+  { key: 'datareview', replyKind: 'datareview-output' },
 ];
 const HISTORY_DAYS = 365, HANDLE_KEY = 'coworkFolder';
 const SCHEDULE_DEFAULTS = { pushMin: 60, checkMin: 5 };
@@ -109,12 +113,14 @@ export async function channelContext(key) {
       needStreams: s.filter(a => a.start >= cutoff && !have.has(a.id)).map(a => a.strava_id).slice(0, 200),
       haveStreams: s.filter(a => have.has(a.id)).slice(0, 120).map(a => a.strava_id),
       linked: s.filter(a => a.source === 'garmin').length, stravaOnly: s.filter(a => a.source === 'strava').length,
+      // Segment efforts cost a request per activity, so only for the ones the athlete asked for.
+      wantSegments: ((state.profile && state.profile.segmentsWanted) || [])
+        .filter(sid => !Object.values(state.segmentEfforts).some(e => e.strava_id === String(sid))).slice(0, 40),
     };
   }
-  if (key === 'analysis') {
-    return { requests: Object.values(state.analysisRequests).filter(r => r.status !== 'answered')
-      .map(r => ({ id: r.id, question: r.q, note: r.note || '', created: r.created })) };
-  }
+  if (key === 'analysis') return { requests: dueRequests() };
+  if (key === 'pod') return podContext(state, new Date());
+  if (key === 'datareview') return reviewContext(state);
   // coach: the standing weekly review
   const reviews = Object.values(state.reviews).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   return { lastReview: reviews[0]?.created_at || null, week: new Date().toISOString().slice(0, 10) };
@@ -163,6 +169,45 @@ Every activity since \`lastActivityStart\` is pulled, all sports, plus streams f
 - Go as deep as the question deserves. The data is all here: \`../app-export.json\` (activities, laps, weather, gear, daily, wellness, Garmin's metrics, races, and \`derived\`: best efforts, interval reps, stops, durability per activity) and \`../data/streams/<activity id>.json\` (per-second channels: \`seconds\`, \`metres\`, \`hr\`, \`lat\`, \`lon\`, \`elevation_m\`, \`cadence_spm\`, \`power_w\`, \`stride_m\`, \`gct_ms\`, \`vertical_oscillation_cm\`, …). Compute with code rather than eyeballing JSON.
 - Prefer the app's own numbers in \`../brief.json\` when a question touches them, so the answer agrees with what the athlete sees. Say when you disagree, and why.
 - Cite dates, activities and numbers. Say plainly when the data cannot answer the question. No medical advice.
+- The athlete's own context is in \`app-export.json\` too: \`journal\` (per activity: \`rpe\` 1–10, \`feel\` 1–5, \`note\`, \`tags\`; per day \`YYYY-MM-DD\`: \`tags\` like illness, travel, alcohol, stress, poor-sleep, and a \`note\`) and \`experiments\` (a declared change with \`start\`/\`end\`). Use them: they are the inputs a "what predicts a good run" question needs. A linked activity also carries \`strava\` (Strava's own numbers for the same session).
+- **Draw what is better seen than read.** Put a chart in the answer as a fenced block the app renders (one y-axis per chart; at most 8 series, 3 for scatter; ISO dates for time):
+
+\`\`\`\`
+\`\`\`chart
+{ "type": "line", "title": "Long-run decoupling", "x": { "label": "date", "type": "time" },
+  "y": { "label": "drift", "unit": "%" }, "series": [ { "name": "long runs", "points": [["2026-09-01", 11.2], ["2026-09-08", 9.5]] } ],
+  "note": "optional one line" }
+\`\`\`
+\`\`\`\`
+
+  \`type\` is \`line\`, \`bar\` or \`scatter\`; \`x.type\` is \`time\`, \`linear\` or \`category\`. Two measures on different scales are two charts.
+- **Standing questions** (\`standing: true\`) are asked again every week or so: \`previous\` holds your last answers. Say what changed since then, first, in a line; then the current answer.
+`;
+  if (key === 'pod') return head + `## kind: \`pod-output\` — the plan of the day
+
+\`\`\`json
+{ "date": "YYYY-MM-DD", "rationale": "why these, in two or three sentences",
+  "plans": [ { "name": "Easy aerobic + strides", "sport": "running", "minutes": 50, "intensity": 2,
+    "description": "markdown: the session, as you would say it to the athlete",
+    "steps": [ { "minutes": 40, "target": "easy", "pace_s_per_km": [330, 370], "hr": [130, 145], "note": "conversational" },
+               { "reps": 6, "minutes": 0.33, "target": "strides", "note": "20 s quick, full recovery" } ],
+    "why": "one line tying it to the data" } ] }
+\`\`\`
+
+- Read \`context.json\`: today's readiness (HRV, resting HR, sleep, form), the week so far, the active training-block week if a race has a plan, the weather forecast, the athlete's options (\`availableMinutes\` {min,max}, \`sports\`, \`surfaces\`, \`niggles\`, \`notes\`), strength sessions from GymTracker if present, and \`recentOutcomes\` — what happened to the plans you wrote before (done / skipped / swapped, planned vs actual minutes and intensity).
+- Offer 2–3 options spanning the available time, including one that uses most of the maximum. Adapt to the outcomes: stop prescribing what keeps being skipped, shorten what keeps running long.
+- Targets come from the app's own training paces and HR zones in \`../brief.json\`. Respect niggles. Never prescribe through a readiness of "rest" without saying so plainly.
+`;
+  if (key === 'datareview') return head + `## kind: \`datareview-output\` — review the data the app flagged
+
+\`\`\`json
+{ "proposals": [ { "id": "<finding id>", "action": "fix" | "keep" | "ignore",
+    "fix": { "...": "the corrected field(s), e.g. {\\"type\\": \\"cycling\\"} or {\\"distance_m\\": 10012}" },
+    "reason": "one or two sentences, citing the evidence" } ] }
+\`\`\`
+
+- \`context.json\` → \`findings\`: each is something the app found suspicious — a GPS jump, a heart-rate dropout or a cadence lock, an activity type that does not fit its speed, an elevation spike, a Garmin/Strava near-miss pair dedup could not decide — with the evidence attached. Look at the stream (\`../data/streams/<id>.json\`) when it helps.
+- Propose \`fix\` only when the correction is clear; \`keep\` when the data is right after all; \`ignore\` when it is wrong but harmless. **Nothing is changed automatically** — the athlete approves each one, and approved fixes change Run315's copy only, never Garmin or Strava.
 `;
   return head + `## kind: \`coach-output\` — the weekly review
 
@@ -262,6 +307,24 @@ export function parseEnvelope(text) {
   return { ok: true, kind: o.kind, payload: o.payload, requestHash: o.requestHash || null };
 }
 
+// Open questions, plus standing ones whose last answer is older than their cadence.
+export function dueRequests(now = Date.now()) {
+  return Object.values(state.analysisRequests).filter(r => {
+    if (r.standing) return !r.answeredAt || now - Date.parse(r.answeredAt) >= (r.everyDays || 7) * 864e5;
+    return r.status !== 'answered';
+  }).map(r => ({ id: r.id, question: r.q, note: r.note || '', created: r.created, standing: !!r.standing,
+    previous: r.standing ? (r.history || []).slice(-3) : undefined }));
+}
+// One answer onto its request: a standing question keeps its history and stays open.
+export function applyAnswer(id, answer, via = 'cowork') {
+  const rq = state.analysisRequests[id];
+  if (!rq) return false;
+  const at = new Date().toISOString();
+  const history = rq.standing ? [...(rq.history || []), { at, answer: String(answer || '') }].slice(-52) : rq.history;
+  put(state, 'analysisRequests', id, { ...rq, answer: String(answer || ''), status: rq.standing ? 'standing' : 'answered', answeredAt: at, via, history });
+  return true;
+}
+
 async function applyReply(kind, p) {
   if (kind === 'garmin-output' || kind === 'strava-output') {
     const r = kind === 'garmin-output' ? await importGarmin(state, p, putStream) : await importStrava(state, p, putStream, hasStream);
@@ -273,12 +336,7 @@ async function applyReply(kind, p) {
   }
   if (kind === 'analysis-output') {
     let n = 0;
-    for (const a of p.answers || []) {
-      const rq = a && state.analysisRequests[a.id];
-      if (!rq) continue;
-      put(state, 'analysisRequests', a.id, { ...rq, answer: String(a.answer || ''), status: 'answered', answeredAt: new Date().toISOString() });
-      n++;
-    }
+    for (const a of p.answers || []) if (a && applyAnswer(a.id, a.answer)) n++;
     return { handled: true, note: n + ' answered' };
   }
   if (kind === 'coach-output' && p.review) {
@@ -286,6 +344,8 @@ async function applyReply(kind, p) {
     put(state, 'reviews', id, { id, created_at: new Date().toISOString(), markdown: String(p.review), source: 'cowork' });
     return { handled: true, note: 'review added' };
   }
+  if (kind === 'pod-output') return importPod(state, p);
+  if (kind === 'datareview-output') return importReview(state, p);
   return { handled: false, note: 'unknown kind ' + kind };
 }
 
@@ -356,9 +416,11 @@ export function startScheduler() {
 }
 
 // ---- asking questions (the analysis channel's queue) ----
-export function ask(q, note = '') {
+// opts.standing: re-answered every opts.everyDays (default 7) with the history kept, so a verdict can be watched move.
+export function ask(q, note = '', opts = {}) {
   const id = 'q' + Date.now().toString(36);
-  put(state, 'analysisRequests', id, { id, q: String(q).trim(), note, created: new Date().toISOString(), status: 'open' });
+  put(state, 'analysisRequests', id, { id, q: String(q).trim(), note, created: new Date().toISOString(),
+    status: opts.standing ? 'standing' : 'open', standing: !!opts.standing, everyDays: opts.everyDays || 7, history: [] });
   save('ask');
   return id;
 }

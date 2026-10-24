@@ -76,7 +76,9 @@ export function dedupe(st) {
       if (!g.strava_id || g.strava_id === s.strava_id) {
         const gear = st.activityGear[s.id], ggear = st.activityGear[g.id];
         if (gear && !ggear) put(st, 'activityGear', g.id, gear);
-        put(st, 'activities', g.id, { ...g, strava_id: s.strava_id, strava_name: s.strava_name, suffer_score: s.suffer_score, kudos: s.kudos });
+        put(st, 'activities', g.id, { ...g, strava_id: s.strava_id, strava_name: s.strava_name, suffer_score: s.suffer_score, kudos: s.kudos,
+          strava: s.strava || { distance_m: s.distance_m, moving_s: s.moving_s, elapsed_s: s.elapsed_s, elev_gain_m: s.elev_gain_m, avg_hr: s.avg_hr, max_hr: s.max_hr, calories: s.calories } });
+        for (const e of Object.values(st.segmentEfforts)) if (e.activity_id === s.id) put(st, 'segmentEfforts', e.id, { ...e, activity_id: g.id });
       }
       drop(s);
       continue;
@@ -194,7 +196,13 @@ export async function importStrava(st, p, putStream, hasStream) {
       if (!target) target = findTwin(st, start, num(a.distance), 'garmin');
       // A Garmin activity already linked to a different Strava id: this one is a re-upload.
       if (target && target.source === 'garmin' && target.strava_id && target.strava_id !== sid) { res.duplicates = (res.duplicates || 0) + 1; continue; }
-      const extra = { strava_id: sid, strava_name: a.name, suffer_score: num(a.suffer_score), kudos: num(a.kudos_count), ...(hint ? { garmin_hint: hint } : {}) };
+      // Strava's own numbers, kept beside Garmin's on a linked activity: the two services measure
+      // the same session differently, and where they disagree is worth seeing.
+      const strava = { distance_m: num(a.distance), moving_s: num(a.moving_time), elapsed_s: num(a.elapsed_time),
+        elev_gain_m: num(a.total_elevation_gain), avg_hr: num(a.average_heartrate), max_hr: num(a.max_heartrate),
+        calories: num(a.calories), avg_watts: num(a.average_watts), device: a.device_name || null };
+      const extra = { strava_id: sid, strava_name: a.name, suffer_score: num(a.suffer_score), kudos: num(a.kudos_count), strava,
+        ...(hint ? { garmin_hint: hint } : {}) };
       if (target && target.source === 'garmin') {
         if (!target.strava_id) res.linked++;
         put(st, 'activities', target.id, { ...target, ...extra });
@@ -210,6 +218,15 @@ export async function importStrava(st, p, putStream, hasStream) {
         if (a.gear_id) put(st, 'activityGear', id, { uuids: ['strava:' + a.gear_id] });
       }
       res.activities++;
+    }
+    // Segment efforts (only for activities the athlete asked segments for -- they cost a request each).
+    for (const e of a.segment_efforts || []) {
+      if (!e || e.id == null || !e.segment) continue;
+      put(st, 'segmentEfforts', String(e.id), { id: String(e.id), segment_id: String(e.segment.id), segment_name: e.segment.name || e.name,
+        activity_id: target ? target.id : 's' + sid, strava_id: sid, elapsed_time: num(e.elapsed_time), moving_time: num(e.moving_time),
+        distance: num(e.distance ?? e.segment.distance), start_date_local: localIso(e.start_date_local), pr_rank: num(e.pr_rank),
+        avg_hr: num(e.average_heartrate), avg_watts: num(e.average_watts), grade: num(e.segment.average_grade),
+        climb_category: num(e.segment.climb_category), city: e.segment.city || null });
     }
     // A Garmin capture beats Strava's resampled streams; only fill a gap with them.
     if (target && a.streams && !(await hasStream(target.id, 'garmin'))) {

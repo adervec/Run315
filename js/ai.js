@@ -19,7 +19,13 @@ Write a short, direct review in Markdown with exactly these sections:
 
 Be specific and quantitative, referencing the numbers given. Say plainly when confidence is low or data thin, and what to run to fix it. At most 4 actions, one line each, each with a number. No preamble, no medical advice. Under 400 words.`;
 
-const ANALYST = `You are a meticulous endurance-sport analyst. Answer the athlete's question from the brief below, which holds the app's own computed numbers. Go as deep as the question deserves, cite dates and numbers, show your working where it matters, and say plainly when the data cannot answer it. No medical advice. Markdown.`;
+const ANALYST = `You are a meticulous endurance-sport analyst. Answer the athlete's question from the brief below, which holds the app's own computed numbers. Go as deep as the question deserves, cite dates and numbers, show your working where it matters, and say plainly when the data cannot answer it. No medical advice. Markdown.
+
+When something is better seen than read, include a chart as a fenced block the app draws:
+\`\`\`chart
+{"type": "line"|"bar"|"scatter", "title": "...", "x": {"label": "...", "type": "time"|"linear"|"category"}, "y": {"label": "...", "unit": "..."}, "series": [{"name": "...", "points": [[x, y], ...]}], "note": "..."}
+\`\`\`
+One y-axis per chart (two scales means two charts), at most 8 series (3 for scatter), ISO dates for time.`;
 
 async function complete(system, prompt) {
   const key = apiKey();

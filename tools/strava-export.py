@@ -181,6 +181,22 @@ def main():
         rec["streams"] = st
         done += 1
 
+    # Segment efforts: one detail request per activity, so only for the ones the athlete asked for.
+    for sid in [str(x) for x in ctx.get("wantSegments") or []][:args.max_streams]:
+        try:
+            det = _req("%s/activities/%s?include_all_efforts=true" % (API, sid), token)
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                limited = True
+                break
+            continue
+        rec = out_acts.setdefault(sid, {"id": sid, "streams_only": True})
+        rec["segment_efforts"] = [{k: e.get(k) for k in ("id", "name", "elapsed_time", "moving_time", "distance",
+                                   "start_date_local", "pr_rank", "average_heartrate", "average_watts")}
+                                  | {"segment": {k: (e.get("segment") or {}).get(k) for k in
+                                     ("id", "name", "distance", "average_grade", "climb_category", "city")}}
+                                  for e in det.get("segment_efforts") or []]
+
     athlete = {}
     try:
         athlete = _req(API + "/athlete", token)

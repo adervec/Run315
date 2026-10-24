@@ -25,7 +25,12 @@ export const SYNCED = [
   'routes',          // id -> {id, name, profile, rtype, pts}
   'trailAreas',      // id -> {id, name, bbox, loaded_at, seg_count, ways, cover, gains, matched_at}
   'reviews',         // id -> {id, created_at, markdown, source}
-  'analysisRequests',// id -> {id, q, note, created, status, answer, answeredAt}
+  'analysisRequests',// id -> {id, q, note, created, status, answer, answeredAt, standing, everyDays, history: [{at, answer}]}
+  'journal',         // activity id or 'YYYY-MM-DD' -> {kind: 'activity'|'day', rpe, feel, note, tags: []}
+  'experiments',     // id -> {id, name, change, start, end, metrics: [], verdict}
+  'pod',             // 'YYYY-MM-DD' -> {date, rationale, plans: [...], chosen, outcome}
+  'dataReview',      // finding id -> {id, decision: 'fix'|'keep'|'ignore', proposal, decidedAt}
+  'segmentEfforts',  // Strava effort id -> {id, segment_id, segment_name, activity_id, elapsed_time, moving_time, distance, start_date_local, pr_rank, ...}
 ];
 // Single records that sync on their own timestamp.
 export const SYNCED_SINGLE = ['profile'];
