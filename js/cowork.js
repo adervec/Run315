@@ -133,6 +133,8 @@ Run the exporter, which writes the reply envelope itself (it needs \`pip install
 python ../tools/garmin-export.py --context context.json --out inbox/
 \`\`\`
 
+(On Windows use \`py\` if \`python\` is an older install; the exporter needs Python 3.10+ with \`garminconnect\` installed — \`py -m pip install garminconnect\`.)
+
 It backfills exactly what \`context.json\` says is missing: activities since \`lastActivityStart\`, the per-sample channels / laps / weather / gear for \`needDetail\` (40 per run, newest first — say how many remain), the daily sweep since \`lastDailyDay\`, the nights since \`lastWellnessDay\`, gear, personal records and Garmin's own estimates.
 
 - If the hub's prompt lists a **DATA SOURCES** file that is already a \`run315-cowork\` \`garmin-output\` envelope, copy that file into \`inbox/\` with a shell copy instead of fetching. Never retype stream data.
