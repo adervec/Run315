@@ -73,7 +73,7 @@ async function trackOf(id) {
   const rec = await fetchStream(id).catch(() => null);
   const pts = D.samplesOf(rec).filter(s => s[3] != null && s[4] != null).map(s => [s[3], s[4], s[5] ?? null]);
   if (pts.length >= 2) return pts;
-  const thin = state.derived[id]?.points;
+  const thin = (await D.getDetail(id))?.points;
   if (thin && thin.length >= 2) return thin.map(([la, lo]) => [la, lo, null]);
   throw new Error('That activity has no GPS track stored yet.');
 }
@@ -262,7 +262,7 @@ function formPanel(f) {
 function coursePanel(race, m) {
   const cs = m.courseStats, prof = cs ? elevationProfile(cs) : '';
   // Candidate tracks: the runs around race day, else recent runs with a GPS line.
-  const picks = m.pastRuns.length ? m.pastRuns : D.runs(state).filter(a => state.derived[a.id]?.points).slice(0, 20);
+  const picks = m.pastRuns.length ? m.pastRuns : D.runs(state).filter(a => state.derived[a.id]?.p0 || state.derived[a.id]?.points).slice(0, 20);
   return html`<section class="panel">
     <div class="panel-head"><p class="eyebrow">The course</p>
       ${cs ? html`<p class="panel-note">${(cs.length_m / 1000).toFixed(2)} km · ${Math.round(cs.climb_m)} m up · ${Math.round(cs.drop_m)} m down</p>` : ''}</div>

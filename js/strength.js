@@ -331,7 +331,7 @@ export async function clearStrength() {
 // emits 'cloud' when one succeeded), at most every REFRESH_MIN minutes.
 if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
   loadStrengthCache().then(() => { if (rev > 0) refreshStrength(); });
-  onChange(why => { if (why === 'cloud') refreshStrength(); });
+  onChange(why => { if (why === 'cloud-data') refreshStrength(); });
 }
 
 // ---------------------------------------------------------------------------------------

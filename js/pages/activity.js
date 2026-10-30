@@ -121,7 +121,7 @@ export async function render(params = {}) {
   try { rec = await fetchStream(id); } catch (e) { console.warn('stream', e); }
   const samples = D.samplesOf(rec);
   const hasStream = samples.length > 1;
-  const der = state.derived[id] || null;
+  const der = await D.fullDerived(state, id);
   // Prefer what was derived (identical, and already done); compute from the stream only
   // when this activity was never derived.
   const td = hasStream && !der ? samples.map(s => [s[0], s[1]]) : null;

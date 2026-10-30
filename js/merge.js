@@ -31,6 +31,7 @@ export const SYNCED = [
   'pod',             // 'YYYY-MM-DD' -> {date, rationale, plans: [...], chosen, outcome}
   'dataReview',      // finding id -> {id, decision: 'fix'|'keep'|'ignore', proposal, decidedAt}
   'segmentEfforts',  // Strava effort id -> {id, segment_id, segment_name, activity_id, elapsed_time, moving_time, distance, start_date_local, pr_rank, ...}
+  'cities',          // area id -> street/trail completion for one municipality (js/cities.js): totals, base64 cover bitsets, completion dates
 ];
 // Single records that sync on their own timestamp.
 export const SYNCED_SINGLE = ['profile'];
@@ -62,6 +63,24 @@ export function put(st, coll, id, rec, at) { st[coll][id] = touch({ ...rec }, at
 export function remove(st, coll, id, at) {
   delete st[coll][id];
   (st.tombs[coll] || (st.tombs[coll] = {}))[id] = at || new Date().toISOString();
+}
+
+// A cheap summary of what a payload holds: per collection, how many records and the newest
+// edit. Equal fingerprints mean nothing to merge and nothing to upload -- without it every
+// sync re-rendered the app and re-uploaded the whole state, and a save in reaction to that
+// render started the next sync: a loop that ran a decade of data out of memory.
+export function fingerprint(p) {
+  if (!p) return '';
+  const out = [];
+  for (const k of [...SYNCED, ...SYNCED_SINGLE, 'tombs']) {
+    const c = p[k] || {};
+    if (k === 'tombs') { for (const [coll, t] of Object.entries(c)) out.push('t' + coll + Object.keys(t).length); continue; }
+    if (SYNCED_SINGLE.includes(k)) { out.push(k + (c.u || '')); continue; }
+    let n = 0, max = '';
+    for (const r of Object.values(c)) { n++; const u = (r && r.u) || ''; if (u > max) max = u; }
+    out.push(k + n + max);
+  }
+  return out.join('|');
 }
 
 // What goes to the cloud: the synced keys only.

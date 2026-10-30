@@ -18,7 +18,7 @@ class Dir {
 class File_ {
   constructor(name) { this.name = name; this.kind = 'file'; this.text_ = ''; }
   async createWritable() { const f = this; let buf = ''; return { write: async t => { buf += t; }, close: async () => { f.text_ = buf; } }; }
-  async getFile() { return { text: async () => this.text_ }; }
+  async getFile() { return { size: this.text_.length, text: async () => this.text_ }; }
 }
 const read = async (root, path) => { let d = root; const parts = path.split('/'); const f = parts.pop(); for (const p of parts) d = await d.getDirectoryHandle(p); return (await d.getFileHandle(f)).text_; };
 const put = async (root, path, text) => { let d = root; const parts = path.split('/'); const f = parts.pop(); for (const p of parts) d = await d.getDirectoryHandle(p, { create: true }); const w = await (await d.getFileHandle(f, { create: true })).createWritable(); await w.write(text); await w.close(); };

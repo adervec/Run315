@@ -457,7 +457,7 @@ export function coverage(st, today = new Date(), weeks = 26) {
     stream: a => !!st.derived[a.id],
     // Both services report an average HR whenever the session had one, so its absence is an answer.
     hr: a => a.avg_hr > 0 || !!(st.derived[a.id] && (st.derived[a.id].zones || st.derived[a.id].drift)) || !!chans(a.id)?.includes('hr'),
-    gps: a => { const d = st.derived[a.id], c = chans(a.id); if ((d && (d.points?.length || d.tiles?.length)) || (c && c.includes('lat'))) return true; return d || c ? false : null; },
+    gps: a => { const d = st.derived[a.id], c = chans(a.id); if ((d && (d.p0 || d.points?.length || d.tiles?.length)) || (c && c.includes('lat'))) return true; return d || c ? false : null; },
     dynamics: a => { const c = chans(a.id); return c ? DYN.some(k => c.includes(k)) : null; },
     power: a => { const c = chans(a.id); return c ? c.includes('power_w') : (a.strava?.avg_watts ? true : null); },
     weather: a => !!st.weather[a.id],

@@ -4,17 +4,19 @@
 //   kv       the state blob, folder handles, Drive file ids, small device-local things
 //   streams  one record per activity: {id, src, channels} (see ingest.js)
 //   cache    re-fetchable bulk: trail segments, POI answers
-import { normalize, merge as mergeState, syncPayload } from './merge.js';
+//   detail   per activity, the heavy part of what the analysis found (track points, splits,
+//            every stop, every rep) -- kept out of the synced state, fetched on demand like streams
+import { normalize, merge as mergeState, syncPayload, fingerprint } from './merge.js';
 
 const DB_NAME = 'run315', STATE_KEY = 'state';
 let _db = null;
 function db() {
   if (_db) return _db;
   _db = new Promise((res, rej) => {
-    const rq = indexedDB.open(DB_NAME, 1);
+    const rq = indexedDB.open(DB_NAME, 2);
     rq.onupgradeneeded = () => {
       const d = rq.result;
-      for (const s of ['kv', 'streams', 'cache']) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s);
+      for (const s of ['kv', 'streams', 'cache', 'detail']) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s);
     };
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);
@@ -59,23 +61,30 @@ export async function loadState() {
 }
 
 let _saveTimer = null;
-// Bumped on every save: derive.js memoises its expensive model fits on it.
+// Bumped on every save that changes data: derive.js memoises its expensive model fits on it.
 export let rev = 0;
+// Saves that only touch this device (state.local) or report on a sync: they persist, but do not
+// count as data -- no Drive sync, no memo rebuild. Anything else is data.
+const LOCAL_WHYS = new Set(['local', 'cowork', 'theme', 'ai', 'ui', 'cloud', 'cloud-meta']);
+export const isDataChange = why => !LOCAL_WHYS.has(why);
 // Persist (debounced) and tell everyone; `why` lets the cloud layer skip its own writes.
 export function save(why = 'edit') {
-  rev++;
+  if (isDataChange(why)) rev++;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => { idbSet('kv', STATE_KEY, state).catch(e => console.warn('state save failed', e)); }, 250);
   listeners.forEach(fn => { try { fn(why); } catch (e) { console.error(e); } });
 }
 export async function saveNow() { clearTimeout(_saveTimer); await idbSet('kv', STATE_KEY, state); }
 
-// Fold another device's payload in, keeping this device's local settings.
+// Fold another device's payload in, keeping this device's local settings. -> whether anything changed.
 export function mergeIn(remote) {
+  const before = fingerprint(state);
   const local = state.local;
   state = mergeState(state, remote);
   state.local = local;
-  rev++;
+  const changed = fingerprint(state) !== before;
+  if (changed) rev++;
+  return changed;
 }
 export const payload = () => syncPayload(state);
 export function replaceState(next) { const local = state.local; state = normalize(next); state.local = local; rev++; }
@@ -85,3 +94,7 @@ export const getStream = id => idbGet('streams', id);
 export const putStream = (id, rec) => idbSet('streams', id, rec);
 export const hasStream = async (id, src) => { const r = await getStream(id); return !!r && (!src || r.src === src); };
 export const streamIds = () => idbKeys('streams');
+
+// ---- detail (see the store list above) ----
+export const getDetailRec = id => idbGet('detail', id);
+export const putDetailRec = (id, rec) => idbSet('detail', id, rec);

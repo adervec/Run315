@@ -31,6 +31,7 @@ export const CHANNELS = [
   { key: 'datareview', replyKind: 'datareview-output' },
 ];
 const HISTORY_DAYS = 365, HANDLE_KEY = 'coworkFolder';
+const MAX_REPLY_BYTES = 256 * 1048576;
 const SCHEDULE_DEFAULTS = { pushMin: 60, checkMin: 5 };
 
 export const supported = () => typeof window !== 'undefined' && 'showDirectoryPicker' in window;
@@ -266,7 +267,7 @@ export async function exportNow(auto = true) {
     const brief = buildBrief(state, new Date());
     await write(r, 'brief.json', envelope('brief', brief));
     await write(r, 'BRIEF.md', briefMarkdown(brief));
-    await write(r, 'app-export.json', envelope('app-export', { ...state, local: undefined }));
+    await write(r, 'app-export.json', JSON.stringify(envelope('app-export', { ...state, local: undefined })));
     for (const [f, src] of Object.entries(await toolSources())) await write(r, 'tools/' + f, src);
     for (const c of CHANNELS) {
       const ctx = envelope(c.key + '-request', await channelContext(c.key));
@@ -365,7 +366,19 @@ export async function pollAll(interactive = false) {
       for await (const [name, h] of inbox.entries()) if (h.kind === 'file' && /\.json$/i.test(name)) files.push([name, h]);
       files.sort((a, b) => a[0].localeCompare(b[0]));
       for (const [name, h] of files) {
-        const text = await (await h.getFile()).text();
+        // A reply too big to read in one go is set aside with a reason, not retried on every
+        // load: a browser that cannot hold it would otherwise crash each time the app opens.
+        const file = await h.getFile();
+        if (file.size > MAX_REPLY_BYTES) {
+          recordRun({ kind: 'check', channel: c.key, ok: false, auto: !interactive,
+            note: `set aside ${name}: ${Math.round(file.size / 1048576)} MB is more than one reply should be (limit ${MAX_REPLY_BYTES / 1048576} MB). Re-export in smaller batches (--max-details).` });
+          const big = await dir(ch, 'too-big');
+          const w = await (await big.getFileHandle(name, { create: true })).createWritable();
+          await file.stream().pipeTo(w);
+          await inbox.removeEntry(name);
+          continue;
+        }
+        const text = await file.text();
         const hash = hashText(text), led = (local().ledger[c.key] = local().ledger[c.key] || {});
         const done = async () => {
           const pd = await dir(ch, 'processed');

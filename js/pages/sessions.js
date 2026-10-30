@@ -29,9 +29,10 @@ function loadSessions(limit = 200) {
   const out = [];
   for (const a of D.runs(state)) {
     const s = state.derived[a.id]?.session;
-    if (!s || !s.reps || !s.reps.length) continue;
+    const paces = s && (s.paces || (s.reps || []).map(r => r.pace));
+    if (!paces || !paces.length) continue;
     out.push({ ...s, id: a.id, start: a.start.toISOString(), day: state.activities[a.id].start.slice(0, 10),
-      snapped_m: s.uniform ? s.reps[0].snapped_m : null });
+      paces, snapped_m: s.snapped_m ?? (s.uniform && s.reps ? s.reps[0].snapped_m : null) });
     if (out.length >= limit) break;
   }
   return out;
@@ -115,7 +116,7 @@ export function render() {
         <thead><tr><th>Date</th><th>Session</th><th class="num">Avg rep</th><th class="num">Spread</th>
           <th class="num">Fade</th><th class="num">Recovery</th><th>Reps</th></tr></thead>
         <tbody>${sessions.map(s => {
-          const paces = s.reps.map(r => r.pace), slow = Math.max(...paces), fast = Math.min(...paces), span = slow - fast;
+          const paces = s.paces, slow = Math.max(...paces), fast = Math.min(...paces), span = slow - fast;
           return html`<tr>
             <td class="dim">${s.day}</td>
             <td><a class="quiet-link" href="#/activity/${s.id}">${s.name}</a>${s.on_track ? html` <span class="badge-track">TRACK</span>` : ''}</td>
@@ -125,9 +126,9 @@ export function render() {
               ? html`<span class="${s.fade > 0.02 ? 'behind' : s.fade < -0.02 ? 'ahead' : 'dim'}">${sgn(s.fade * 100, 1)}%</span>`
               : html`<span class="dim">—</span>`}</td>
             <td class="num dim">${s.avg_recovery_s ? fmtTime(s.avg_recovery_s) : '—'}</td>
-            <td><span class="rep-spark">${s.reps.map(r => html`<i class="${span > 1 && r.pace > fast + span * 0.75 ? 'slow' : ''}"
-              style="height:${(8 + 18 * (span > 1 ? (slow - r.pace) / span : 0.5)).toFixed(0)}px"
-              title="Rep ${r.n}: ${r.distance_m.toFixed(0)} m in ${fmtTime(r.seconds)} (${fmtPace(r.pace, 1000)})"></i>`)}</span></td>
+            <td><span class="rep-spark">${s.paces.map((pace, i) => html`<i class="${span > 1 && pace > fast + span * 0.75 ? 'slow' : ''}"
+              style="height:${(8 + 18 * (span > 1 ? (slow - pace) / span : 0.5)).toFixed(0)}px"
+              title="Rep ${i + 1}: ${fmtPace(pace, 1000)}"></i>`)}</span></td>
           </tr>`;
         })}</tbody>
       </table></div>

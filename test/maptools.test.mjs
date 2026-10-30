@@ -52,10 +52,11 @@ test('trails: match demo runs, summarise into the synced area, ledger without ge
   const r = await importGarmin(store.state, demoGarminPayload(), store.putStream);
   await D.deriveAll(store.state, r.streams);
   // A trail laid exactly along the first stretch of a demo run, plus one nobody ran.
-  const run = D.runs(store.state).find(a => store.state.derived[a.id]?.points?.length > 20);
-  const line = store.state.derived[run.id].points.slice(0, 20);
+  // The thinned track lives in the per-activity detail, not the synced core.
+  let run = null, line = null;
+  for (const a of D.runs(store.state)) { const det = await D.getDetail(a.id); if (det && det.points && det.points.length > 20) { run = a; line = det.points.slice(0, 20); break; } }
   const geom = pts => pts.map(([lat, lon]) => ({ lat, lon }));
-  const far = line.map(([la, lo]) => [la + 0.05, lo]);
+  const far = line.map(([la, lo]) => [la + 0.5, lo]);   // 55 km away: no demo run goes there
   const segs = TR.segmentsFromOverpass({ elements: [
     { type: 'way', id: 1, tags: { highway: 'path', name: 'Demo Trail' }, geometry: geom(line) },
     { type: 'way', id: 2, tags: { highway: 'track' }, geometry: geom(far) },

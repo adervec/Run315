@@ -24,10 +24,11 @@ import * as LM from './lib/landmarks.js';
 import { dayKey, addDayKey, fromDay } from './lib/dt.js';
 import { samplesFromChannels } from './ingest.js';
 import { put } from './merge.js';
-import { getStream, rev } from './store.js';
+import { getStream, rev, getDetailRec, putDetailRec } from './store.js';
+import { queueDetail, fetchDetailRec } from './drive.js';
 import { strengthActivities } from './strength.js';
 
-export const DERIVE_VERSION = 1;
+export const DERIVE_VERSION = 2;
 export const DEFAULT_SHOE_LIFE_M = 700000, SHOE_WARN_SHARE = 0.8;
 const isRun = a => F.RUN_TYPES.has(a.type);
 
@@ -103,8 +104,64 @@ export function limits(st) {
 }
 // Places the athlete stops on run after run: crossings, learned from their own history.
 export function junctions(st) {
-  return memo('junctions', () => ST.junctionTiles(
-    Object.values(st.derived).filter(d => d.stops && d.stops.interruptions).map(d => d.stops.interruptions), 3));
+  return memo('junctions', () => ST.junctionTiles(Object.values(st.derived).map(stopPoints).filter(x => x.length), 3));
+}
+// Where a run came to a full stop, in the shape junctionTiles reads -- from the slim core
+// (`stops.at`) or, for a record not yet slimmed, the full interruption list.
+const stopPoints = d => (!d || !d.stops) ? [] : d.stops.at ? d.stops.at.map(([lat, lon]) => ({ full_stop: true, lat, lon }))
+  : (d.stops.interruptions || []);
+
+// ---- core and detail ----
+// What the analysis finds splits in two. The core -- every number a page aggregates -- syncs in
+// state.derived and stays small. The detail -- the thinned track, km splits, each rep, each stop --
+// is what one activity page shows; it lives in the IndexedDB `detail` store and as one Drive file
+// per activity, fetched when that page opens. At a decade of runs the detail alone was ~80 MB of
+// synced JSON; the core is a few KB per run.
+export function splitDerived(d) {
+  const { points, splits, ...core } = d;
+  const detail = { v: d.v, points: points || null, splits: splits || [], session: d.session || null, stops: d.stops || null };
+  if (d.session) {
+    const { reps, ...s } = d.session;
+    core.session = { ...s, snapped_m: s.uniform && reps && reps.length ? reps[0].snapped_m : null,
+      paces: (reps || []).map(r => +(+r.pace).toFixed(1)) };
+  }
+  if (d.stops) {
+    const { interruptions, ...s } = d.stops;
+    core.stops = { ...s, at: (interruptions || []).filter(it => it.full_stop && it.lat != null)
+      .map(it => [+(+it.lat).toFixed(5), +(+it.lon).toFixed(5)]) };
+  }
+  if (points && points.length) core.p0 = points[0];
+  if (core.limits) core.limits = { hr_max: core.limits.hr_max ?? null, cs: core.limits.cs ?? null };
+  return [core, detail];
+}
+const isFat = d => d && (d.points || d.splits || (d.session && d.session.reps) || (d.stops && d.stops.interruptions));
+// The heavy detail of one activity (or null): this device, else Drive. Merged over the core,
+// it is what the activity page reads.
+export async function getDetail(id) {
+  const d = await getDetailRec(id);
+  return d || fetchDetailRec(id);
+}
+export async function fullDerived(st, id) {
+  const core = st.derived[id];
+  if (!core) return null;
+  if (isFat(core)) return core;   // not slimmed yet
+  const det = await getDetail(id);
+  return det ? { ...core, ...det } : core;
+}
+// Move the heavy part of every fat record out of the synced state. Runs once at boot on a
+// device that derived under version 1. -> how many records it slimmed.
+export async function slimAll(st) {
+  let n = 0;
+  for (const [id, d] of Object.entries(st.derived)) {
+    if (!isFat(d)) continue;
+    const [core, detail] = splitDerived(d);
+    await putDetailRec(id, detail);
+    await queueDetail(id).catch(() => {});
+    put(st, 'derived', id, core);
+    n++;
+  }
+  if (n) _derived++;
+  return n;
 }
 
 export async function deriveActivity(st, id, ctx = {}) {
@@ -132,11 +189,14 @@ export async function deriveActivity(st, id, ctx = {}) {
     climb: run && (a.elev_gain_m || 0) > 50 ? TE.climbCost(samples) : null,
     zones: thrHr && hasHr ? { thr: thrHr, secs: Z.timeInZones(samples, thrHr) } : null,
     durability: null, limits: lim,
-    points: pts.length ? thinTrack(pts, 400) : null,   // enough to draw the route on the phone
+    points: pts.length ? thinTrack(pts, 600) : null,   // enough to draw the route without the stream
   };
   if (run && lim.hr_max && lim.cs && (a.distance_m || 0) >= DU.MIN_DISTANCE_M && (a.moving_s || 0) >= DU.MIN_DURATION_S)
     d.durability = DU.analyse(samples, lim.hr_max, lim.cs, temp);
-  put(st, 'derived', id, d);
+  const [core, detail] = splitDerived(d);
+  await putDetailRec(id, detail);
+  if (!ctx.getStream) await queueDetail(id).catch(() => {});
+  put(st, 'derived', id, core);
   _derived++;
   return d;
 }
@@ -156,7 +216,7 @@ export async function deriveAll(st, ids, onProgress, opts = {}) {
   const ctx = { thrHr: summary(st)?.threshold_hr, limits: limits(st), getStream: opts.getStream };
   let n = 0;
   for (const id of ids) { await deriveActivity(st, id, ctx); onProgress && onProgress(++n, ids.length * 2); }
-  ctx.junctions = ST.junctionTiles(Object.values(st.derived).filter(d => d.stops).map(d => d.stops.interruptions || []), 3);
+  ctx.junctions = ST.junctionTiles(Object.values(st.derived).map(stopPoints).filter(x => x.length), 3);
   ctx.limits = limits(st);   // efforts from pass one feed critical speed
   for (const id of ids) { await deriveActivity(st, id, ctx); onProgress && onProgress(++n, ids.length * 2); }
   return n / 2;

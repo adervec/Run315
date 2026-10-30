@@ -6,7 +6,8 @@
 //   run315-state.json      the synced state (merge.js); read-merge-write on every push
 //   stream-<id>.json       one per activity, written once by the device that imported
 //                          it (the desktop), fetched on demand by the others (the phone)
-import { state, save, mergeIn, payload, idbGet, idbSet, getStream, putStream } from './store.js';
+import { state, save, mergeIn, payload, idbGet, idbSet, getStream, putStream, getDetailRec, putDetailRec, isDataChange } from './store.js';
+import { fingerprint } from './merge.js';
 
 const CLIENT_ID = '547617739897-br6dj2facmsc34qnkjb5u4dbfhju39pu.apps.googleusercontent.com';
 const SCOPE = 'https://www.googleapis.com/auth/drive.appdata openid https://www.googleapis.com/auth/userinfo.profile';
@@ -103,11 +104,14 @@ export async function sync() {
   _busy = true;
   try {
     const remote = await readJson(STATE_FILE);
-    if (remote) mergeIn(remote);
-    await writeJson(STATE_FILE, payload());
-    await pushStreams();
+    const changed = remote ? mergeIn(remote) : false;
+    // Upload only when this device holds something the cloud copy does not.
+    const out = payload();
+    if (!remote || fingerprint(out) !== fingerprint(remote)) await writeJson(STATE_FILE, out);
+    await pushQueued('streamQueue', 'stream', getStream);
+    await pushQueued('detailQueue', 'detail', getDetailRec);
     stamp({ lastSync: new Date().toISOString(), lastError: null });
-    save('cloud');
+    if (changed) save('cloud-data');   // only then does anything need to re-render
     return true;
   } catch (e) {
     stamp({ lastError: e.message || String(e) });
@@ -115,20 +119,32 @@ export async function sync() {
   } finally { _busy = false; }
 }
 
-// Streams this device imported and has not uploaded yet.
-export async function queueStream(id) {
-  const q = new Set((await idbGet('kv', 'streamQueue')) || []); q.add(id); await idbSet('kv', 'streamQueue', [...q]);
+// Streams and details this device made and has not uploaded yet, a few per sync.
+async function queue(key, id) {
+  const q = new Set((await idbGet('kv', key)) || []); q.add(id); await idbSet('kv', key, [...q]);
 }
-async function pushStreams(limit = 25) {
-  const q = (await idbGet('kv', 'streamQueue')) || [];
+export const queueStream = id => queue('streamQueue', id);
+export const queueDetail = id => queue('detailQueue', id);
+async function pushQueued(key, prefix, get, limit = 25) {
+  const q = (await idbGet('kv', key)) || [];
   const left = [...q];
   for (const id of q.slice(0, limit)) {
-    const rec = await getStream(id);
-    if (rec) await writeJson(`stream-${id}.json`, rec);
+    const rec = await get(id);
+    if (rec) await writeJson(`${prefix}-${id}.json`, rec);
     left.splice(left.indexOf(id), 1);
-    await idbSet('kv', 'streamQueue', left);
+    await idbSet('kv', key, left);
   }
   return left.length;
+}
+// The heavy derived detail for one activity: local first, then Drive (and keep it).
+export async function fetchDetailRec(id) {
+  const local = await getDetailRec(id);
+  if (local || !driveOn()) return local || null;
+  try {
+    const rec = await readJson(`detail-${id}.json`);
+    if (rec) { await putDetailRec(id, rec); return rec; }
+  } catch (e) { console.warn('detail fetch failed', id, e); }
+  return null;
 }
 // The stream for one activity: local first, then Drive (and keep it).
 export async function fetchStream(id) {
@@ -158,7 +174,9 @@ let _timer = null;
 export function startAutoSync(everyMin = 5) {
   let debounce = null;
   const soon = () => { clearTimeout(debounce); debounce = setTimeout(() => sync(), 2000); };
-  import('./store.js').then(s => s.onChange(why => { if (driveOn() && !String(why).startsWith('cloud')) soon(); }));
+  // Only data changes sync: a device-local save (lastSeen, the cowork log, the theme) never does,
+  // nor does a sync's own report of what it merged.
+  import('./store.js').then(s => s.onChange(why => { if (driveOn() && isDataChange(why) && !String(why).startsWith('cloud')) soon(); }));
   addEventListener('focus', () => { if (driveOn()) sync(); });
   clearInterval(_timer);
   _timer = setInterval(() => { if (driveOn() && document.visibilityState === 'visible') sync(); }, everyMin * 60000);
