@@ -53,7 +53,7 @@ const CSS = `
   letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .cities .legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid; margin-right: 6px; vertical-align: 3px; }
 .cities .lg-cov { border-color: var(--measured); }
-.cities .lg-unc { border-color: var(--line); }
+.cities .lg-unc { border-color: var(--behind); }
 .cities .lg-done { border-top-width: 5px !important; border-color: var(--measured); }
 .cities .lg-bnd { border-color: var(--projected); border-top-style: dashed !important; }
 .cities .cand { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
@@ -332,10 +332,14 @@ export async function mount(el) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
   const [s, w, n, e] = a.bbox || [];
   if (lastView) map.setView(lastView[0], lastView[1]);
-  else if ([s, w, n, e].every(Number.isFinite)) map.fitBounds([[s, w], [n, e]]);
+  else if ([s, w, n, e].every(Number.isFinite)) {
+    map.fitBounds([[s, w], [n, e]]);
+    // The container may not have its size yet on first paint; fit again once it does.
+    requestAnimationFrame(() => { try { map.invalidateSize(); map.fitBounds([[s, w], [n, e]]); } catch { /* gone */ } });
+  }
   else map.setView([43.86, -79.33], 12);
 
-  const cCov = token('--measured', '#0b6e79'), cUnc = token('--line', '#c9ced6'), cBnd = token('--projected', '#6b4fd8');
+  const cCov = token('--measured', '#0b6e79'), cUnc = token('--behind', '#a5321f'), cBnd = token('--projected', '#6b4fd8');
   // OSM names reach Leaflet's tooltip as text nodes, never as markup.
   const tip = text => () => { const sp = document.createElement('span'); sp.textContent = text; return sp; };
   const done = a.done || {}, list = a.list || {};
