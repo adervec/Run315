@@ -4,7 +4,9 @@
 // Where things live now that there is no server:
 //   state.trailAreas[id]          synced. The area (name, bbox), a compact index of its
 //                                 ways ({way id: [name, kind, nodes, length]}), the covered
-//                                 nodes as a bitstring per way OR'd across every matched
+//                                 nodes as a base64 bitset per way (js/bitset.js; older
+//                                 records carry '0'/'1' strings, read either way and
+//                                 rewritten as bitsets on first visit) OR'd across every matched
 //                                 run, and the new ground per trail per day. Enough for the
 //                                 phone to show the ledger, coverage and streaks with no
 //                                 streams and no OSM geometry.
@@ -19,6 +21,7 @@ import { state, save, idbGet, idbSet, idbDel, streamIds } from '../store.js';
 import { put, remove } from '../merge.js';
 import * as D from '../derive.js';
 import * as TR from '../lib/trails.js';
+import * as BS from '../bitset.js';
 import { fetchStream } from '../drive.js';
 import { dayKey } from '../lib/dt.js';
 import { html, pageHead, day, toast, useCss, polyline } from '../ui.js';
@@ -58,9 +61,29 @@ const CSS = `
 `;
 
 // ---------- small codecs ----------
+// '0'/'1' strings stay the format of the device-local hit cache (trail-hits-*), which never
+// syncs. The synced cover is a base64 bitset: a sixth of the size (5.4 MB -> under 1 MB for
+// five areas). coverMask() reads either, so records synced before the switch still work.
 const bits = mask => Array.from(mask, b => (b ? '1' : '0')).join('');
 const unbits = s => Uint8Array.from(String(s || ''), c => (c === '1' ? 1 : 0));
-const ones = s => { let n = 0; for (const c of String(s || '')) if (c === '1') n++; return n; };
+const coverMask = (s, n) => BS.toMask(BS.decode(s, n), n);
+const coverOnes = (s, n) => BS.count(BS.decode(s, n).subarray(0, BS.bytesFor(n)));
+const encodeCover = mask => BS.toB64(BS.fromMask(mask));
+
+// Rewrite any area still holding '0'/'1' covers as bitsets. -> number of areas changed.
+export function migrateCovers(st) {
+  let changed = 0;
+  for (const a of Object.values(st.trailAreas || {})) {
+    const ways = a.ways || {};
+    const legacy = Object.entries(a.cover || {}).filter(([w, s]) => ways[w] && BS.isLegacy(s, ways[w][2]));
+    if (!legacy.length) continue;
+    const cover = { ...a.cover };
+    for (const [w, s] of legacy) { const enc = encodeCover(coverMask(s, ways[w][2])); if (enc) cover[w] = enc; else delete cover[w]; }
+    put(st, 'trailAreas', a.id, { ...a, cover });
+    changed++;
+  }
+  return changed;
+}
 const areaKey = id => 'trail-area-' + id;
 const hitsKey = id => 'trail-hits-' + id;
 const areasOf = st => Object.values(st.trailAreas).sort((a, b) => String(b.loaded_at).localeCompare(String(a.loaded_at)));
@@ -105,7 +128,7 @@ export function buildTrails(st, { completeAt = TR.DEFAULT_COMPLETE_AT, named = f
     let t = grouped.get(key);
     if (!t) grouped.set(key, t = { key, name: name || 'Unnamed way ' + wid, named: !!name, nodes: 0, hit: 0, len_m: 0, kinds: new Set() });
     t.nodes += nodes;
-    t.hit += Math.min(ones(a.cover && a.cover[wid]), nodes);
+    t.hit += Math.min(coverOnes(a.cover && a.cover[wid], nodes), nodes);
     t.len_m += len;
     t.kinds.add(kind);
   }
@@ -172,9 +195,9 @@ function areaSummary(area, acts) {
   const cover = TR.unionCoverage(acts, inArea);
   const out = {};
   for (const wid of new Set([...Object.keys(cover), ...Object.keys(area.cover || {})])) {
-    const n = ways[wid] ? ways[wid][2] : 0, m = new Uint8Array(n), mine = cover[wid], theirs = unbits(area.cover?.[wid]);
+    const n = ways[wid] ? ways[wid][2] : 0, m = new Uint8Array(n), mine = cover[wid], theirs = coverMask(area.cover?.[wid], n);
     for (let i = 0; i < n; i++) m[i] = (mine && mine[i]) || theirs[i] ? 1 : 0;
-    if (m.some(Boolean)) out[wid] = bits(m);
+    if (m.some(Boolean)) out[wid] = encodeCover(m);
   }
   const order = [...acts].sort((a, b) => String(a.date || '9999').localeCompare(String(b.date || '9999')) || String(a.id).localeCompare(String(b.id)));
   const seenNodes = new Map(), agg = new Map();
@@ -342,7 +365,7 @@ export async function render() {
   const unmatched = await unmatchedCount(local);
   return html`<div class="trails">
   ${pageHead('Trails', `Trail completion${stats ? ` · ${stats.segments} ways loaded` : ''}`,
-    html`<a class="btn btn-ghost" href="#/territory">Territory</a><a class="btn btn-ghost" href="#/routes">Routes</a>`)}
+    html`<a class="btn btn-ghost" href="#/cities">By municipality</a><a class="btn btn-ghost" href="#/territory">Territory</a><a class="btn btn-ghost" href="#/routes">Routes</a>`)}
 
   ${stats ? html`<section class="panel">
     <div class="panel-head">
@@ -417,6 +440,8 @@ export async function render() {
 }
 
 export async function mount(el) {
+  // One-off: covers synced in the old '0'/'1' format are rewritten as bitsets.
+  if (migrateCovers(state)) save('edit');
   const redraw = async () => { if (!el.isConnected) return; el.innerHTML = String(await render()); mount(el); };
   const hint = el.querySelector('#areahint');
   // Long jobs: one at a time, buttons off while they run, the hint line says what is happening.
@@ -537,7 +562,7 @@ export async function mount(el) {
       drawn++;
       L.polyline(sg.coords, { color: known, weight: 2, opacity: 0.7 }).addTo(all);
       const mask = a.cover && a.cover[sg.id];
-      for (const [i, j] of mask ? TR.coveredRuns(unbits(mask)) : []) {
+      for (const [i, j] of mask ? TR.coveredRuns(coverMask(mask, sg.coords.length)) : []) {
         const part = sg.coords.slice(i, j + 1);
         if (part.length > 1) L.polyline(part, { color: covered, weight: 4 }).addTo(all).bindTooltip(sg.name || 'Unnamed way');
       }

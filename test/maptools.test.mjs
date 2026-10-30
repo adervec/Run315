@@ -1,6 +1,7 @@
 // The map pages' glue: route validation and the route maker's maths (js/routemaker.js),
 // and the trails page's matching and synced summaries (js/pages/trails.js) run end to
 // end against the demo athlete, with a fake Overpass answer laid over one demo run.
+import * as BS from '../js/bitset.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as store from '../js/store.js';
@@ -68,7 +69,9 @@ test('trails: match demo runs, summarise into the synced area, ledger without ge
   const m = await TP.matchRuns();
   assert.ok(m.matched >= 1 && m.touched >= 1);
   const area = store.state.trailAreas.a1;
-  assert.ok(area.cover['1'] && /1/.test(area.cover['1']), 'the run trail is covered');
+  // The synced cover is a base64 bitset now (js/bitset.js), not a '0'/'1' string.
+  assert.ok(area.cover['1'] && BS.count(BS.decode(area.cover['1'], segs[0].coords.length)) > 0, 'the run trail is covered');
+  assert.ok(!BS.isLegacy(area.cover['1'], segs[0].coords.length), 'written in the new format');
   assert.ok(!area.cover['2'], 'the far way is not');
   assert.ok(area.gains.length >= 1);
   const [trails, totals] = TP.buildTrails(store.state);

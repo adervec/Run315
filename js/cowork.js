@@ -333,6 +333,8 @@ async function applyReply(kind, p) {
     for (const id of r.streams) await queueStream(id);
     await deriveAll(state, r.streams);   // two passes: crossings need every run read first
     for (const id of r.streams) scanRecord(state, id, await getStream(id));   // data review: GPS jumps, HR dropouts...
+    // Streets & trails: match whatever is new against every loaded municipality, in the background.
+    import('./cities.js').then(m => m.matchNew()).catch(e => console.warn('city matching failed', e));
     return { handled: true, note: kind === 'garmin-output'
       ? `${r.activities} activities, ${r.details} with detail, ${r.days} days, ${r.nights} nights` + (r.remaining ? `, ${r.remaining} still to fetch` : '')
       : `${r.activities} activities (${r.linked} linked to Garmin, ${r.inserted} new), ${r.streams.length} streams` + (r.remaining ? `, ${r.remaining} still to fetch` : '') };

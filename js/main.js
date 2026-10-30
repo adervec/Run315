@@ -32,6 +32,7 @@ export const NAV = [
   { group: 'Explore', items: [
     { route: 'routes', page: 'routes', label: 'Route maker' },
     { route: 'repeats', page: 'repeats', label: 'My routes' },
+    { route: 'cities', page: 'cities', label: 'Streets & trails' },
     { route: 'trails', page: 'trails', label: 'Trails' },
     { route: 'territory', page: 'territory', label: 'Territory' },
   ] },
