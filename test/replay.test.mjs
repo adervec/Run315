@@ -128,3 +128,13 @@ test('year ramp, quantile box, recorder mime, background tiles', () => {
   assert.equal(bg.z, 14);    // 8 world units a tile x 32 px = 256 px
   assert.ok(bg.list.length >= 2 && bg.list.every(t => t.size === 256));
 });
+
+import { homeBox } from '../js/replay.js';
+test('home framing ignores the other continent', () => {
+  // 600 tiles around Markham (z17) and 400 around Zurich.
+  const xs = [], ys = [];
+  for (let i = 0; i < 600; i++) { xs.push(36600 + (i % 30)); ys.push(47800 + Math.floor(i / 30)); }
+  for (let i = 0; i < 400; i++) { xs.push(68600 + (i % 20)); ys.push(45800 + Math.floor(i / 20)); }
+  const b = homeBox(xs, ys, 17);
+  assert.ok(b[2] - b[0] < 100 && b[0] >= 36500, 'framed Markham only: ' + b);
+});

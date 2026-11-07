@@ -144,7 +144,7 @@ export async function mount(el) {
   }
   function fit(which) {
     const xs = ev.x, ys = ev.y;
-    const b = which === 'all' ? RP.quantileBox(xs, ys, 0, 1, unit) : RP.quantileBox(xs, ys, 0.03, 0.97, unit);
+    const b = which === 'all' ? RP.quantileBox(xs, ys, 0, 1, unit) : RP.homeBox(xs, ys, u.zoom, unit);
     const bw = Math.max(4, b[2] - b[0]), bh = Math.max(4, b[3] - b[1]);
     view.cx = (b[0] + b[2]) / 2; view.cy = (b[1] + b[3]) / 2;
     view.s = Math.min(view.w / bw, view.h / bh) * 0.92;

@@ -300,6 +300,21 @@ export function quantileBox(xs, ys, lo = 0.03, hi = 0.97, unit = 1) {
   return [q(sx, lo) * unit, q(sy, lo) * unit, (q(sx, hi) + 1) * unit, (q(sy, hi) + 1) * unit];
 }
 
+// "Where you usually run": the median tile (the home holding most tiles wins outright), the tiles
+// within ~30 km of it, then the middle of those. The plain quantile box spans the ocean when the
+// record holds two homes (a move, a long stay abroad); this frames the main one.
+export function homeBox(xs, ys, zoom, unit = 1, radiusM = 30000) {
+  const n = xs.length;
+  if (!n) return null;
+  const med = a => Float64Array.from(a).sort()[n >> 1];
+  const mx = med(xs), my = med(ys);
+  const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * my / 2 ** zoom)));   // tile y -> latitude
+  const tileM = 40075016 * Math.cos(lat) / 2 ** zoom, r = radiusM / tileM;
+  const kx = [], ky = [];
+  for (let i = 0; i < n; i++) if (Math.abs(xs[i] - mx) <= r && Math.abs(ys[i] - my) <= r) { kx.push(xs[i]); ky.push(ys[i]); }
+  return quantileBox(kx.length ? kx : xs, kx.length ? ky : ys, 0.03, 0.97, unit);
+}
+
 // Hex colour mixing for the year ramp: '#rrggbb' x2, f in [0, 1] -> '#rrggbb'.
 const hex = c => { const m = /^#?([0-9a-f]{6})$/i.exec(String(c).trim()); const v = m ? parseInt(m[1], 16) : 0x808080; return [v >> 16, (v >> 8) & 255, v & 255]; };
 export function mixHex(a, b, f) {

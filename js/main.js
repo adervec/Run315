@@ -28,6 +28,8 @@ export const NAV = [
     { route: 'power', page: 'power', label: 'Power' },
     { route: 'response', page: 'response', label: 'Response model' },
     { route: 'sql', page: 'sql', label: 'SQL console' },
+    { route: 'records', page: 'records', label: 'Records & collections' },
+    { route: 'year', page: 'review', label: 'Year in review' },
     { route: 'durability', page: 'durability', label: 'Durability' },
     { route: 'climbing', page: 'climbing', label: 'Climbing' },
     { route: 'second-opinion', page: 'secondopinion', label: 'Second opinion' },

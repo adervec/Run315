@@ -3,6 +3,7 @@
 // that beat their projection, and readiness trends. Read out of the state by
 // js/events.js -- nothing is recorded when it happens, so a run synced from another
 // device, or a trail finished by a re-match, appears here the same way.
+import { eddingtonPanel } from '../share.js';
 import { state, rev } from '../store.js';
 import * as D from '../derive.js';
 import * as E from '../events.js';
@@ -47,7 +48,8 @@ export function render() {
         a long run six weeks since anything as long, and a readiness trend a week of nights (the median, so one bad night moves
         nothing) a standard deviation away from three or more weeks before it, holding for three days. Trends describe the
         numbers; they do not say why.</p>
-    </section>`;
+    </section>
+    ${eddingtonPanel()}`;
 }
 
 export function mount(el) {

@@ -20,6 +20,7 @@ import { fetchStream, driveOn } from '../drive.js';
 import { journalWidget, mountJournal } from '../journal.js';
 import { newGroundPanel } from '../explore.js';
 import { replayButton } from './replay.js';
+import { shareButton, airPanel, mountAir } from '../share.js';
 import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast } from '../ui.js';
@@ -191,7 +192,7 @@ export async function render(params = {}) {
   const journal = hook(() => journalWidget(id)), segs = hook(() => segmentsButton(id));
 
   return html`
-    ${pageHead(act.name, dateLine(act.start), html`${!D.isVirtual(act) && state.derived[id]?.p0 ? replayButton(id) : ''}${segs ? html`<span data-hook="segments">${segs}</span>` : ''}<a class="btn btn-ghost" href="#/activities">All activities</a>`)}
+    ${pageHead(act.name, dateLine(act.start), html`${!D.isVirtual(act) && state.derived[id]?.p0 ? replayButton(id) : ''}${hook(() => shareButton(id))}${segs ? html`<span data-hook="segments">${segs}</span>` : ''}<a class="btn btn-ghost" href="#/activities">All activities</a>`)}
 
     <section class="panel">
       <div class="panel-head">
@@ -218,6 +219,7 @@ export async function render(params = {}) {
     ${session ? sessionPanel(session, prescribed, band) : ''}
 
     ${wxLine ? html`<p class="wx-line">${wxLine}</p>` : ''}
+    ${hook(() => airPanel(id))}
 
     ${shape && findings.length ? formPanel(shape, formDrift, findings) : ''}
 
@@ -749,6 +751,7 @@ export async function mount(el, params = {}) {
   const j = el.querySelector('[data-hook="journal"]'), sg = el.querySelector('[data-hook="segments"]');
   try { if (j) mountJournal(j, params.id); } catch (e) { console.warn('journal', e); }
   try { if (sg) mountSegmentsButton(sg, params.id); } catch (e) { console.warn('segments', e); }
+  try { mountAir(el, params.id); } catch (e) { console.warn('air', e); }
   const mapRef = { api: null };
   if (_view.sx) { try { explorer(el, _view.sx, mapRef); } catch (e) { console.error('explorer', e); } }
   const box = el.querySelector('#actmap'), pts = _view.track;
