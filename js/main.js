@@ -35,6 +35,7 @@ export const NAV = [
     { route: 'repeats', page: 'repeats', label: 'My routes' },
     { route: 'cities', page: 'cities', label: 'Streets & trails' },
     { route: 'trails', page: 'trails', label: 'Trails' },
+    { route: 'heatmap', page: 'heatmap', label: 'Heatmap' },
     { route: 'territory', page: 'territory', label: 'Territory' },
   ] },
   { group: 'Kit & data', items: [

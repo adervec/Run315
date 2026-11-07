@@ -32,6 +32,10 @@ function hook(fn) {
 }
 
 const CSS = `
+.colourby { margin-left: auto; font-size: 13px; color: var(--muted); }
+.maplegend { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 12px var(--mono); color: var(--muted); margin-top: 8px; }
+.maplegend i { display: inline-block; width: 14px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
+.maplegend .lg-title { color: var(--ink); text-transform: uppercase; letter-spacing: .08em; }
 .act-src { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-left: 8px; }
 .act-src.strava { color: #fc4c02; }
 #actmap { height: 380px; border-radius: 3px; background: var(--ground); }
@@ -131,6 +135,8 @@ export async function render(params = {}) {
   const fullTrack = hasStream ? samples.filter(s => s[3] != null && s[4] != null).map(s => [s[3], s[4]]) : [];
   const track = fullTrack.length ? fullTrack : der && der.points ? der.points : [];
   _view.track = track.length > 1 ? track : null;
+  // Per-point values for colouring the track, aligned with fullTrack (only with a stream).
+  _view.colour = fullTrack.length > 1 ? trackChannels(samples, rec.channels) : null;
   const load = summary ? F.activityLoad(act, thrHr, F.thresholds(acts)[1]) : null;
 
   // Where does this run sit against the athlete's records at each distance?
@@ -215,8 +221,10 @@ export async function render(params = {}) {
 
     ${_view.track ? html`<section class="panel">
       <div class="panel-head"><p class="eyebrow">Where you ran</p>
-        <p class="panel-note">${track.length} points${fullTrack.length ? '' : ' · thinned for sync'}</p></div>
-      <div id="actmap"></div>
+        <p class="panel-note">${track.length} points${fullTrack.length ? '' : ' · thinned for sync'}</p>
+        ${_view.colour ? html`<label class="colourby">Colour by <select id="colourby"><option value="">one colour</option>
+          ${Object.keys(_view.colour.ch).map(k => html`<option value="${k}">${COLOUR_LABEL[k]}</option>`)}</select></label>` : ''}</div>
+      <div id="actmap"></div><div id="maplegend" class="maplegend"></div>
     </section>` : ''}
 
     ${_view.sx ? explorerPanel(_view.sx) : ''}
@@ -629,8 +637,72 @@ function leaflet() {
 }
 const token = (n, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || fallback;
 
+// ---- the track coloured by a channel ----
+// Five quantile bands of a warm sequential ramp (light = low, dark = high); pace and speed are
+// flipped so darker is always the harder or faster end. Each band is one polyline per run of
+// consecutive points, so a 9,000-point track stays a few hundred map objects.
+const COLOUR_LABEL = { pace: 'pace', hr: 'heart rate', grade: 'grade', cadence: 'cadence', power: 'power', elevation: 'elevation' };
+const RAMP = ['#fde3a7', '#f6b26b', '#e8743b', '#c4402f', '#7a1f3d'];
+function trackChannels(samples, ch = {}) {
+  const idx = [];
+  samples.forEach((s, i) => { if (s[3] != null && s[4] != null) idx.push(i); });
+  const at = (arr, i) => (arr && arr[i] != null ? +arr[i] : null);
+  const out = {};
+  // Pace as speed over a ~20 s window, so a GPS jitter does not paint a sprint.
+  const speed = idx.map(i => {
+    let j = i; while (j > 0 && samples[i][0] - samples[j - 1][0] <= 20) j--;
+    const dt = samples[i][0] - samples[j][0], dd = samples[i][1] - samples[j][1];
+    return dt > 3 ? dd / dt : null;
+  });
+  out.pace = speed;
+  out.hr = idx.map(i => at(ch.hr, i) ?? samples[i][2]);
+  // Grade over ~50 m of distance either side.
+  out.grade = idx.map(i => {
+    let a = i, b = i; const d0 = samples[i][1];
+    while (a > 0 && d0 - samples[a - 1][1] <= 50) a--;
+    while (b < samples.length - 1 && samples[b + 1][1] - d0 <= 50) b++;
+    const dd = samples[b][1] - samples[a][1], e1 = samples[b][5], e0 = samples[a][5];
+    return dd > 20 && e1 != null && e0 != null ? 100 * (e1 - e0) / dd : null;
+  });
+  out.cadence = idx.map(i => samples[i][6]);
+  out.power = idx.map(i => at(ch.power_w, i));
+  out.elevation = idx.map(i => samples[i][5]);
+  for (const k of Object.keys(out)) if (out[k].filter(v => v != null).length < 20) delete out[k];
+  return { ch: out };
+}
+function bands(vals) {
+  const v = vals.filter(x => x != null && isFinite(x)).sort((a, b) => a - b);
+  if (v.length < 20) return null;
+  return [0.2, 0.4, 0.6, 0.8].map(q => v[Math.floor(q * (v.length - 1))]);
+}
+function colourLine(L, map, pts, vals, key) {
+  const cut = bands(vals);
+  if (!cut) return { layers: [], legend: '' };
+  const band = v => (v == null ? -1 : cut.findIndex(c => v <= c) === -1 ? 4 : cut.findIndex(c => v <= c));
+  const layers = [];
+  let run = [pts[0]], cur = band(vals[0]);
+  const flush = () => { if (run.length > 1 && cur >= 0) layers.push(L.polyline(run, { color: RAMP[cur], weight: 5, opacity: 0.95 }).addTo(map)); };
+  for (let i = 1; i < pts.length; i++) {
+    const b = band(vals[i]);
+    run.push(pts[i]);
+    if (b !== cur) { flush(); run = [pts[i]]; cur = b; }
+  }
+  flush();
+  const fmt = v => key === 'pace' ? (v > 0 ? fmtPaceShort(1000 / v) : '--') : key === 'grade' ? v.toFixed(1) + '%' : Math.round(v);
+  const lo = [null, ...cut], hi = [...cut, null];
+  // Bands are cut on the value (speed, for pace), so a pace label reads the other way round.
+  const label = i => key === 'pace'
+    ? (lo[i] == null ? 'slower than ' + fmt(hi[i]) : hi[i] == null ? 'faster than ' + fmt(lo[i]) : fmt(hi[i]) + '–' + fmt(lo[i]))
+    : (lo[i] == null ? '≤ ' + fmt(hi[i]) : hi[i] == null ? '> ' + fmt(lo[i]) : fmt(lo[i]) + '–' + fmt(hi[i]));
+  const legend = `<span class="lg-title">${COLOUR_LABEL[key]}</span>` + RAMP.map((c, i) =>
+    `<span><i style="background:${c}"></i>${label(i)}</span>`).join('')
+    + (key === 'pace' ? '<span class="dim">darker = faster</span>' : '');
+  return { layers, legend };
+}
+const fmtPaceShort = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+
 // Draw the route; return what the explorer drives on it: a hover marker and a highlighted stretch.
-async function drawMap(box, pts) {
+async function drawMap(box, pts, colour = null) {
   let L;
   try { L = await leaflet(); } catch (e) { box.textContent = 'The map did not load (offline?).'; return null; }
   if (!box.isConnected) return null;
@@ -638,6 +710,17 @@ async function drawMap(box, pts) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
   const line = L.polyline(pts, { color: token('--measured', '#0b6e79'), weight: 4 }).addTo(map);
   map.fitBounds(line.getBounds(), { padding: [18, 18] });
+  // Colour by a channel: the plain line hides, the bands draw, the legend explains them.
+  const pick = document.getElementById('colourby'), legendBox = document.getElementById('maplegend');
+  let coloured = [];
+  if (pick && colour) pick.onchange = () => {
+    coloured.forEach(l => l.remove()); coloured = [];
+    if (!pick.value) { line.setStyle({ opacity: 1 }); if (legendBox) legendBox.innerHTML = ''; return; }
+    line.setStyle({ opacity: 0 });
+    const r = colourLine(L, map, pts, colour.ch[pick.value], pick.value);
+    coloured = r.layers;
+    if (legendBox) legendBox.innerHTML = r.legend;
+  };
   L.circleMarker(pts[0], { radius: 6, color: token('--ahead', '#17694a'), fillOpacity: 1 }).addTo(map).bindTooltip('Start');
   L.circleMarker(pts[pts.length - 1], { radius: 6, color: token('--behind', '#a5321f'), fillOpacity: 1 }).addTo(map).bindTooltip('Finish');
   let marker = null, sel = null;
@@ -665,5 +748,5 @@ export async function mount(el, params = {}) {
   const mapRef = { api: null };
   if (_view.sx) { try { explorer(el, _view.sx, mapRef); } catch (e) { console.error('explorer', e); } }
   const box = el.querySelector('#actmap'), pts = _view.track;
-  if (box && pts) mapRef.api = await drawMap(box, pts);
+  if (box && pts) mapRef.api = await drawMap(box, pts, _view.colour);
 }
