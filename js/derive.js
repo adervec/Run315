@@ -28,9 +28,10 @@ import { getStream, rev, getDetailRec, putDetailRec } from './store.js';
 import { queueDetail, fetchDetailRec } from './drive.js';
 import { strengthActivities } from './strength.js';
 import * as PW from './lib/power.js';
+import { hrRecovery, hrrCore } from './lib/insights.js';
 import { hrLoadFactor, runEfficiency, trend as efTrend, slope as efSlope } from './lib/efficiency.js';
 
-export const DERIVE_VERSION = 4;
+export const DERIVE_VERSION = 5;
 export const DEFAULT_SHOE_LIFE_M = 700000, SHOE_WARN_SHARE = 0.8;
 const isRun = a => F.RUN_TYPES.has(a.type);
 // A session whose "GPS" is not a place on Earth: Zwift reports Watopia as coordinates in the
@@ -213,6 +214,8 @@ export async function deriveActivity(st, id, ctx = {}) {
   };
   if (run && lim.hr_max && lim.cs && (a.distance_m || 0) >= DU.MIN_DISTANCE_M && (a.moving_s || 0) >= DU.MIN_DURATION_S)
     d.durability = DU.analyse(samples, lim.hr_max, lim.cs, temp);
+  // Heart-rate recovery after hard efforts: ~20 bytes synced, so a phone sees the trend too.
+  d.hrr = run && hasHr ? hrrCore(hrRecovery(samples, d.session?.reps)) : null;
   const [core, detail] = splitDerived(d);
   await putDetailRec(id, detail);
   if (!ctx.getStream) await queueDetail(id).catch(() => {});

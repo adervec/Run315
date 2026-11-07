@@ -19,6 +19,13 @@ import { listEntries, streamEntry, readEntry, entryBlob } from './zipread.js';
 import { decodeFit, fitType } from './fit.js';
 import { html } from './ui.js';
 
+// Garmin's sleep timestamps in the export are GMT ('2019-01-16T01:37:00.0'): local 'HH:MM' on this
+// device's clock (the athlete's zone, DST included). null when absent.
+const localHM = g => {
+  if (!g) return null;
+  const t = new Date(String(g).replace(/\.\d+$/, '') + 'Z');
+  return isNaN(t) ? null : String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+};
 export const BATCH = 50;            // activities with channels per yielded payload
 export const SUMMARY_BATCH = 500;   // summary-only activities per payload (no channels: small)
 const KJ_PER_KCAL = 4.184;
@@ -197,6 +204,8 @@ export class Days {
     this.set('wellness', day, { _weak: true, rhr: num(r.restingHeartRate) || null });
   }
   sleep(r) {
+    // A window the watch says it was off the wrist for has no timing worth keeping.
+    if (r.sleepWindowConfirmationType === 'OFF_WRIST') { r = { ...r, sleepStartTimestampGMT: null, sleepEndTimestampGMT: null }; }
     const day = dayOf(r.calendarDate);
     if (!day) return;
     const asleep = ['deepSleepSeconds', 'lightSleepSeconds', 'remSleepSeconds'].map(k => num(r[k]) || 0).reduce((a, b) => a + b, 0);
@@ -209,6 +218,7 @@ export class Days {
       deep_s: num(r.deepSleepSeconds), light_s: num(r.lightSleepSeconds), rem_s: num(r.remSleepSeconds),
       awake_s: num(r.awakeSleepSeconds), restless_count: num(r.restlessMomentCount ?? r.restlessMomentsCount),
       avg_stress: num(r.avgSleepStress), respiration_avg: num(r.averageRespiration),
+      sleep_start: localHM(r.sleepStartTimestampGMT), sleep_end: localHM(r.sleepEndTimestampGMT),
     });
   }
   healthStatus(r) {

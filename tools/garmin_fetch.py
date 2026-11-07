@@ -450,6 +450,12 @@ def fetch_daily(api, day):
         sleep = {}
     for column, *paths in SLEEP_FIELDS:
         out[column] = _dig(sleep, *paths)
+    # Bedtime and wake as local 'HH:MM'. Garmin's *Local timestamps are local wall time encoded
+    # as epoch ms, so they format as UTC.
+    dto = sleep.get("dailySleepDTO") or {}
+    for column, key in (("sleep_start", "sleepStartTimestampLocal"), ("sleep_end", "sleepEndTimestampLocal")):
+        v = dto.get(key)
+        out[column] = datetime.utcfromtimestamp(v / 1000.0).strftime("%H:%M") if isinstance(v, (int, float)) and v > 0 else None
 
     # Garmin reports body mass in grams. A 70,200 kg athlete would be notable.
     if out.get("weight_kg") and out["weight_kg"] > 500:
