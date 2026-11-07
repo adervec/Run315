@@ -31,6 +31,11 @@ import { strengthActivities } from './strength.js';
 export const DERIVE_VERSION = 2;
 export const DEFAULT_SHOE_LIFE_M = 700000, SHOE_WARN_SHARE = 0.8;
 const isRun = a => F.RUN_TYPES.has(a.type);
+// A session whose "GPS" is not a place on Earth: Zwift reports Watopia as coordinates in the
+// Pacific, a treadmill or trainer has no position at all. Its map still draws on the activity
+// page, but it claims no territory, no route, no street.
+export const isVirtual = a => !!a && (/virtual|indoor|treadmill|trainer|zwift/i.test(a.type || '') || !!a.trainer
+  || /zwift|watopia|rouvy|mywhoosh|tacx|wahoo systm/i.test(a.name || ''));
 
 // One-slot memo per name, invalidated by the store's revision counter -- and by
 // deriveActivity, which changes what the memos are built from without a save.
@@ -130,7 +135,7 @@ export function splitDerived(d) {
     core.stops = { ...s, at: (interruptions || []).filter(it => it.full_stop && it.lat != null)
       .map(it => [+(+it.lat).toFixed(5), +(+it.lon).toFixed(5)]) };
   }
-  if (points && points.length) core.p0 = points[0];
+  if (points && points.length && !d.virtual) core.p0 = points[0];
   if (core.limits) core.limits = { hr_max: core.limits.hr_max ?? null, cs: core.limits.cs ?? null };
   return [core, detail];
 }
@@ -176,19 +181,19 @@ export async function deriveActivity(st, id, ctx = {}) {
   const thrHr = ctx.thrHr !== undefined ? ctx.thrHr : summary(st)?.threshold_hr;
   const lim = ctx.limits || limits(st);
   const temp = st.weather[id]?.temp_c ?? null;
-  const hasHr = samples.some(s => s[2]);
+  const hasHr = samples.some(s => s[2]), virtual = isVirtual(a);
   const d = {
     v: DERIVE_VERSION,
     efforts: run ? F.bestEffortCurve(td) : {},
     splits: run ? F.kmSplits(td) : [],
     drift: hasHr ? F.hrDrift(samples.map(s => [s[0], s[1], s[2]])) : null,
-    tiles: pts.length ? TR.tilesForTrack(pts) : [],
-    sig: run && pts.length >= 10 && (a.distance_m || 0) > 1000 ? RP.signature(pts) : null,
+    tiles: pts.length && !virtual ? TR.tilesForTrack(pts) : [],
+    sig: run && !virtual && pts.length >= 10 && (a.distance_m || 0) > 1000 ? RP.signature(pts) : null,
     session: run ? IV.analyse(samples.map(s => [s[0], s[1], s[2]]), pts) : null,
     stops: run ? ST.analyse(samples, ctx.junctions || junctions(st)) : null,
     climb: run && (a.elev_gain_m || 0) > 50 ? TE.climbCost(samples) : null,
     zones: thrHr && hasHr ? { thr: thrHr, secs: Z.timeInZones(samples, thrHr) } : null,
-    durability: null, limits: lim,
+    durability: null, limits: lim, virtual: virtual || undefined,
     points: pts.length ? thinTrack(pts, 600) : null,   // enough to draw the route without the stream
   };
   if (run && lim.hr_max && lim.cs && (a.distance_m || 0) >= DU.MIN_DISTANCE_M && (a.moving_s || 0) >= DU.MIN_DURATION_S)
@@ -343,7 +348,7 @@ export function tileSummary(st, now = new Date()) {
   const visits = new Map(), first = new Map();
   for (const a of Object.values(st.activities)) {
     const tiles = st.derived[a.id]?.tiles;
-    if (!tiles) continue;
+    if (!tiles || isVirtual(a)) continue;   // records derived before virtual sessions were excluded
     const day = a.start.slice(0, 10);
     for (const t of tiles) {
       const k = TR.tileKey(t[0], t[1]);
@@ -366,7 +371,7 @@ export function tileSummary(st, now = new Date()) {
 
 export function repeatedRoutes(st, now = new Date(), days = 365, minRepeats = 3) {
   const cutoff = addDayKey(dayKey(now), -days);
-  const rs = runs(st).filter(a => dayKey(a.start) >= cutoff && st.derived[a.id]?.sig)
+  const rs = runs(st).filter(a => dayKey(a.start) >= cutoff && st.derived[a.id]?.sig && !isVirtual(a))
     .map(a => ({ id: a.id, garmin_id: a.id, name: a.name, start: a.start, distance_m: a.distance_m, moving_s: a.moving_s, tiles: st.derived[a.id].sig }))
     .reverse();   // oldest first, as the SQL ordered them
   return RP.summarise(rs, minRepeats);

@@ -184,36 +184,26 @@ export const _MAX_GAP = 6;      // a window needing more than this is not a near
 export function nearMissSquares(tiles, size, maxGap = _MAX_GAP) {
   const have = keySet(tiles);
   if (!have.size || size < 1) return [];
-  const list = [...have].map(fromKey);
-  const xs = list.map(t => t[0]), ys = list.map(t => t[1]);
-  const x0 = Math.min(...xs) - size + 1, x1 = Math.max(...xs);
-  const y0 = Math.min(...ys) - size + 1, y1 = Math.max(...ys);
-  const w = x1 - x0 + size, h = y1 - y0 + size;
-
-  // ps[j][i] = claimed tiles in the rectangle above-left of (x0+i, y0+j)
-  const ps = Array.from({ length: h + 1 }, () => new Array(w + 1).fill(0));
-  for (let j = 0; j < h; j++) {
-    const row = ps[j + 1], prev = ps[j];
-    for (let i = 0; i < w; i++) {
-      row[i + 1] = row[i] + prev[i + 1] - prev[i] + (have.has(tileKey(x0 + i, y0 + j)) ? 1 : 0);
-    }
+  // Sparse: a size x size square missing at most maxGap tiles has its top-left corner within
+  // size-1 of some claimed tile, so only those corners are worth counting. (The Python swept
+  // a prefix-sum grid over the bounding box of every tile, which is fine inside one city and
+  // billions of cells once a single activity is on another continent -- a Zwift ride reports
+  // Watopia as real coordinates near the Solomon Islands.) A square with no claimed tile at
+  // all is not a near miss, so it is never a candidate.
+  const corners = new Set();
+  for (const k of have) {
+    const [x, y] = fromKey(k);
+    for (let dx = 0; dx < size; dx++) for (let dy = 0; dy < size; dy++) corners.add(tileKey(x - dx, y - dy));
   }
-
   const out = [];
-  for (let j = 0; j < h - size + 1; j++) {
-    for (let i = 0; i < w - size + 1; i++) {
-      const got = ps[j + size][i + size] - ps[j][i + size] - ps[j + size][i] + ps[j][i];
-      const gap = size * size - got;
-      if (gap >= 1 && gap <= maxGap) {
-        const cx = x0 + i, cy = y0 + j, missing = [];
-        for (let dx = 0; dx < size; dx++) {
-          for (let dy = 0; dy < size; dy++) {
-            if (!have.has(tileKey(cx + dx, cy + dy))) missing.push([cx + dx, cy + dy]);
-          }
-        }
-        out.push([missing, [cx, cy]]);
+  for (const c of corners) {
+    const [cx, cy] = fromKey(c), missing = [];
+    for (let dx = 0; dx < size && missing.length <= maxGap; dx++) {
+      for (let dy = 0; dy < size && missing.length <= maxGap; dy++) {
+        if (!have.has(tileKey(cx + dx, cy + dy))) missing.push([cx + dx, cy + dy]);
       }
     }
+    if (missing.length >= 1 && missing.length <= maxGap) out.push([missing, [cx, cy]]);
   }
   out.sort((a, b) => (a[0].length - b[0].length) || cmpTile(a[1], b[1]));
   return out;

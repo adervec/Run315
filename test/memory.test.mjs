@@ -49,3 +49,19 @@ test('derived records sync slim; the detail comes back on demand', async () => {
   assert.equal(await D.slimAll(store.state), 1);
   assert.ok(!store.state.derived[id].points && (await D.getDetail(id)).points.length > 10);
 });
+
+import * as TR from '../js/lib/territory.js';
+test('territory with tiles on two continents stays sparse (Zwift put Watopia near the Solomon Islands)', () => {
+  const home = [], far = [];
+  for (let x = 0; x < 30; x++) for (let y = 0; y < 30; y++) if ((x * 7 + y * 3) % 11) home.push([36600 + x, 47800 + y]);
+  for (let i = 0; i < 40; i++) far.push([126300 + i, 69800]);
+  const t0 = Date.now(), tiles = [...home, ...far];
+  const s = TR.stats(tiles), g = TR.squareGrowthTargets(tiles);
+  assert.ok(Date.now() - t0 < 3000, 'took ' + (Date.now() - t0) + ' ms');
+  assert.ok(s.max_square >= 1 && Array.isArray(g));
+});
+
+test('a virtual ride claims no territory, route or street', async () => {
+  assert.ok(D.isVirtual({ type: 'virtual_ride' }) && D.isVirtual({ type: 'cycling', name: 'Zwift - Tempus Fugit in Watopia' }) && D.isVirtual({ type: 'treadmill_running' }));
+  assert.ok(!D.isVirtual({ type: 'running', name: 'Morning Run' }));
+});

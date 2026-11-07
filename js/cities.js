@@ -520,7 +520,9 @@ export async function loadTrack(id) {
   return null;
 }
 
-const activityList = st => Object.values(st.activities || {}).map(a => ({
+// Virtual sessions (Zwift's Watopia, a trainer, a treadmill) have no real ground to cover.
+const VIRTUAL = /virtual|indoor|treadmill|trainer|zwift/i;
+const activityList = st => Object.values(st.activities || {}).filter(a => !VIRTUAL.test(a.type || '') && !a.trainer && !/zwift|watopia/i.test(a.name || '')).map(a => ({
   id: a.id, date: String(a.start || '').slice(0, 10) || null, p0: okPt(st.derived?.[a.id]?.p0) ? st.derived[a.id].p0 : null,
 }));
 
