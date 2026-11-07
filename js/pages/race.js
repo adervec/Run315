@@ -3,6 +3,7 @@
 // is over the result and a kilometre-by-kilometre postmortem. app.py's race_detail and
 // the course / result / ran handlers live here.
 import { responsePanel } from './response.js';
+import { dprimePanel } from '../physio.js';
 import { state, save } from '../store.js';
 import { put, remove } from '../merge.js';
 import * as D from '../derive.js';
@@ -487,8 +488,10 @@ export async function render(params = {}) {
   // --- the postmortem, once the race has been run: needs the run's stream ---
   let review = null, missing = false;
   const linked = resolve(race.garmin_id), ranId = linked || matchRun(race);
+  let dp = '';
   if (race.date <= m.today && ranId) {
     const rec = await fetchStream(ranId).catch(() => null);
+    dp = await dprimePanel(ranId, rec).catch(() => '');
     const actual = RC.actualSegments(D.samplesOf(rec));
     if (actual.length) {
       review = RC.postmortem(m.plan || [], actual, race.goal_s || null);
@@ -508,6 +511,7 @@ export async function render(params = {}) {
     ${blockPanel(m)}
     ${fuelPanel(m.fuel)}
     ${postmortemPanel(race, m, review, ranId, missing)}
+    ${dp}
     ${splitsPanel(race, m)}
     <div class="race-actions"><button class="btn-quiet" type="button" data-act="race-delete">Remove this race</button></div>`;
 }

@@ -21,6 +21,7 @@ import { journalWidget, mountJournal } from '../journal.js';
 import { newGroundPanel } from '../explore.js';
 import { replayButton } from './replay.js';
 import { shareButton, airPanel, mountAir } from '../share.js';
+import { dprimePanel, dfaPanel } from '../physio.js';
 import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast } from '../ui.js';
@@ -126,6 +127,9 @@ export async function render(params = {}) {
   // copy, or a ride with no capture, still gets everything the analysis kept.
   let rec = null;
   try { rec = await fetchStream(id); } catch (e) { console.warn('stream', e); }
+  // D' balance (the reserve above critical speed) and DFA-a1 (when the watch logged RR intervals).
+  let physio = '';
+  try { physio = html`${await dprimePanel(id, rec)}${await dfaPanel(id, rec)}`; } catch (e) { console.warn('physio', e); }
   const samples = D.samplesOf(rec);
   const hasStream = samples.length > 1;
   const der = await D.fullDerived(state, id);
@@ -220,6 +224,7 @@ export async function render(params = {}) {
 
     ${wxLine ? html`<p class="wx-line">${wxLine}</p>` : ''}
     ${hook(() => airPanel(id))}
+    ${physio}
 
     ${shape && findings.length ? formPanel(shape, formDrift, findings) : ''}
 
