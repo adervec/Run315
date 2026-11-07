@@ -157,7 +157,8 @@ export async function importGarmin(st, p, putStream) {
     } else if (!cur) continue;   // details for an activity we do not have: nothing to hang them on
     if ('channels' in a) {
       if (a.channels && a.channels.seconds) {
-        await putStream(id, { id, src: 'garmin', channels: a.channels });
+        // Beat-to-beat intervals (FIT hrv messages), kept for HRV and DFA-a1 analysis when the watch logged them.
+        await putStream(id, { id, src: 'garmin', channels: a.channels, ...(a.hrv_rr ? { hrv_rr: a.hrv_rr } : {}) });
         res.streams.push(id);
       }
       res.details++;

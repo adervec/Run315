@@ -133,7 +133,10 @@ export async function mount(el) {
       for (const t of list) if (inView(t) && t.speed) { ctx.strokeStyle = PACE[q(t.speed)]; path(ctx, t); shown++; }
       scale.innerHTML = `slowest fifth ${PACE.map(c => `<b style="width:28px;background:${c}"></b>`).join('')} fastest fifth <span class="dim">· of the runs shown</span>`;
     }
-    count.textContent = `${shown} of ${list.length} tracks in view` + (tracks.length < Object.keys(state.derived).length ? ` · ${Object.keys(state.derived).length - tracks.length} more have no track on this device` : '');
+    // Missing = outdoor activities that claimed ground (so had GPS) but whose track is not here.
+    const have = new Set(tracks.map(t => t.id));
+    const missing = Object.entries(state.derived).filter(([id, d]) => d.tiles && d.tiles.length && !have.has(id)).length;
+    count.textContent = `${shown} of ${list.length} tracks in view` + (missing ? ` · ${missing} more have a track on another device` : '');
   }
   function redraw() { if (map) draw(); }
   map.on('moveend zoomend resize', draw);

@@ -7,6 +7,7 @@ import * as cowork from '../cowork.js';
 import * as D from '../derive.js';
 import { importGarmin, importStrava } from '../ingest.js';
 import { setKey, apiKey, MODEL } from '../ai.js';
+import { archivePanel, mountArchive } from '../archive.js';
 import { html, pageHead, ago, toast, useCss } from '../ui.js';
 
 export const title = 'Sync & cowork';
@@ -82,7 +83,7 @@ function settingsPanel() {
 export function render() {
   useCss('sync', CSS);
   return html`${pageHead('Sync & cowork', 'Garmin and Strava in · analysis out · every device in step')}
-    <div class="sync-grid">${coworkPanel()}${drivePanel()}${dataPanel()}${settingsPanel()}</div>`;
+    <div class="sync-grid">${coworkPanel()}${archivePanel()}${drivePanel()}${dataPanel()}${settingsPanel()}</div>`;
 }
 
 function download(name, text, type = 'application/json') {
@@ -164,4 +165,12 @@ export function mount(el) {
   el.querySelectorAll('[data-sched]').forEach(i => i.onchange = () => {
     const c = state.local.cowork; c.schedules = { ...(c.schedules || {}), [i.dataset.sched]: Math.max(0, +i.value || 0) }; save('cowork');
   });
+  // Garmin's own export, read in the browser one file at a time; each batch goes through the
+  // same importer as a cowork reply, then is analysed and dropped. Leaving the page cancels it.
+  return mountArchive(el, { onBatch: async p => {
+    const r = await importGarmin(state, p, putStream);
+    for (const id of r.streams) await drive.queueStream(id);
+    await D.deriveAll(state, r.streams);
+    save('garmin-archive');
+  }, onDone: s => toast(`Imported ${s.summaries} activities, ${s.withChannels} traces`) });
 }
