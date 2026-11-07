@@ -26,6 +26,7 @@ export const NAV = [
     { route: 'efficiency', page: 'efficiency', label: 'Efficiency' },
     { route: 'power', page: 'power', label: 'Power' },
     { route: 'response', page: 'response', label: 'Response model' },
+    { route: 'sql', page: 'sql', label: 'SQL console' },
     { route: 'durability', page: 'durability', label: 'Durability' },
     { route: 'climbing', page: 'climbing', label: 'Climbing' },
     { route: 'second-opinion', page: 'secondopinion', label: 'Second opinion' },
