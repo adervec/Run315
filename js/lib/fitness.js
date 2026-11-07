@@ -119,6 +119,7 @@ export function thresholds(activities) {
 // TSS-style load: hours * intensity^2 * 100.
 export function activityLoad(activity, thrHr, thrSpd) {
   if (typeof activity.load === 'number') return activity.load;   // precomputed (strength sessions)
+  if (typeof activity.power_tss === 'number') return activity.power_tss;   // rides with a power meter
   const secs = activity.moving_s || activity.elapsed_s || 0;
   const hours = secs / 3600.0;
   if (hours <= 0) return 0.0;

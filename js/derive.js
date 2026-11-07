@@ -27,9 +27,10 @@ import { put } from './merge.js';
 import { getStream, rev, getDetailRec, putDetailRec } from './store.js';
 import { queueDetail, fetchDetailRec } from './drive.js';
 import { strengthActivities } from './strength.js';
+import * as PW from './lib/power.js';
 import { hrLoadFactor, runEfficiency, trend as efTrend, slope as efSlope } from './lib/efficiency.js';
 
-export const DERIVE_VERSION = 3;
+export const DERIVE_VERSION = 4;
 export const DEFAULT_SHOE_LIFE_M = 700000, SHOE_WARN_SHARE = 0.8;
 const isRun = a => F.RUN_TYPES.has(a.type);
 // A session whose "GPS" is not a place on Earth: Zwift reports Watopia as coordinates in the
@@ -53,9 +54,15 @@ function memo(name, fn) {
 // ---- loaders ----
 // Activities as the analysis modules expect them: `start` a Date, newest first.
 // GymTracker's strength sessions join them (read-only, when connected) so they count in load.
-export const activities = st => memo('acts', () => [...Object.values(st.activities), ...strengthActivities()]
-  .map(a => ({ ...a, start: new Date(a.start), hr_load_factor: st.derived[a.id]?.hrf ?? a.hr_load_factor }))
-  .sort((a, b) => b.start - a.start));
+// Rides with a power meter are scored by power (TSS against the eFTP of the 90 days to that ride).
+export const activities = st => memo('acts', () => {
+  const ptss = PW.powerTssById(Object.values(st.activities)
+    .filter(a => PW.isRide(a) && st.derived[a.id]?.power?.mmp)
+    .map(a => ({ id: a.id, date: dayKey(new Date(a.start)), power: st.derived[a.id].power })));
+  return [...Object.values(st.activities), ...strengthActivities()]
+  .map(a => ({ ...a, start: new Date(a.start), hr_load_factor: st.derived[a.id]?.hrf ?? a.hr_load_factor, power_tss: ptss[a.id] ?? null }))
+  .sort((a, b) => b.start - a.start);
+});
 export const runs = st => activities(st).filter(isRun);
 export const samplesOf = rec => (rec && rec.channels ? samplesFromChannels(rec.channels) : []);
 
@@ -201,6 +208,7 @@ export async function deriveActivity(st, id, ctx = {}) {
     zones: thrHr && hasHr ? { thr: thrHr, secs: Z.timeInZones(samples, thrHr) } : null,
     durability: null, limits: lim, virtual: virtual || undefined,
     hrf: hasHr ? hrLoadFactor(samples, restingHr(st), lim.hr_max) : null,
+    power: PW.isRide(a) && rec.channels?.power_w ? PW.summarise(rec.channels) : null,
     points: pts.length ? thinTrack(pts, 600) : null,   // enough to draw the route without the stream
   };
   if (run && lim.hr_max && lim.cs && (a.distance_m || 0) >= DU.MIN_DISTANCE_M && (a.moving_s || 0) >= DU.MIN_DURATION_S)

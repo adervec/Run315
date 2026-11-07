@@ -24,6 +24,7 @@ export const NAV = [
     { route: 'vitals', page: 'vitals', label: 'Vitals' },
     { route: 'journal', page: 'journal', label: 'Journal' },
     { route: 'efficiency', page: 'efficiency', label: 'Efficiency' },
+    { route: 'power', page: 'power', label: 'Power' },
     { route: 'durability', page: 'durability', label: 'Durability' },
     { route: 'climbing', page: 'climbing', label: 'Climbing' },
     { route: 'second-opinion', page: 'secondopinion', label: 'Second opinion' },
