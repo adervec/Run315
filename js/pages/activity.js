@@ -19,6 +19,7 @@ import * as S from '../streams.js';
 import { fetchStream, driveOn } from '../drive.js';
 import { journalWidget, mountJournal } from '../journal.js';
 import { newGroundPanel } from '../explore.js';
+import { replayButton } from './replay.js';
 import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast } from '../ui.js';
@@ -190,7 +191,7 @@ export async function render(params = {}) {
   const journal = hook(() => journalWidget(id)), segs = hook(() => segmentsButton(id));
 
   return html`
-    ${pageHead(act.name, dateLine(act.start), html`${segs ? html`<span data-hook="segments">${segs}</span>` : ''}<a class="btn btn-ghost" href="#/activities">All activities</a>`)}
+    ${pageHead(act.name, dateLine(act.start), html`${!D.isVirtual(act) && state.derived[id]?.p0 ? replayButton(id) : ''}${segs ? html`<span data-hook="segments">${segs}</span>` : ''}<a class="btn btn-ghost" href="#/activities">All activities</a>`)}
 
     <section class="panel">
       <div class="panel-head">

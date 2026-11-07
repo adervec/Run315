@@ -42,6 +42,8 @@ export const NAV = [
     { route: 'heatmap', page: 'heatmap', label: 'Heatmap' },
     { route: 'territory', page: 'territory', label: 'Territory' },
     { route: 'plan-route', page: 'plan-route', label: 'Plan a new-ground run' },
+    { route: 'replay', page: 'replay', label: 'Replay' },
+    { route: 'timelapse', page: 'timelapse', label: 'Time-lapse' },
   ] },
   { group: 'Kit & data', items: [
     { route: 'gear', page: 'gear', label: 'Gear' },
