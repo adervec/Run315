@@ -2,6 +2,7 @@
 // pace plan, the training block (and whether it is being run), fuelling, and once it
 // is over the result and a kilometre-by-kilometre postmortem. app.py's race_detail and
 // the course / result / ran handlers live here.
+import { responsePanel } from './response.js';
 import { state, save } from '../store.js';
 import { put, remove } from '../merge.js';
 import * as D from '../derive.js';
@@ -500,6 +501,7 @@ export async function render(params = {}) {
     ${headline(race, m)}
     ${race.date < m.today ? resultPanel(race) : ''}
     ${formPanel(m.form)}
+    ${responsePanel(race.id)}
     ${race.date >= m.today ? weatherPanel(race, m) : ''}
     ${coursePanel(race, m)}
     ${planPanel(race, m)}
