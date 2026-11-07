@@ -27,8 +27,9 @@ import { put } from './merge.js';
 import { getStream, rev, getDetailRec, putDetailRec } from './store.js';
 import { queueDetail, fetchDetailRec } from './drive.js';
 import { strengthActivities } from './strength.js';
+import { hrLoadFactor, runEfficiency, trend as efTrend, slope as efSlope } from './lib/efficiency.js';
 
-export const DERIVE_VERSION = 2;
+export const DERIVE_VERSION = 3;
 export const DEFAULT_SHOE_LIFE_M = 700000, SHOE_WARN_SHARE = 0.8;
 const isRun = a => F.RUN_TYPES.has(a.type);
 // A session whose "GPS" is not a place on Earth: Zwift reports Watopia as coordinates in the
@@ -53,7 +54,7 @@ function memo(name, fn) {
 // Activities as the analysis modules expect them: `start` a Date, newest first.
 // GymTracker's strength sessions join them (read-only, when connected) so they count in load.
 export const activities = st => memo('acts', () => [...Object.values(st.activities), ...strengthActivities()]
-  .map(a => ({ ...a, start: new Date(a.start) }))
+  .map(a => ({ ...a, start: new Date(a.start), hr_load_factor: st.derived[a.id]?.hrf ?? a.hr_load_factor }))
   .sort((a, b) => b.start - a.start));
 export const runs = st => activities(st).filter(isRun);
 export const samplesOf = rec => (rec && rec.channels ? samplesFromChannels(rec.channels) : []);
@@ -101,6 +102,11 @@ export function projection(st, race, now = new Date()) {
 }
 
 // ---- per-activity derivation ----
+// The athlete's usual resting HR (median overnight), for heart-rate reserve.
+function restingHr(st) {
+  const v = Object.values(st.wellness).map(w => w.rhr).filter(Boolean).sort((a, b) => a - b);
+  return v.length ? v[v.length >> 1] : 50;
+}
 export function limits(st) {
   let hrMax = null;
   for (const a of Object.values(st.activities)) if (a.max_hr && (!hrMax || a.max_hr > hrMax)) hrMax = a.max_hr;
@@ -194,6 +200,7 @@ export async function deriveActivity(st, id, ctx = {}) {
     climb: run && (a.elev_gain_m || 0) > 50 ? TE.climbCost(samples) : null,
     zones: thrHr && hasHr ? { thr: thrHr, secs: Z.timeInZones(samples, thrHr) } : null,
     durability: null, limits: lim, virtual: virtual || undefined,
+    hrf: hasHr ? hrLoadFactor(samples, restingHr(st), lim.hr_max) : null,
     points: pts.length ? thinTrack(pts, 600) : null,   // enough to draw the route without the stream
   };
   if (run && lim.hr_max && lim.cs && (a.distance_m || 0) >= DU.MIN_DISTANCE_M && (a.moving_s || 0) >= DU.MIN_DURATION_S)
@@ -376,6 +383,25 @@ export function repeatedRoutes(st, now = new Date(), days = 365, minRepeats = 3)
     .reverse();   // oldest first, as the SQL ordered them
   return RP.summarise(rs, minRepeats);
 }
+
+// Aerobic efficiency over the whole record (js/lib/efficiency.js): every steady run, corrected
+// for hills and heat, with that morning's resting HR for RRE.
+export function efficiencyRows(st) {
+  return memo('efficiency', () => {
+    const s = summary(st);
+    if (!s || !s.threshold_hr) return [];
+    const out = [];
+    for (const a of runs(st)) {
+      const w = st.weather[a.id] || {}, d = st.derived[a.id];
+      const r = runEfficiency(a, { thrHr: s.threshold_hr, rhr: st.wellness[dayKey(a.start)]?.rhr ?? null,
+        tempC: w.temp_c ?? null, humidity: w.humidity ?? null, dewPointC: w.dew_point_c ?? null, interval: !!(d && d.session) });
+      if (r) out.push({ ...r, name: a.name });
+    }
+    return out.reverse();   // oldest first
+  });
+}
+export const efficiencyTrend = (st, period) => efTrend(efficiencyRows(st), period);
+export const efficiencySlope = (st, field) => efSlope(efficiencyRows(st), field);
 
 export function gearTable(st) {
   const used = {};

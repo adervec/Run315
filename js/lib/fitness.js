@@ -127,13 +127,15 @@ export function activityLoad(activity, thrHr, thrSpd) {
   const dist = activity.distance_m, mov = activity.moving_s;
   const sk = sport ?? null;  // Python keys a missing type as None
   const spd = thrSpd && Object.hasOwn(thrSpd, sk) ? thrSpd[sk] : null;
-  let intensity;
-  if (hr && thrHr) intensity = hr / thrHr;
+  let intensity, spread = 1;
+  // hr_load_factor: what the HR trace adds over its average (efficiency.hrLoadFactor) --
+  // intervals score their hard minutes, not their average.
+  if (hr && thrHr) { intensity = hr / thrHr; spread = activity.hr_load_factor || 1; }
   else if (dist && mov && spd) intensity = (dist / mov) / spd;
   // ponytail: no HR and no pace baseline -> assume a steady aerobic effort.
   else intensity = 0.75;
   intensity = Math.max(0.4, Math.min(1.15, intensity));
-  return hours * intensity * intensity * 100.0;
+  return hours * intensity * intensity * 100.0 * spread;
 }
 
 // {dayKey: total load} over cardio activities.

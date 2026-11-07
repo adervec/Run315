@@ -23,6 +23,7 @@ export const NAV = [
     { route: 'experiments', page: 'experiments', label: 'Experiments' },
     { route: 'vitals', page: 'vitals', label: 'Vitals' },
     { route: 'journal', page: 'journal', label: 'Journal' },
+    { route: 'efficiency', page: 'efficiency', label: 'Efficiency' },
     { route: 'durability', page: 'durability', label: 'Durability' },
     { route: 'climbing', page: 'climbing', label: 'Climbing' },
     { route: 'second-opinion', page: 'secondopinion', label: 'Second opinion' },
@@ -129,6 +130,15 @@ async function boot() {
   });
   addEventListener('hashchange', () => route());
   await route();
+  // Records derived under an older version (before the HR-trace load, say) are re-derived
+  // quietly once the app is up, one stream at a time, from streams already on this device.
+  setTimeout(async () => {
+    try {
+      const D = await import('./derive.js'), { streamIds } = await import('./store.js');
+      const stale = (await streamIds()).filter(id => state.activities[id] && (state.derived[id]?.v || 0) < D.DERIVE_VERSION);
+      if (stale.length) { await D.deriveAll(state, stale); save('derive'); }
+    } catch (e) { console.warn('re-deriving stale records failed', e); }
+  }, 5000);
   drive.startAutoSync();
   cowork.startScheduler();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('./sw.js').catch(() => {});
