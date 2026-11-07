@@ -18,6 +18,7 @@ import * as WX from '../lib/weather.js';
 import * as S from '../streams.js';
 import { fetchStream, driveOn } from '../drive.js';
 import { journalWidget, mountJournal } from '../journal.js';
+import { newGroundPanel } from '../explore.js';
 import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast } from '../ui.js';
@@ -210,6 +211,8 @@ export async function render(params = {}) {
     ${journal ? html`<section class="panel" data-hook="journal">
       <div class="panel-head"><p class="eyebrow">How it went</p><p class="panel-note">Your own words and numbers · synced</p></div>
       ${journal}</section>` : ''}
+
+    ${newGroundPanel(id)}
 
     ${session ? sessionPanel(session, prescribed, band) : ''}
 
