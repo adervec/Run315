@@ -1,6 +1,8 @@
 // Run315 service worker. The app is static files and all data lives in IndexedDB, so the
-// whole shell can be served from cache: stale-while-revalidate for our own files (instant
-// open, fresh next time), and nothing cross-origin (Google, Anthropic, Overpass, tiles).
+// shell works offline from cache. Network first for our own files, cache only when offline:
+// stale-while-revalidate refreshed modules one at a time, so after a deploy a fresh module could
+// import a name its stale cached neighbour did not export yet -- a blank page until a reload.
+// Nothing cross-origin is touched (Google, Anthropic, Overpass, tiles).
 // BUILD is stamped by the deploy workflow; a new value retires the old cache.
 const BUILD = '__BUILD__';
 const CACHE = 'run315-' + BUILD;
@@ -19,8 +21,10 @@ self.addEventListener('fetch', e => {
   if (url.origin !== location.origin) return;
   const key = req.mode === 'navigate' ? './' : req;
   e.respondWith(caches.open(CACHE).then(async c => {
-    const hit = await c.match(key);
-    const fresh = fetch(req).then(res => { if (res.ok) c.put(key, res.clone()); return res; }).catch(() => hit);
-    return hit || fresh;
+    try {
+      const res = await fetch(req, { cache: 'no-cache' });   // revalidate: Pages lets browsers keep files 10 min
+      if (res.ok) c.put(key, res.clone());
+      return res;
+    } catch (err) { return (await c.match(key)) || Promise.reject(err); }
   }));
 });
