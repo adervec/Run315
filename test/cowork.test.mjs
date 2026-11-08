@@ -61,10 +61,36 @@ test('requests out, replies in, once', async () => {
   // A question round-trips through the analysis channel.
   const id = cowork.ask('Is my decoupling improving?');
   await cowork.exportNow(false);
+  // The brief's digest carries the imported runs and says when Garmin last landed.
+  const recent = JSON.parse(await read(root, 'recent.json')).payload;
+  assert.ok(recent.activities.length > 0 && Object.keys(recent.days).length > 0);
+  assert.ok(recent.freshness.lastImport.garmin);
   const actx = JSON.parse(await read(root, 'analysis/context.json'));
   assert.equal(actx.payload.requests[0].id, id);
   await put(root, 'analysis/inbox/output-a.json', JSON.stringify({ protocol: 'run315-cowork', protocolVersion: 1,
     kind: 'analysis-output', requestHash: actx.requestHash, payload: { answers: [{ id, answer: 'Yes: 12% to 9%.' }] } }));
   await cowork.pollAll(true);
   assert.equal(store.state.analysisRequests[id].status, 'answered');
+});
+
+test('recent.json: six weeks whole, nothing older, heavy fields left out', () => {
+  const now = new Date(2026, 10, 8, 9);
+  const st = { activities: { a: { id: 'a', start: '2026-11-07T07:00:00', distance_m: 10000 }, old: { id: 'old', start: '2026-01-01T07:00:00' } },
+    laps: { a: { laps: [{ n: 1 }] } }, derived: { a: { efforts: [1], tiles: ['x'], p0: [1, 2] } },
+    daily: { '2026-11-07': { steps: 9000, stress_timeline: Array(200).fill(1) }, '2025-01-01': { steps: 1 } },
+    wellness: { '2026-11-08': { hrv_ms: 60 } }, journal: { a: { rpe: 5 }, '2026-11-07': { tags: ['travel'] } },
+    races: { r: { id: 'r', date: '2026-12-01' } },
+    local: { coworkLocal: { ledger: { garmin: { h1: { at: '2026-11-08T06:00:00Z', ok: true }, h2: { at: '2026-11-08T07:00:00Z', error: 'x' } } } } } };
+  const d = cowork.recentDigest(st, now);
+  assert.deepEqual(d.activities.map(a => a.id), ['a']);
+  assert.equal(d.activities[0].laps.length, 1);
+  assert.equal(d.activities[0].journal.rpe, 5);
+  assert.deepEqual(Object.keys(d.activities[0].derived), ['efforts']);
+  assert.deepEqual(Object.keys(d.days), ['2026-11-08', '2026-11-07']);
+  assert.equal(d.days['2026-11-07'].daily.steps, 9000);
+  assert.equal(d.days['2026-11-07'].daily.stress_timeline, undefined);
+  assert.deepEqual(d.days['2026-11-07'].journal.tags, ['travel']);
+  assert.equal(d.freshness.lastDailyDay, '2026-11-07');
+  assert.equal(d.freshness.lastImport.garmin, '2026-11-08T06:00:00Z');
+  assert.equal(d.races.length, 1);
 });

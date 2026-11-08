@@ -6,6 +6,7 @@
 //   cowork.json              discovery manifest (cowork-manifest v1)
 //   README.md                what the folder is, for an agent arriving cold
 //   BRIEF.md + brief.json    the app's own conclusions, so an agent does not re-derive them
+//   recent.json              the last 6 weeks, whole: what a daily or weekly brief reads (small)
 //   app-export.json          the whole synced state: every activity, day, night, race...
 //   data/streams/<id>.json   every per-second stream, written once each, for deep analysis
 //   tools/*.py               the Garmin and Strava exporters the garmin/strava channels run
@@ -84,6 +85,48 @@ async function write(parent, path, content) {
   const w = await (await d.getFileHandle(name, { create: true })).createWritable();
   await w.write(typeof content === 'string' ? content : JSON.stringify(content, null, 2));
   await w.close();   // createWritable commits atomically on close
+}
+
+// ---- the brief's digest ----
+// A daily or weekly brief should never have to open app-export.json (hundreds of MB after a
+// decade). recent.json holds the last `days` days whole -- each activity with its laps,
+// weather, gear, journal, Strava's numbers and the app's derived summary, each day's Garmin
+// sweep, night and estimates -- plus the plans, answers, experiments and races around them,
+// and when each source last got new data so a stale folder is visible as stale.
+const STRIP_DERIVED = ['tiles', 'sig', 'p0', 'points', 'splits'];
+const slimDay = r => r && Object.fromEntries(Object.entries(r).filter(([, v]) => !(Array.isArray(v) && v.length > 48)));
+const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export function recentDigest(st, now = new Date(), days = 42) {
+  const from = isoDay(new Date(now - days * 864e5)), today = isoDay(now);
+  const newest = coll => Object.keys(st[coll] || {}).sort().pop() || null;
+  const acts = Object.values(st.activities || {}).filter(a => String(a.start) >= from).sort(byStart);
+  const gearName = Object.fromEntries(Object.values(st.gear || {}).map(g => [g.uuid, g.name || g.model || g.uuid]));
+  const activities = acts.map(a => {
+    const d = st.derived?.[a.id];
+    return { ...a, laps: st.laps?.[a.id]?.laps || [], weather: st.weather?.[a.id] || null,
+      gear: (st.activityGear?.[a.id]?.uuids || []).map(u => gearName[u] || u), journal: st.journal?.[a.id] || null,
+      derived: d ? Object.fromEntries(Object.entries(d).filter(([k]) => !STRIP_DERIVED.includes(k))) : null };
+  });
+  const dayMap = {};
+  for (const [coll, key] of [['daily', 'daily'], ['wellness', 'night'], ['metrics', 'garmin'], ['journal', 'journal']])
+    for (const [k, r] of Object.entries(st[coll] || {}))
+      if (/^\d{4}-\d{2}-\d{2}$/.test(k) && k >= from) (dayMap[k] || (dayMap[k] = {}))[key] = coll === 'daily' ? slimDay(r) : r;
+  const recentAt = r => String(r || '') >= from;
+  return {
+    window: { from, to: today, days },
+    freshness: { generatedAt: now.toISOString(), lastActivityStart: Object.values(st.activities || {}).map(a => a.start).sort().pop() || null,
+      lastDailyDay: newest('daily'), lastNightDay: newest('wellness'), lastMetricsDay: newest('metrics'),
+      lastImport: Object.fromEntries(['garmin', 'strava'].map(k => [k, Object.values(st.local?.coworkLocal?.ledger?.[k] || {})
+        .filter(e => e.ok).map(e => e.at).sort().pop() || null])) },
+    activities,
+    days: Object.fromEntries(Object.entries(dayMap).sort(([a], [b]) => b.localeCompare(a))),
+    pod: Object.values(st.pod || {}).filter(p => recentAt(p.date)).sort((a, b) => String(b.date).localeCompare(String(a.date))),
+    answers: Object.values(st.analysisRequests || {}).filter(q => q.answer && (q.standing || recentAt(q.answeredAt)))
+      .map(q => ({ q: q.q, answer: q.answer, answeredAt: q.answeredAt, standing: !!q.standing })),
+    lastReview: Object.values(st.reviews || {}).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0] || null,
+    experiments: Object.values(st.experiments || {}).filter(x => !x.end || x.end >= from),
+    races: Object.values(st.races || {}).filter(r => String(r.date) >= from).sort((a, b) => String(a.date).localeCompare(String(b.date))),
+  };
 }
 
 // ---- what each channel asks for ----
@@ -217,7 +260,7 @@ Every activity since \`lastActivityStart\` is pulled, all sports, plus streams f
 { "review": "markdown" }
 \`\`\`
 
-Read \`../BRIEF.md\` first. Sections: **Where the fitness is**, **What the projections mean**, **What to change in the next 4 weeks** (at most 4 actions, one line each, each with a number). Quantitative, specific, under 400 words. Say when the data is thin and what to run to fix it. No medical advice.
+Read \`../BRIEF.md\` first, then \`../recent.json\` for the evidence (no need to open app-export.json). Sections: **Where the fitness is**, **What the projections mean**, **What to change in the next 4 weeks** (at most 4 actions, one line each, each with a number). Quantitative, specific, under 400 words. Say when the data is thin and what to run to fix it. No medical advice.
 `;
 }
 
@@ -227,10 +270,14 @@ A two-way bridge between the Run315 web app and an AI agent (any agent that can 
 
 - \`cowork.json\` — the discovery manifest (\`cowork-manifest\` v1). CoworkSyncHub drives this folder from it.
 - \`BRIEF.md\` + \`brief.json\` — **start here.** The app's own conclusions: fitness / fatigue / form, projections, best efforts, zones, durability, vitals trends, what data is missing.
-- \`app-export.json\` — everything, raw: the synced state.
+- \`recent.json\` — **the last 6 weeks, whole** (activities with laps, weather, gear, journal, Strava's numbers and the app's derived summary; each day's Garmin sweep, night and estimates; plans, answers, experiments, races; \`freshness\`). A daily or weekly brief needs only \`BRIEF.md\` + \`recent.json\`.
+- \`app-export.json\` — everything, raw: the synced state. Large; open it only for questions that reach further back than six weeks.
 - \`data/streams/<id>.json\` — per-second channels for every activity that has them.
 - \`tools/\` — \`garmin-export.py\`, \`strava-export.py\`: the fetchers the garmin and strava channels run.
 - \`garmin/\`, \`strava/\`, \`analysis/\`, \`coach/\` — one task each: \`INSTRUCTIONS.md\` + \`context.json\`; reply into \`<channel>/inbox/\`.
+
+## Writing a daily or weekly brief
+Read \`BRIEF.md\` (conclusions: load, form, readiness, projections, weekly volume) and \`recent.json\` (the evidence). Check \`recent.json\` → \`freshness\` first: if \`lastDailyDay\` is not yesterday or today, or \`garmin/inbox/\` or \`strava/inbox/\` holds \`output-*.json\` files newer than \`freshness.generatedAt\`, the app has not imported the latest pull yet — read those inbox files for the newest days and say in the brief that the app's own numbers lag.
 
 ## Two obligations
 1. **Echo \`requestHash\`** from \`context.json\` into your reply envelope.
@@ -267,6 +314,7 @@ export async function exportNow(auto = true) {
     const brief = buildBrief(state, new Date());
     await write(r, 'brief.json', envelope('brief', brief));
     await write(r, 'BRIEF.md', briefMarkdown(brief));
+    await write(r, 'recent.json', envelope('recent', recentDigest(state, new Date())));
     await write(r, 'app-export.json', JSON.stringify(envelope('app-export', { ...state, local: undefined })));
     for (const [f, src] of Object.entries(await toolSources())) await write(r, 'tools/' + f, src);
     for (const c of CHANNELS) {
@@ -416,6 +464,23 @@ export async function pollAll(interactive = false) {
   return imported;
 }
 
+// After a browser restart Chrome forgets the folder grant, and every scheduled export would skip
+// quietly -- the morning brief then reads yesterday's folder. A button stays on screen until a
+// click re-grants (Chrome offers "Allow on every visit" there, which makes it stick).
+async function permissionNudge() {
+  const h = await idbGet('kv', HANDLE_KEY);
+  const lost = h && (await h.queryPermission({ mode: 'readwrite' })) !== 'granted';
+  let b = document.getElementById('cw-regrant');
+  if (!lost) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('button');
+  b.id = 'cw-regrant'; b.className = 'btn'; b.type = 'button';
+  b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+  b.textContent = 'Cowork folder paused: allow access';
+  b.onclick = async () => { if (await root(true)) { b.remove(); await exportNow(true); await pollAll(false); } };
+  document.body.appendChild(b);
+}
+
 // ---- the schedule: one cheap tick a minute decides what is due ----
 let _tick = null;
 export function startScheduler() {
@@ -424,6 +489,7 @@ export function startScheduler() {
   const due = (k, min) => !local().lastRuns[k] || Date.now() - new Date(local().lastRuns[k]) >= min * 60000;
   const tick = async () => {
     if (!cfg().enabled) return;
+    await permissionNudge();
     const s = { ...SCHEDULE_DEFAULTS, ...(cfg().schedules || {}) };
     if (s.pushMin && due('push', s.pushMin)) await exportNow(true);
     if (s.checkMin && due('check', s.checkMin)) await pollAll(false);
