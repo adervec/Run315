@@ -10,6 +10,7 @@
 // right under the headline, because logging how it felt is a ten-second job best done
 // straight after the run; the Strava segments button in the page head; GymTracker's
 // strength sessions (ids 'gt...') get strength.js's own detail instead of this page.
+import { loadLeaflet, token } from '../routemaker.js';
 import { state } from '../store.js';
 import * as D from '../derive.js';
 import * as F from '../lib/fitness.js';
@@ -635,19 +636,6 @@ function explorer(el, sx, mapRef) {
 }
 
 // ---- the map ----
-const LEAFLET = 'https://unpkg.com/leaflet@1.9.4/dist/';
-let _leaflet = null;
-function leaflet() {
-  if (window.L) return Promise.resolve(window.L);
-  return _leaflet || (_leaflet = new Promise((res, rej) => {
-    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = LEAFLET + 'leaflet.css'; document.head.appendChild(css);
-    const s = document.createElement('script'); s.src = LEAFLET + 'leaflet.js';
-    s.onload = () => res(window.L); s.onerror = () => { _leaflet = null; rej(new Error('Leaflet did not load')); };
-    document.head.appendChild(s);
-  }));
-}
-const token = (n, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || fallback;
-
 // ---- the track coloured by a channel ----
 // Five quantile bands of a warm sequential ramp (light = low, dark = high); pace and speed are
 // flipped so darker is always the harder or faster end. Each band is one polyline per run of
@@ -715,7 +703,7 @@ const fmtPaceShort = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).
 // Draw the route; return what the explorer drives on it: a hover marker and a highlighted stretch.
 async function drawMap(box, pts, colour = null) {
   let L;
-  try { L = await leaflet(); } catch (e) { box.textContent = 'The map did not load (offline?).'; return null; }
+  try { L = await loadLeaflet(); } catch (e) { box.textContent = 'The map did not load (offline?).'; return null; }
   if (!box.isConnected) return null;
   const map = L.map(box, { preferCanvas: true });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);

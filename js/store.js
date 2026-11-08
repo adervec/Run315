@@ -74,6 +74,17 @@ export function save(why = 'edit') {
   _saveTimer = setTimeout(() => { idbSet('kv', STATE_KEY, state).catch(e => console.warn('state save failed', e)); }, 250);
   listeners.forEach(fn => { try { fn(why); } catch (e) { console.error(e); } });
 }
+// Device-local crash log: the last 30 uncaught errors, shown (and copyable) on Sync & cowork.
+export function logError(e, where = '') {
+  try {
+    const L = state.local || (state.local = {}), list = L.errors || (L.errors = []);
+    const msg = String((e && (e.message || e.reason)) || e).slice(0, 300);
+    if (list[0] && list[0].msg === msg && list[0].where === where) { list[0].n = (list[0].n || 1) + 1; list[0].at = new Date().toISOString(); }
+    else list.unshift({ at: new Date().toISOString(), where, route: globalThis.location ? location.hash : '', msg, stack: String((e && e.stack) || '').slice(0, 1500) });
+    list.length = Math.min(list.length, 30);
+    save('local');
+  } catch { /* the log must never throw */ }
+}
 export async function saveNow() { clearTimeout(_saveTimer); await idbSet('kv', STATE_KEY, state); }
 
 // Fold another device's payload in, keeping this device's local settings. -> whether anything changed.

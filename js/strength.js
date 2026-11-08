@@ -24,7 +24,7 @@
 import { state, save, rev, onChange, idbGet, idbSet } from './store.js';
 import { readAppFile, driveOn } from './drive.js';
 import * as F from './lib/fitness.js';
-import { weekStart, dayKey } from './lib/dt.js';
+import { weekStart } from './lib/dt.js';
 import { html, day, ago, fmtTime } from './ui.js';
 
 export const FILE = 'gymtracker-state.json', CACHE_KEY = 'gymtracker-sessions';

@@ -1,7 +1,9 @@
 // Boot, the router and the shell. Pages are lazy modules in js/pages/: each exports
 // `render(params)` returning html`` (sync or async) and optionally `mount(el, params)`
 // for wiring events, maps and charts once the markup is in the document.
-import { loadState, state, save, onChange } from './store.js';
+import { loadState, state, save, onChange, logError } from './store.js';
+addEventListener('error', e => logError(e.error || e.message, 'window'));
+addEventListener('unhandledrejection', e => logError(e.reason, 'promise'));
 import { html, esc } from './ui.js';
 import * as drive from './drive.js';
 import * as cowork from './cowork.js';
@@ -102,16 +104,16 @@ async function route(quiet = false) {
   const main = document.getElementById('page');
   let mod;
   try { mod = await import(`./pages/${page}.js`); }
-  catch (e) { main.innerHTML = `<section class="panel"><p>That page did not load: ${esc(e.message)}</p></section>`; console.error(e); return; }
+  catch (e) { main.innerHTML = `<section class="panel"><p>That page did not load: ${esc(e.message)}</p></section>`; console.error(e); logError(e, 'load ' + page); return; }
   let out;
   try { out = await mod.render(params); }
-  catch (e) { console.error(e); out = html`<section class="panel"><p class="eyebrow">Something broke</p><pre>${e.stack || e}</pre></section>`; }
+  catch (e) { console.error(e); logError(e, 'render ' + page); out = html`<section class="panel"><p class="eyebrow">Something broke</p><pre>${e.stack || e}</pre></section>`; }
   if (seq !== _seq) return;   // a newer navigation won
   // Whatever the previous page started (maps, timers, observers) stops before its markup goes.
   if (_cleanup) { try { _cleanup(); } catch (e) { console.error(e); } _cleanup = null; }
   main.innerHTML = String(out);
   document.title = (mod.title ? (typeof mod.title === 'function' ? mod.title(params) : mod.title) + ' · ' : '') + 'Run315';
-  if (mod.mount) { try { const c = await mod.mount(main, params); if (typeof c === 'function') _cleanup = c; } catch (e) { console.error(e); } }
+  if (mod.mount) { try { const c = await mod.mount(main, params); if (typeof c === 'function') _cleanup = c; } catch (e) { console.error(e); logError(e, 'mount ' + page); } }
   if (!quiet) window.scrollTo(0, 0);
 }
 export const rerender = () => route(true);

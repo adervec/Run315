@@ -5,6 +5,12 @@
   "description": "Run315 - GymTracker for cardio. Static browser app; dev tooling only.",
   "scripts": {
     "test": "node --import ./test/tz.mjs --test --test-concurrency=4 \"test/**/*.test.mjs\"",
-    "serve": "python -m http.server 8315"
+    "serve": "python -m http.server 8315",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "17.13.0"
   }
 }

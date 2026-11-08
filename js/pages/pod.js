@@ -9,7 +9,7 @@ import * as cowork from '../cowork.js';
 import { apiKey } from '../ai.js';
 import { dayKey } from '../lib/dt.js';
 import { forecastFor, shouldFetch, hourCost, defaultLocation } from '../forecast.js';
-import { normOptions, forecastToday, outcomes, outcomeSummary, todayPod, chosenPlan, stepLine, planNow, INTENSITY } from '../pod.js';
+import { normOptions, forecastToday, outcomes, outcomeSummary, todayPod, stepLine, planNow, INTENSITY } from '../pod.js';
 import { html, pageHead, md, day, toast, useCss } from '../ui.js';
 
 export const title = 'Plan of the day';

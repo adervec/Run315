@@ -6,7 +6,6 @@
 // shows the totals, the lists, the chart and the completion dates without the geometry.
 // The map needs `city-geo-<id>` in this device's cache; a device without it gets a
 // "Load map data" button that fetches the same ways from Overpass.
-import { state } from '../store.js';
 import * as C from '../cities.js';
 import * as BS from '../bitset.js';
 import { renderChart } from '../charts.js';

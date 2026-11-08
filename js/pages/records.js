@@ -2,7 +2,6 @@
 // map of them), the privacy zones every share respects, the air you ran in against how you
 // ran, and the track wall -- every route as a thumbnail, grouped by where it started.
 import { state } from '../store.js';
-import * as D from '../derive.js';
 import * as C from '../collect.js';
 import * as S from '../share.js';
 import { renderChart } from '../charts.js';

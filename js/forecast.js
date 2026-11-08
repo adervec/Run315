@@ -113,7 +113,7 @@ export function defaultLocation(st) {
     const [s, w, n, e] = tileBounds(ts.home[0], ts.home[1]);
     return { lat: (s + n) / 2, lon: (w + e) / 2, source: 'most-run tile' };
   }
-  const latest = Object.values(st.activities).filter(a => (st.derived[a.id]?.p0 || st.derived[a.id]?.points?.length) && !/virtual|indoor|treadmill|trainer|zwift/i.test((a.type || '') + ' ' + (a.name || '')))
+  const latest = Object.values(st.activities).filter(a => (st.derived[a.id]?.p0 || st.derived[a.id]?.points?.length) && !D.isVirtual(a))
     .sort((a, b) => String(b.start).localeCompare(String(a.start)))[0];
   if (latest) { const d = st.derived[latest.id], [lat, lon] = d.p0 || d.points[0]; return { lat, lon, source: 'latest activity' }; }
   return null;

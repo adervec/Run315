@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { decodeFit, fitType, FIT_EPOCH } from '../js/fit.js';
-import { FitWriter, T, fitTime, semi, sampleActivity } from './fitenc.mjs';
+import { FitWriter, T, fitTime, sampleActivity } from './fitenc.mjs';
 
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 

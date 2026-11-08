@@ -9,7 +9,7 @@ import * as C from '../collect.js';
 import * as S from '../share.js';
 import { exploreIndex } from '../explore.js';
 import { distLabel } from '../events.js';
-import { html, raw, pageHead, emptyState, useCss, toast, day, fmtTime } from '../ui.js';
+import { html, pageHead, emptyState, useCss, toast, day, fmtTime } from '../ui.js';
 
 export const title = 'Year in review';
 

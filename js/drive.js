@@ -35,8 +35,14 @@ function loadGis() {
     document.head.appendChild(s);
   }));
 }
+// Getting a token can open Google's popup, which the browser blocks (and GSI logs an error for)
+// unless a click is behind it. So a background sync never asks: an expired token stops it with
+// RECONNECT until the next click (Sync now, or any navigation that fetches a stream).
+export const RECONNECT = 'Drive sign-in expired: press Sync now to reconnect.';
+let _interactive = false;
 async function token(force) {
   if (!force && _token && _token.exp > Date.now() + 60000) return _token.value;
+  if (!_interactive && !(navigator.userActivation && navigator.userActivation.isActive)) throw new Error(RECONNECT);
   await loadGis();
   if (!_client) _client = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPE, callback: () => {} });
   return new Promise((res, rej) => {
@@ -99,9 +105,9 @@ let _busy = false;
 function stamp(patch) { Object.assign(meta(), patch); save('cloud-meta'); }
 
 // Pull, merge, push. One function, because a push is never safe without the pull before it.
-export async function sync() {
+export async function sync(interactive = false) {
   if (!driveOn() || _busy) return false;
-  _busy = true;
+  _busy = true; _interactive = interactive;
   try {
     const remote = await readJson(STATE_FILE);
     const changed = remote ? mergeIn(remote) : false;
@@ -116,7 +122,7 @@ export async function sync() {
   } catch (e) {
     stamp({ lastError: e.message || String(e) });
     return false;
-  } finally { _busy = false; }
+  } finally { _busy = false; _interactive = false; }
 }
 
 // Streams and details this device made and has not uploaded yet, a few per sync.
@@ -159,13 +165,14 @@ export async function fetchStream(id) {
 
 export async function connect() {
   if (!originAllowed()) throw new Error('Google Drive sync only works on adervec.github.io (or localhost).');
-  await token(true);
+  _interactive = true;
+  try { await token(true); } finally { _interactive = false; }
   stamp({ enabled: true, lastError: null });
   try {
     const r = await gfetch('https://www.googleapis.com/oauth2/v3/userinfo');
     if (r.ok) { const u = await r.json(); stamp({ account: { name: u.name, picture: u.picture } }); }
   } catch { /* the name is a nicety */ }
-  return sync();
+  return sync(true);
 }
 export function disconnect() { _token = null; stamp({ enabled: false, account: null }); }
 

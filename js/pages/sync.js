@@ -71,6 +71,16 @@ function dataPanel() {
     </div></section>`;
 }
 
+// The crash log store.js keeps: copy it into a bug report, or clear it.
+function errorsPanel() {
+  const list = state.local.errors || [];
+  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Diagnostics</p></div>
+    ${list.length ? html`<dl class="kv">${list.slice(0, 8).map(e => html`<dt>${ago(e.at)}${e.n > 1 ? ` ×${e.n}` : ''}</dt><dd><b>${e.where}</b> ${e.route} · ${e.msg}</dd>`)}</dl>
+      <div class="row-actions"><button class="btn" data-act="err-copy">Copy ${list.length} error${list.length > 1 ? 's' : ''}</button><button class="btn btn-ghost" data-act="err-clear">Clear</button></div>`
+    : html`<p class="panel-note" style="margin:0">No errors recorded on this device.</p>`}
+  </section>`;
+}
+
 function settingsPanel() {
   const t = state.local.theme || 'system';
   return html`<section class="panel"><div class="panel-head"><p class="eyebrow">AI & appearance</p></div>
@@ -83,7 +93,7 @@ function settingsPanel() {
 export function render() {
   useCss('sync', CSS);
   return html`${pageHead('Sync & cowork', 'Garmin and Strava in · analysis out · every device in step')}
-    <div class="sync-grid">${coworkPanel()}${archivePanel()}${drivePanel()}${dataPanel()}${settingsPanel()}</div>`;
+    <div class="sync-grid">${coworkPanel()}${archivePanel()}${drivePanel()}${dataPanel()}${settingsPanel()}${errorsPanel()}</div>`;
 }
 
 function download(name, text, type = 'application/json') {
@@ -141,8 +151,10 @@ export function mount(el) {
     if (act === 'import') { b.onchange = () => b.files[0] && busy(b, () => importFile(b.files[0]), r => `Imported ${r.activities} activities, ${r.streams.length} streams`); return; }
     b.onclick = () => ({
       'drive-on': () => busy(b, drive.connect, 'Google Drive connected'),
-      'drive-sync': () => busy(b, drive.sync, 'Synced'),
+      'drive-sync': () => busy(b, () => drive.sync(true), 'Synced'),
       'drive-off': () => { drive.disconnect(); redraw(); },
+      'err-copy': () => busy(b, () => navigator.clipboard.writeText(JSON.stringify({ ua: navigator.userAgent, errors: state.local.errors }, null, 2)), 'Copied'),
+      'err-clear': () => { state.local.errors = []; save('local'); redraw(); },
       'cw-pick': () => busy(b, cowork.pickFolder, 'Cowork folder ready: requests written'),
       'cw-push': () => busy(b, () => cowork.exportNow(false), 'Requests written'),
       'cw-poll': () => busy(b, () => cowork.pollAll(true), n => n ? `Imported ${n} replies` : 'No new replies'),
