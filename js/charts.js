@@ -11,6 +11,7 @@
 // get a legend, and are capped at 8 (scatter at 3, where every pair must stay apart).
 // Every mark names its value on hover, and a table view sits under each chart.
 import { esc } from './ui.js';
+import { dayKey } from './lib/dt.js';
 
 const W = 680, H = 240, M = { l: 48, r: 14, t: 10, b: 30 };
 const colour = (i, n) => (n === 1 ? 'var(--measured)' : `var(--series-${i + 1})`);
@@ -37,7 +38,8 @@ export function renderChart(spec) {
 
   // x as numbers: time -> ms, category -> index
   const cats = xt === 'category' ? [...new Set(series.flatMap(s => s.points.map(p => String(p[0]))))] : null;
-  const xv = x => (xt === 'time' ? Date.parse(x) : xt === 'category' ? cats.indexOf(String(x)) : +x);
+  // A bare 'YYYY-MM-DD' is the runner's local day: read it at local midnight, label it locally.
+  const xv = x => (xt === 'time' ? Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(x) ? x + 'T00:00:00' : x) : xt === 'category' ? cats.indexOf(String(x)) : +x);
   const pts = series.map(s => s.points.map(p => [xv(p[0]), +p[1], p[0]]).filter(p => isFinite(p[0]) && isFinite(p[1])));
   const xs = pts.flat().map(p => p[0]), ys = pts.flat().map(p => p[1]);
   if (!xs.length) throw new Error('no finite points');
@@ -50,7 +52,7 @@ export function renderChart(spec) {
   const X = v => M.l + ((v - x0) / (x1 - x0)) * iw, Y = v => M.t + ih - ((v - y0) / (y1 - y0)) * ih;
 
   const yt = ticks(y0, y1);
-  const fmtX = v => (xt === 'time' ? new Date(v).toISOString().slice(0, 10) : cats ? cats[Math.round(v)] : fmtNum(v));
+  const fmtX = v => (xt === 'time' ? dayKey(new Date(v)) : cats ? cats[Math.round(v)] : fmtNum(v));
   const xtv = cats ? cats.map((_, i) => i).filter((_, i, a) => a.length <= 12 || i % Math.ceil(a.length / 12) === 0)
     : xt === 'time' ? Array.from({ length: 5 }, (_, i) => x0 + (i * (x1 - x0)) / 4) : ticks(x0, x1);
   const unit = (spec.y && spec.y.unit) ? ' ' + spec.y.unit : '';

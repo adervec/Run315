@@ -19,6 +19,7 @@ import { put } from './merge.js';
 import { importGarmin, importStrava } from './ingest.js';
 import { queueStream } from './drive.js';
 import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
+import { dayKey } from './lib/dt.js';
 import { podContext, importPod } from './pod.js';
 import { reviewContext, importReview, scanRecord } from './datareview.js';
 
@@ -95,9 +96,8 @@ async function write(parent, path, content) {
 // and when each source last got new data so a stale folder is visible as stale.
 const STRIP_DERIVED = ['tiles', 'sig', 'p0', 'points', 'splits'];
 const slimDay = r => r && Object.fromEntries(Object.entries(r).filter(([, v]) => !(Array.isArray(v) && v.length > 48)));
-const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export function recentDigest(st, now = new Date(), days = 42) {
-  const from = isoDay(new Date(now - days * 864e5)), today = isoDay(now);
+  const from = dayKey(new Date(now - days * 864e5)), today = dayKey(now);
   const newest = coll => Object.keys(st[coll] || {}).sort().pop() || null;
   const acts = Object.values(st.activities || {}).filter(a => String(a.start) >= from).sort(byStart);
   const gearName = Object.fromEntries(Object.values(st.gear || {}).map(g => [g.uuid, g.name || g.model || g.uuid]));
@@ -167,7 +167,7 @@ export async function channelContext(key) {
   if (key === 'datareview') return reviewContext(state);
   // coach: the standing weekly review
   const reviews = Object.values(state.reviews).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
-  return { lastReview: reviews[0]?.created_at || null, week: new Date().toISOString().slice(0, 10) };
+  return { lastReview: reviews[0]?.created_at || null, week: dayKey(new Date()) };
 }
 
 const ENV_DOC = '```json\n' + JSON.stringify({ protocol: PROTOCOL, protocolVersion: VERSION, kind: '<kind>',

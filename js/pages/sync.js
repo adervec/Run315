@@ -2,6 +2,7 @@
 // (Garmin and Strava in, analysis out), manual import/export, the demo, and settings.
 import { state, save, putStream, hasStream, streamIds, eraseDevice } from '../store.js';
 import { syncPayload } from '../merge.js';
+import { dayKey } from '../lib/dt.js';
 import * as drive from '../drive.js';
 import * as cowork from '../cowork.js';
 import * as D from '../derive.js';
@@ -159,7 +160,7 @@ export function mount(el) {
       'cw-pick': () => busy(b, cowork.pickFolder, 'Cowork folder ready: requests written'),
       'cw-push': () => busy(b, () => cowork.exportNow(false), 'Requests written'),
       'cw-poll': () => busy(b, () => cowork.pollAll(true), n => n ? `Imported ${n} replies` : 'No new replies'),
-      export: () => download('run315-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(syncPayload(state))),
+      export: () => download('run315-' + dayKey(new Date()) + '.json', JSON.stringify(syncPayload(state))),
       csv: () => {
         const rows = [['start', 'name', 'type', 'distance_m', 'moving_s', 'elapsed_s', 'avg_hr', 'max_hr', 'elev_gain_m', 'calories', 'garmin_id', 'strava_id']];
         for (const a of D.activities(state)) rows.push([a.start.toISOString(), a.name, a.type, a.distance_m, a.moving_s, a.elapsed_s, a.avg_hr, a.max_hr, a.elev_gain_m, a.calories, a.garmin_id, a.strava_id]);

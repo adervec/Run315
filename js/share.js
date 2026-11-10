@@ -9,6 +9,7 @@
 //   Open-Meteo one request per (0.1° cell, day), cached in `cache` ('aq:<cell>:<day>') and
 //              shared by every run that starts there that day; fetched only when asked.
 import { put } from './merge.js';
+import { dayKey } from './lib/dt.js';
 import { state, save, idbGet, idbSet, getDetailRec } from './store.js';
 import * as D from './derive.js';
 import * as C from './collect.js';
@@ -276,7 +277,7 @@ export function resolvePlaces({ onProgress, signal, fetchJson = u => fetch(u).th
 // ---------------------------------------------------------------------------
 const aqCell = (lat, lon) => (Math.round(lat * 10) / 10).toFixed(1) + ',' + (Math.round(lon * 10) / 10).toFixed(1);
 // Outdoor activities that have a start point, with whether the archive covers them.
-export function airTargets(st = state, today = new Date().toISOString().slice(0, 10)) {
+export function airTargets(st = state, today = dayKey(new Date())) {
   const out = [];
   for (const a of Object.values(st.activities)) {
     const p = st.derived?.[a.id]?.p0;
@@ -295,7 +296,7 @@ async function dayJson(lat, lon, dayK) {
   const j = await r.json();
   const keep = { hourly: j.hourly || null, at: nowIso() };
   // An empty answer for a recent day may fill in later; an old one never will.
-  const old = dayK < new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10);
+  const old = dayK < dayKey(new Date(Date.now() - 6 * 864e5));
   if (j.hourly && (old || C.parseAir(j, dayK + 'T12:00'))) await idbSet('cache', key, keep);
   return keep;
 }

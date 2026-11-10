@@ -32,6 +32,8 @@ const KJ_PER_KCAL = 4.184;
 
 const num = v => (v == null || v === '' || !isFinite(+v) ? null : +v);
 const round = (v, dp) => (v == null ? null : Math.round(v * 10 ** dp) / 10 ** dp);
+// UTC on purpose: Garmin's calendarDate and startTimeLocal (and FIT time + local offset) are the
+// runner's wall clock stored as if it were UTC, so reading them back in UTC is their local day.
 const dayOf = v => (v == null ? null : typeof v === 'number' ? new Date(v).toISOString().slice(0, 10) : String(v).slice(0, 10));
 const localIso = ms => new Date(ms).toISOString().slice(0, 19);
 const tick = () => new Promise(r => setTimeout(r, 0));
