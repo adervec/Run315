@@ -4,7 +4,7 @@
 import { loadState, state, save, onChange, logError } from './store.js';
 addEventListener('error', e => logError(e.error || e.message, 'window'));
 addEventListener('unhandledrejection', e => logError(e.reason, 'promise'));
-import { html, esc } from './ui.js';
+import { html, esc, avatar } from './ui.js';
 import * as drive from './drive.js';
 import * as cowork from './cowork.js';
 
@@ -79,7 +79,7 @@ function parseHash() {
 function syncDot() {
   const c = state.local.cloud || {};
   if (!c.enabled) return html`<span class="dot"></span>Not syncing`;
-  return c.lastError ? html`<span class="dot err"></span>Sync error` : html`<span class="dot ok"></span>Drive synced`;
+  return c.lastError ? html`<span class="dot err"></span>${avatar(c.account)}Sync error` : html`<span class="dot ok"></span>${avatar(c.account)}Drive synced`;
 }
 function renderNav(current) {
   const nav = document.getElementById('nav');

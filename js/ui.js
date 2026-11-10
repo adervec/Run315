@@ -115,3 +115,7 @@ export function useCss(id, css) {
   const s = document.createElement('style'); s.dataset.page = id; s.textContent = css; document.head.appendChild(s);
 }
 export const link = (route, text, cls = 'quiet-link') => html`<a class="${cls}" href="#/${route}">${text}</a>`;
+
+// The connected Google account's picture (round, 24 px) -- nothing when there is none.
+export const avatar = account => (account && account.picture
+  ? html`<img class="avatar" src="${account.picture}" alt="" referrerpolicy="no-referrer" width="24" height="24">` : '');

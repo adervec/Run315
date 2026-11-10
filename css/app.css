@@ -608,3 +608,5 @@ select {
 .chart-legend-row i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 .chart-fig details { font-size: 12px; margin-top: 6px; }
 .chart-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+
+.avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; }

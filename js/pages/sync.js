@@ -8,7 +8,7 @@ import * as D from '../derive.js';
 import { importGarmin, importStrava } from '../ingest.js';
 import { setKey, apiKey, MODEL } from '../ai.js';
 import { archivePanel, mountArchive } from '../archive.js';
-import { html, pageHead, ago, toast, useCss } from '../ui.js';
+import { html, pageHead, ago, toast, useCss, avatar } from '../ui.js';
 
 export const title = 'Sync & cowork';
 const CSS = `
@@ -26,7 +26,7 @@ function drivePanel() {
   const c = state.local.cloud || {};
   return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Google Drive</p></div>
     <p class="panel-note" style="margin:0 0 12px">Phone and desktop share one copy in Drive's private app folder: invisible in your Drive, readable only by this app.</p>
-    ${c.enabled ? html`<dl class="kv"><dt>Account</dt><dd>${c.account?.name || 'connected'}</dd>
+    ${c.enabled ? html`<dl class="kv"><dt>Account</dt><dd>${avatar(c.account)}${c.account?.name || 'connected'}</dd>
       <dt>Last sync</dt><dd>${ago(c.lastSync)}</dd>
       ${c.lastError ? html`<dt>Error</dt><dd class="bad">${c.lastError}</dd>` : ''}</dl>
       <div class="row-actions"><button class="btn" data-act="drive-sync">Sync now</button><button class="btn btn-ghost" data-act="drive-off">Disconnect</button></div>`
