@@ -40,3 +40,15 @@ test('erase removes only Run315 data, stops saves, and the Drive copy is left al
   assert.match(src, /copy in your Google Drive is not touched/);
   assert.doesNotMatch(readFileSync('js/store.js', 'utf8'), /localStorage\.clear\(\)/);
 });
+
+test("what's new: whatsnew.json is newest first, declared in the page, and deployed", () => {
+  const notes = JSON.parse(readFileSync('whatsnew.json', 'utf8'));
+  assert.ok(Array.isArray(notes) && notes.length);
+  for (const n of notes) {
+    assert.match(n.date, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(Array.isArray(n.items) && n.items.length && n.items.every(i => typeof i === 'string' && i.trim()));
+  }
+  assert.deepEqual(notes.map(n => n.date), [...notes.map(n => n.date)].sort().reverse(), 'newest first');
+  assert.match(readFileSync('index.html', 'utf8'), /<meta name="app-whatsnew" content="whatsnew.json">/);
+  assert.match(readFileSync('.github/workflows/pages.yml', 'utf8'), /cp -r [^\n]*whatsnew\.json[^\n]* _site\//);
+});

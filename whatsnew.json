@@ -1,0 +1,24 @@
+[
+  { "date": "2026-11-10", "items": [
+    "Your Google profile picture shows beside your account when Drive sync is on.",
+    "Maps, the SQL console and the AI coach no longer load code from other websites.",
+    "Erase everything on this device now removes all of Run315's data and only Run315's, disconnects Drive, and leaves your Drive copy untouched.",
+    "Days are always your local day: a late-evening run no longer shows up as tomorrow in charts, the coach's week or air quality."
+  ] },
+  { "date": "2026-11-09", "items": [
+    "Atkinson Hyperlegible is the default font, and you can pick another one in Sync & cowork."
+  ] },
+  { "date": "2026-11-08", "items": [
+    "Fixed a blank page that could appear right after an update.",
+    "Drive sync no longer tries to open a blocked sign-in popup in the background: press Sync now to reconnect when it asks.",
+    "Errors are recorded on this device and shown under Sync & cowork, ready to copy into a bug report.",
+    "The cowork folder gets a recent.json with your last six weeks, so daily and weekly briefs read fast and can tell when the data is stale.",
+    "If the browser forgets the cowork folder after a restart, a button asks for access again instead of exports stopping quietly."
+  ] },
+  { "date": "2026-11-07", "items": [
+    "Records and collections, a year in review, shareable images with privacy zones, and air quality on each run.",
+    "Replay a run, race your own ghost, and watch your coverage grow in a time-lapse.",
+    "Plan a run through streets and tiles you have never covered, and export it as GPX.",
+    "W′ balance through a run, and DFA-a1 when your watch records beat-to-beat intervals."
+  ] }
+]
