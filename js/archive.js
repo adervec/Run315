@@ -18,6 +18,7 @@
 import { listEntries, streamEntry, readEntry, entryBlob } from './zipread.js';
 import { decodeFit, fitType } from './fit.js';
 import { html } from './ui.js';
+import { pad, weekStart } from './lib/dt.js';
 
 // Garmin's sleep timestamps in the export are GMT ('2019-01-16T01:37:00.0'): local 'HH:MM' on this
 // device's clock (the athlete's zone, DST included). null when absent.
@@ -34,7 +35,8 @@ const num = v => (v == null || v === '' || !isFinite(+v) ? null : +v);
 const round = (v, dp) => (v == null ? null : Math.round(v * 10 ** dp) / 10 ** dp);
 // UTC on purpose: Garmin's calendarDate and startTimeLocal (and FIT time + local offset) are the
 // runner's wall clock stored as if it were UTC, so reading them back in UTC is their local day.
-const dayOf = v => (v == null ? null : typeof v === 'number' ? new Date(v).toISOString().slice(0, 10) : String(v).slice(0, 10));
+const wallDay = ms => { const d = new Date(ms); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); };
+const dayOf = v => (v == null ? null : typeof v === 'number' ? wallDay(v) : String(v).slice(0, 10));
 const localIso = ms => new Date(ms).toISOString().slice(0, 19);
 const tick = () => new Promise(r => setTimeout(r, 0));
 
@@ -261,7 +263,7 @@ export class Days {
     for (const [day, r] of this.readiness) this.set('daily', day, { training_readiness: r.score });
     const weekly = new Map();
     for (const row of [...this.metrics.values()].sort((a, b) => (a.day < b.day ? -1 : 1))) {
-      const d = new Date(row.day + 'T00:00:00Z'), wk = new Date(d - ((d.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10);
+      const wk = weekStart(row.day);
       weekly.set(wk, { ...(weekly.get(wk) || {}), ...row });
     }
     const sorted = m => [...m.values()].sort((a, b) => (a.day < b.day ? -1 : 1));

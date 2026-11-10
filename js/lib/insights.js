@@ -17,6 +17,7 @@ import { basePrediction, STANDARD_RACES } from './fitness.js';
 import { costRatio, haversine } from './racecraft.js';
 import { adjust as heatAdjust } from './weather.js';
 import { medianCI } from './efficiency.js';
+import { addDayKey as addDay } from './dt.js';
 
 export { medianCI };
 export const median = xs => {
@@ -224,7 +225,6 @@ export function hrrTrend(rows, { hrMax = null, period = 'quarter', kinds = ['r',
 // transfers; the absolute numbers and published thresholds do not.
 export const HRV_ROLL = 7, HRV_BASE = 60, HRV_MIN_ROLL = 5, HRV_MIN_BASE = 30;
 
-const addDay = (day, n) => { const d = new Date(Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10) + n)); return d.toISOString().slice(0, 10); };
 
 // wellness {day: {hrv_ms}} -> [{day, ln, roll, cv, base, lo, hi, flag}] for days with a rolling
 // mean (>= 5 of 7 nights). base/lo/hi are null until 30 nights of baseline precede the week.

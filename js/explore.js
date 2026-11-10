@@ -15,6 +15,7 @@ import { NODE_STEP_M } from './lib/trails.js';
 import { isVirtual } from './derive.js';
 import { rev, state } from './store.js';
 import { html, raw } from './ui.js';
+import { addDayKey, weekStart } from './lib/dt.js';
 
 export const ZOOMS = [17, 14];
 export const ZOOM_NAMES = { 17: 'Squadratinhos', 14: 'Squadrats' };
@@ -165,21 +166,14 @@ export function scoresFor(st, zoom, countUnreachable = true, today = null) {
   return ix.scores.get(key);
 }
 
-function shiftDay(day, n) {
-  const d = new Date(day + 'T00:00:00Z');
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
+const shiftDay = addDayKey;
 
 // ---------------------------------------------------------------------------
 // New ground over time
 // ---------------------------------------------------------------------------
 
-// Monday of a day key (UTC arithmetic on the date alone, so no timezone can shift it).
-export function weekOf(day) {
-  const d = new Date(day + 'T00:00:00Z');
-  return shiftDay(day, -((d.getUTCDay() + 6) % 7));
-}
+// Monday of a day key.
+export const weekOf = weekStart;
 
 // -> [[periodStartDay, newTiles], ...] for one zoom, every period from the first to `today`
 // (zeros included: a month with no new ground is the point of the chart).
