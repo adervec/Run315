@@ -14,7 +14,7 @@ import { put, remove } from './merge.js';
 import * as POI from './lib/pois.js';
 
 // ---------- Leaflet, loaded once, lazily, by whichever map page gets there first ----------
-const LEAFLET = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet';
+const LEAFLET = new URL('../static/vendor/leaflet/leaflet', import.meta.url).href;   // 1.9.4, vendored
 let _leaflet = null;
 export function loadLeaflet() {
   if (typeof window === 'undefined') return Promise.reject(new Error('no window'));

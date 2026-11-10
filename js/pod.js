@@ -240,7 +240,7 @@ export function importPod(st, p) {
 }
 
 // ---- the direct transport: "Plan it now" with the athlete's own key ----
-const SDK = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.132.1/+esm';   // the version ai.js loads
+const SDK = new URL('../static/vendor/anthropic-sdk/anthropic-ai_sdk_0.132.1.mjs', import.meta.url).href;   // the vendored copy ai.js loads
 export async function podSystemPrompt() {
   const { instructions } = await import('./cowork.js');
   // The channel's own contract, minus the folder mechanics (envelope, inbox) that do not apply here.

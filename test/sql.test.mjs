@@ -149,7 +149,7 @@ async function fetchSqlJs() {
   for (const [f, sri] of Object.entries(FILES)) {
     const path = join(tmpdir(), `run315-sqljs-${S.SQLJS_VERSION}-${f}`);
     let buf = existsSync(path) ? readFileSync(path) : null;
-    if (!buf) { const res = await fetch(S.SQLJS_BASE + f, { signal: AbortSignal.timeout(15000) }); if (!res.ok) throw new Error(f + ' ' + res.status); buf = Buffer.from(await res.arrayBuffer()); }
+    if (!buf) buf = readFileSync(new URL('../static/vendor/sql.js/' + f, import.meta.url));
     if ('sha384-' + createHash('sha384').update(buf).digest('base64') !== sri) throw new Error(f + ': hash mismatch');
     if (!existsSync(path)) writeFileSync(path, buf);
     out[f] = buf;

@@ -24,7 +24,8 @@ import { normTag } from './journal.js';
 // Pinned: 1.14.2 (Aug 2026). The 1.15 line was three releases in twelve days in Oct 2026 and the
 // newest is under two weeks old -- the patch release of the line before is the settled one.
 export const SQLJS_VERSION = '1.14.2';
-export const SQLJS_BASE = `https://cdnjs.cloudflare.com/ajax/libs/sql.js/${SQLJS_VERSION}/`;
+// Vendored from cdnjs into static/vendor/sql.js; the hashes below still pin the exact bytes.
+export const SQLJS_BASE = new URL('../static/vendor/sql.js/', import.meta.url).href;
 // Subresource integrity of sql-wasm.js (identical bytes on cdnjs and jsDelivr).
 export const SQLJS_SRI = 'sha384-7Zym2PlgXfg8ap8cqJUwlZrLl+VEwt0NVbzYfhH28IWLnSpAgQOnSCY2+EXo5MtM';
 export const MAX_ROWS = 2000;            // rows the page draws; the count says how many there were

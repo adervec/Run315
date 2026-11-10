@@ -1,7 +1,7 @@
 // Where data comes from and goes: Google Drive (phone <-> desktop), the cowork folder
 // (Garmin and Strava in, analysis out), manual import/export, the demo, and settings.
-import { state, save, putStream, hasStream, streamIds, replaceState } from '../store.js';
-import { emptyState as freshState, syncPayload } from '../merge.js';
+import { state, save, putStream, hasStream, streamIds, eraseDevice } from '../store.js';
+import { syncPayload } from '../merge.js';
 import * as drive from '../drive.js';
 import * as cowork from '../cowork.js';
 import * as D from '../derive.js';
@@ -168,8 +168,9 @@ export function mount(el) {
       rederive: () => busy(b, async () => { const n = await D.deriveAll(state, await streamIds()); save('derive'); return n; }, n => `Re-analysed ${n} streams`),
       demo: () => busy(b, loadDemo, r => `Demo athlete loaded: ${r.activities} activities`),
       wipe: () => {
-        if (!confirm('Erase every activity, race and setting on this device? Drive keeps its copy.')) return;
-        replaceState(freshState()); state.local = {}; save('cloud'); indexedDB.deleteDatabase('run315'); setTimeout(() => location.reload(), 300);
+        if (!confirm('Erase every activity, race, stream and setting Run315 keeps on this device, and disconnect Google Drive?\n\nThe copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.')) return;
+        drive.disconnect();
+        busy(b, async () => { await eraseDevice(); location.reload(); }, 'Erased');
       },
       key: () => { const v = el.querySelector('[data-key]').value; if (!v.startsWith('•')) { setKey(v); toast(v ? 'Key saved on this device' : 'Key removed'); } },
     }[act] || (() => {}))();

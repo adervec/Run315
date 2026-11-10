@@ -4,7 +4,8 @@
 import { state, save } from './store.js';
 import { buildBrief, briefMarkdown } from './derive.js';
 
-const SDK = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.132.1/+esm';
+// Vendored (static/vendor/anthropic-sdk, from jsDelivr's +esm build of 0.132.1): no third-party requests.
+const SDK = new URL('../static/vendor/anthropic-sdk/anthropic-ai_sdk_0.132.1.mjs', import.meta.url).href;
 export const MODEL = 'claude-opus-5-5';
 
 export const apiKey = () => String((state.local.ai || {}).key || '').trim();

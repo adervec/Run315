@@ -71,6 +71,7 @@ export const isDataChange = why => !LOCAL_WHYS.has(why);
 export function save(why = 'edit') {
   if (isDataChange(why)) rev++;
   clearTimeout(_saveTimer);
+  if (_erased) return;
   _saveTimer = setTimeout(() => { idbSet('kv', STATE_KEY, state).catch(e => console.warn('state save failed', e)); }, 250);
   listeners.forEach(fn => { try { fn(why); } catch (e) { console.error(e); } });
 }
@@ -84,6 +85,25 @@ export function logError(e, where = '') {
     list.length = Math.min(list.length, 30);
     save('local');
   } catch { /* the log must never throw */ }
+}
+// Erase everything Run315 keeps on this device -- and only that: every app shares the
+// adervec.github.io origin, so this names its own database, caches, storage keys and service
+// worker rather than clearing the origin. Saves are stopped first: a pending debounced save
+// would otherwise re-create the database the moment it was deleted. The Drive copy is untouched.
+export const OWN_LOCAL_KEYS = key => /^run315/i.test(key);
+let _erased = false;
+export async function eraseDevice() {
+  _erased = true; clearTimeout(_saveTimer);
+  if (typeof indexedDB === 'undefined') { for (const k of Object.keys(_mem)) delete _mem[k]; }
+  else {
+    if (_db) { try { (await _db).close(); } catch { /* never opened */ } _db = null; }
+    await new Promise(res => { const rq = indexedDB.deleteDatabase(DB_NAME); rq.onsuccess = rq.onerror = rq.onblocked = () => res(); });
+  }
+  if (globalThis.caches) for (const k of await caches.keys()) if (k.startsWith('run315-')) await caches.delete(k);
+  try { for (const k of Object.keys(localStorage)) if (OWN_LOCAL_KEYS(k)) localStorage.removeItem(k); } catch { /* no storage */ }
+  if (globalThis.navigator && navigator.serviceWorker)
+    for (const r of await navigator.serviceWorker.getRegistrations()) if (/\/Run315\/$/.test(r.scope)) await r.unregister();
+  state = normalize(null); state.local = {}; rev++;
 }
 export async function saveNow() { clearTimeout(_saveTimer); await idbSet('kv', STATE_KEY, state); }
 
