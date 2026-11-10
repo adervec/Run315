@@ -87,7 +87,8 @@ function settingsPanel() {
     <p class="panel-note" style="margin:0 0 8px">Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: ${MODEL}.</p>
     <div class="row-actions"><input type="password" placeholder="sk-ant-…" data-key value="${apiKey() ? '••••••••' : ''}" style="flex:1"><button class="btn btn-ghost" data-act="key">Save key</button></div>
     <div class="row-actions" role="group" aria-label="Theme">${['system', 'light', 'dark'].map(x =>
-      html`<button class="btn btn-ghost" data-theme="${x}" aria-pressed="${t === x}">${x}</button>`)}</div></section>`;
+      html`<button class="btn btn-ghost" data-theme="${x}" aria-pressed="${t === x}">${x}</button>`)}</div>
+    <div class="row-actions"><app-font-picker></app-font-picker></div></section>`;
 }
 
 export function render() {

@@ -25,7 +25,7 @@
   --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
 
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --body: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  --body: var(--app-font, "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif);
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
   --nav-w: 216px;
