@@ -41,7 +41,22 @@ test('requests out, replies in, once', async () => {
     kind: 'garmin-output', requestHash: ctx.requestHash, payload: demoGarminPayload(new Date(2026, 9, 24, 9)) }));
   await put(root, 'strava/inbox/error-2026-10-24.json', JSON.stringify({ reason: 'not authorised: run strava-export.py --auth' }));
 
-  assert.equal(await cowork.pollAll(true), 1);
+  // Review is on by default: the reply waits, listed by part, and nothing has changed yet.
+  assert.equal(await cowork.pollAll(true), 0);
+  assert.equal(Object.keys(store.state.activities).length, 0);
+  const [rev] = cowork.pendingReviews();
+  assert.equal(rev.channel, 'garmin');
+  assert.deepEqual(rev.rows.map(r => r.id), ['activities', 'days', 'gear']);
+  assert.match(rev.rows[0].label, /^Activities: \d+ new, 0 updated$/);
+  assert.equal(await cowork.pollAll(true), 0);                            // still waiting, not listed twice
+  assert.equal(cowork.pendingReviews().length, 1);
+  assert.equal(cowork.panelData().channels.find(c => c.channel === 'garmin').review, true);
+
+  // Take the activities and days, leave the gear.
+  const applied = await cowork.approve(rev.key, ['activities', 'days']);
+  assert.ok(applied.handled && applied.undoKey);
+  assert.equal(Object.keys(store.state.gear).length, 0);
+  assert.equal(cowork.pendingReviews().length, 0);
   assert.ok(Object.keys(store.state.activities).length > 300);
   assert.ok(Object.keys(store.state.derived).length > 200, 'streams analysed on import');
   const garminDir = await root.getDirectoryHandle('garmin');
@@ -69,8 +84,33 @@ test('requests out, replies in, once', async () => {
   assert.equal(actx.payload.requests[0].id, id);
   await put(root, 'analysis/inbox/output-a.json', JSON.stringify({ protocol: 'run315-cowork', protocolVersion: 1,
     kind: 'analysis-output', requestHash: actx.requestHash, payload: { answers: [{ id, answer: 'Yes: 12% to 9%.' }] } }));
+  cowork.setReview('analysis', false);                                     // switched to automatic for this channel
   await cowork.pollAll(true);
   assert.equal(store.state.analysisRequests[id].status, 'answered');
+
+  // Undo the Garmin import: every record it added goes (tombstoned, so Drive drops them too), and its streams.
+  const before = Object.keys(store.state.activities).length;
+  const n = await cowork.undoRun(applied.undoKey);
+  assert.ok(n >= before);
+  assert.equal(Object.keys(store.state.activities).length, 0);
+  assert.equal(Object.keys(store.state.daily).length, 0);
+  assert.equal((await store.streamIds()).length, 0);
+  assert.ok(Object.keys(store.state.tombs.activities).length >= before);
+  assert.ok(cowork.runs().some(r => r.undoKey === applied.undoKey && r.undone));
+  await assert.rejects(cowork.undoRun(applied.undoKey), /no longer be undone/);
+});
+
+test('review previews: Strava says new vs updated, and filtering keeps only the ticked parts', () => {
+  const st = { activities: { g1: { id: 'g1', strava_id: '7' } }, analysisRequests: { q1: { q: 'Why?' } } };
+  const rows = cowork.previewReply('strava-output', { activities: [{ id: 7, start_date_local: '2026-11-01T07:00:00' }, { id: 8, start_date_local: '2026-11-03T07:00:00' }], gear: [{ id: 'b1', name: 'Bike' }] }, st);
+  assert.deepEqual(rows.map(r => [r.id, r.label]), [['activities', 'Activities: 1 new, 1 updated'], ['gear', 'Gear: 1']]);
+  assert.equal(rows[0].detail.split(' · ')[0], '2026-11-01 → 2026-11-03');
+  const f = cowork.filterPayload('strava-output', { activities: [1], gear: [2] }, new Set(['gear']));
+  assert.deepEqual([f.activities, f.gear], [[], [2]]);
+  const a = cowork.filterPayload('analysis-output', { answers: [{ id: 'q1' }, { id: 'q2' }] }, new Set(['q1']));
+  assert.deepEqual(a.answers.map(x => x.id), ['q1']);
+  assert.equal(cowork.filterPayload('coach-output', { review: 'x' }, new Set()), null);
+  assert.equal(cowork.previewReply('analysis-output', { answers: [{ id: 'q1', answer: 'Because.' }] }, st)[0].label, 'Why?');
 });
 
 test('recent.json: six weeks whole, nothing older, heavy fields left out', () => {

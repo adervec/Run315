@@ -17,6 +17,10 @@ const CSS = `
 .sync-grid .panel { margin: 0; }
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .runlog { font-family: var(--mono); font-size: 12px; max-height: 280px; overflow: auto; }
+.cw-review { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
+.cw-review label { display: flex; gap: 8px; align-items: baseline; margin: 6px 0; }
+.cw-review .dim, .runlog .dim { color: var(--muted); }
+.cw-switches { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
 .runlog td { padding: 4px 8px; vertical-align: top; }
 .bad { color: var(--behind); } .good { color: var(--ahead); }
 .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; margin: 0; }
@@ -36,6 +40,19 @@ function drivePanel() {
   </section>`;
 }
 
+// Replies waiting for the athlete (review is on by default, per channel), and the switches.
+function reviewBlock() {
+  const waiting = cowork.pendingReviews();
+  return html`${waiting.map(p => html`<div class="cw-review" data-pk="${p.key}">
+      <p style="margin:0"><b>${p.channel}</b> · ${p.name} · ${ago(p.at)}${p.stale ? html` · <span class="bad">answers an older request</span>` : ''}</p>
+      ${p.rows.length ? p.rows.map(r => html`<label><input type="checkbox" checked data-row="${r.id}"><span>${r.label}${r.detail ? html` <span class="dim">${r.detail}</span>` : ''}</span></label>`)
+        : html`<p class="dim">Nothing in this reply would change anything.</p>`}
+      <div class="row-actions"><button class="btn" data-act="cw-approve" data-rkey="${p.key}">Apply ticked</button>
+        <button class="btn btn-ghost" data-act="cw-discard" data-rkey="${p.key}">Discard</button></div></div>`)}
+    <p class="panel-note" style="margin:12px 0 4px">Review replies before they change anything (untick to apply automatically):</p>
+    <div class="cw-switches">${cowork.CHANNELS.map(ch => html`<label><input type="checkbox" data-review="${ch.key}" ${cowork.reviewOn(ch.key) ? 'checked' : ''}> ${ch.key}</label>`)}</div>`;
+}
+
 function coworkPanel() {
   const c = state.local.cowork || {}, runs = cowork.runs().slice(0, 30), s = c.schedules || { pushMin: 60, checkMin: 5 };
   if (!cowork.supported()) return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Cowork folder</p></div>
@@ -48,10 +65,11 @@ function coworkPanel() {
       <button class="btn" data-act="cw-pick">${c.enabled ? 'Change folder' : 'Choose folder'}</button>
       ${c.enabled ? html`<button class="btn btn-ghost" data-act="cw-push">Send requests</button><button class="btn btn-ghost" data-act="cw-poll">Check for replies</button>` : ''}
     </div>
+    ${c.enabled ? reviewBlock() : ''}
     ${c.enabled ? html`<p class="panel-note" style="margin:12px 0 0">Send every <input type="number" min="0" style="width:70px" data-sched="pushMin" value="${s.pushMin}"> min,
       check every <input type="number" min="0" style="width:70px" data-sched="checkMin" value="${s.checkMin}"> min (0 = manual).</p>` : ''}
     ${runs.length ? html`<div class="runlog"><table><tbody>${runs.map(r => html`<tr><td class="dim">${ago(r.at)}</td><td>${r.kind}${r.channel ? ' · ' + r.channel : ''}</td>
-      <td class="${r.ok ? 'good' : 'bad'}">${r.ok ? 'ok' : 'failed'}</td><td>${r.note || ''}</td></tr>`)}</tbody></table></div>` : ''}
+      <td class="${r.ok ? 'good' : 'bad'}">${r.ok ? 'ok' : 'failed'}</td><td>${r.note || ''}${r.undoKey ? (r.undone ? html` <span class="dim">(undone)</span>` : html` <button class="btn-quiet" data-act="cw-undo" data-undo="${r.undoKey}">Undo</button>`) : ''}</td></tr>`)}</tbody></table></div>` : ''}
   </section>`;
 }
 
@@ -159,7 +177,11 @@ export function mount(el) {
       'err-clear': () => { state.local.errors = []; save('local'); redraw(); },
       'cw-pick': () => busy(b, cowork.pickFolder, 'Cowork folder ready: requests written'),
       'cw-push': () => busy(b, () => cowork.exportNow(false), 'Requests written'),
-      'cw-poll': () => busy(b, () => cowork.pollAll(true), n => n ? `Imported ${n} replies` : 'No new replies'),
+      'cw-poll': () => busy(b, () => cowork.pollAll(true), n => n ? `Imported ${n} replies` : cowork.pendingReviews().length ? 'Replies are waiting for your review' : 'No new replies'),
+      'cw-approve': () => busy(b, () => cowork.approve(b.dataset.rkey, [...b.closest('[data-pk]').querySelectorAll('[data-row]:checked')].map(x => x.dataset.row)),
+        r => (r.handled ? 'Applied: ' : '⚠ ') + r.note),
+      'cw-discard': () => busy(b, () => cowork.discard(b.dataset.rkey), 'Discarded: nothing was changed'),
+      'cw-undo': () => busy(b, () => cowork.undoRun(b.dataset.undo), n => `Undone: ${n} records put back`),
       export: () => download('run315-' + dayKey(new Date()) + '.json', JSON.stringify(syncPayload(state))),
       csv: () => {
         const rows = [['start', 'name', 'type', 'distance_m', 'moving_s', 'elapsed_s', 'avg_hr', 'max_hr', 'elev_gain_m', 'calories', 'garmin_id', 'strava_id']];
@@ -177,6 +199,7 @@ export function mount(el) {
     }[act] || (() => {}))();
   });
   el.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => { state.local.theme = b.dataset.theme; save('theme'); redraw(); });
+  el.querySelectorAll('[data-review]').forEach(i => i.onchange = () => cowork.setReview(i.dataset.review, i.checked));
   el.querySelectorAll('[data-sched]').forEach(i => i.onchange = () => {
     const c = state.local.cowork; c.schedules = { ...(c.schedules || {}), [i.dataset.sched]: Math.max(0, +i.value || 0) }; save('cowork');
   });

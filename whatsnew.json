@@ -1,5 +1,6 @@
 [
   { "date": "2026-11-10", "items": [
+    "Cowork replies now wait for your review before they change anything: Garmin and Strava imports are listed by part (activities, days and nights, gear) so you can tick what to take, and every applied reply can be undone from the run log. Untick a channel under Sync & cowork to let it apply automatically.",
     "Your Google profile picture shows beside your account when Drive sync is on.",
     "Maps, the SQL console and the AI coach no longer load code from other websites.",
     "Erase everything on this device now removes all of Run315's data and only Run315's, disconnects Drive, and leaves your Drive copy untouched.",

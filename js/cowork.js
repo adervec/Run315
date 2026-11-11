@@ -14,8 +14,8 @@
 //
 // The agent answers in <channel>/inbox/output-<ISO>.json; the app imports it, moves it to
 // processed/, and the next Drive sync carries it to the phone.
-import { state, save, idbGet, idbSet, putStream, hasStream, getStream, streamIds } from './store.js';
-import { put } from './merge.js';
+import { state, save, idbGet, idbSet, idbDel, putStream, hasStream, getStream, streamIds } from './store.js';
+import { put, remove, SYNCED } from './merge.js';
 import { importGarmin, importStrava } from './ingest.js';
 import { queueStream } from './drive.js';
 import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
@@ -38,7 +38,11 @@ const SCHEDULE_DEFAULTS = { pushMin: 60, checkMin: 5 };
 
 export const supported = () => typeof window !== 'undefined' && 'showDirectoryPicker' in window;
 const cfg = () => (state.local.cowork = state.local.cowork || { enabled: false, schedules: { ...SCHEDULE_DEFAULTS } });
-const local = () => (state.local.coworkLocal = state.local.coworkLocal || { ledger: {}, declared: {}, runs: [], lastRuns: {}, streamsWritten: [] });
+const local = () => {
+  const l = (state.local.coworkLocal = state.local.coworkLocal || { ledger: {}, declared: {}, runs: [], lastRuns: {}, streamsWritten: [] });
+  l.pending = l.pending || {}; l.review = l.review || {}; l.undoKeys = l.undoKeys || [];
+  return l;
+};
 
 export function hashText(t) {
   let h = 5381; const s = String(t ?? '');
@@ -375,6 +379,134 @@ export function applyAnswer(id, answer, via = 'cowork') {
   return true;
 }
 
+// ---- review before applying, and undo ----
+// The house rule: a reply is shown before it changes anything, per channel, ON by default (the
+// athlete may switch a channel to automatic). It waits in inbox/ with one row per part it would
+// change; only the ticked rows are applied. Every apply records exactly which records it changed
+// (in IndexedDB: a decade of Garmin data is far past what localStorage holds), so it can be undone.
+export const reviewOn = ch => local().review[ch] !== false;
+export function setReview(ch, on) { local().review[ch] = !!on; save('cowork'); }
+export const pendingReviews = () => Object.entries(local().pending).map(([key, p]) => ({ key, ...p }));
+
+const span = days => {
+  const d = days.filter(Boolean).map(x => String(x).slice(0, 10)).sort();
+  return d.length ? (d[0] === d[d.length - 1] ? d[0] : d[0] + ' → ' + d[d.length - 1]) : '';
+};
+// One row per part of a reply the athlete can take or leave.
+export function previewReply(kind, p, st = state) {
+  p = p || {};
+  const rows = [], add = (id, label, detail) => rows.push({ id, label, detail });
+  if (kind === 'garmin-output' || kind === 'strava-output') {
+    const g = kind === 'garmin-output';
+    const acts = (p.activities || []).filter(a => a && (g ? a.garmin_id : a.id != null));
+    if (acts.length) {
+      const stravaIds = g ? null : new Set(Object.values(st.activities).map(x => x.strava_id).filter(Boolean));
+      const known = a => (g ? !!st.activities['g' + a.garmin_id] : !!st.activities['s' + a.id] || stravaIds.has(String(a.id)));
+      const fresh = acts.filter(a => !known(a)).length;
+      add('activities', `Activities: ${fresh} new, ${acts.length - fresh} updated`,
+        span(acts.map(a => a.start || a.start_date_local || a.start_date))
+        + (g ? ' · with laps, weather, gear and per-second detail' : ' · with streams and segment efforts'));
+    }
+    const days = [...(p.daily || []), ...(p.wellness || []), ...(p.metrics || [])].filter(r => r && r.day);
+    if (days.length) add('days', `Days and nights: ${(p.daily || []).length} days, ${(p.wellness || []).length} nights, ${(p.metrics || []).length} estimates`, span(days.map(r => r.day)));
+    if ((p.gear || []).length) add('gear', `Gear: ${p.gear.length}`, p.gear.slice(0, 4).map(x => x && x.name).filter(Boolean).join(', '));
+    if ((p.personalRecords || []).length) add('records', `Garmin's record book: ${p.personalRecords.length} entries`, '');
+  } else if (kind === 'analysis-output') {
+    for (const a of p.answers || []) if (a && a.id) add(a.id, (st.analysisRequests[a.id] || {}).q || a.id, String(a.answer || '').slice(0, 140));
+  } else if (kind === 'coach-output') add('review', 'This weekly review', String(p.review || '').split('\n').find(l => l.trim()) || '');
+  else if (kind === 'pod-output') add('plans', `Plan of the day for ${p.date || '?'}`, (p.plans || []).map(x => x && x.name).filter(Boolean).join(' · '));
+  else if (kind === 'datareview-output') add('proposals', `${(p.proposals || []).length} proposals`, 'Each one still waits for your decision on the data review page');
+  return rows;
+}
+// The reply with only the accepted rows left in it (null: nothing to apply).
+export function filterPayload(kind, p, accepted) {
+  const ok = id => accepted.has(id);
+  if (kind === 'garmin-output') return { ...p, activities: ok('activities') ? p.activities : [], daily: ok('days') ? p.daily : [],
+    wellness: ok('days') ? p.wellness : [], metrics: ok('days') ? p.metrics : [], gear: ok('gear') ? p.gear : [],
+    personalRecords: ok('records') ? p.personalRecords : [] };
+  if (kind === 'strava-output') return { ...p, activities: ok('activities') ? p.activities : [], gear: ok('gear') ? p.gear : [] };
+  if (kind === 'analysis-output') return { ...p, answers: (p.answers || []).filter(a => a && ok(a.id)) };
+  return accepted.size ? p : null;   // the single-row kinds: all or nothing
+}
+
+// Apply, and keep what it replaced: per collection the previous record (null = it was new), plus new streams.
+const UNDO_KEEP = 20;
+async function applyWithUndo(kind, p) {
+  const before = Object.fromEntries(SYNCED.map(k => [k, { ...state[k] }])), had = new Set(await streamIds());
+  const res = await applyReply(kind, p);
+  if (!res.handled) return res;
+  const colls = {};
+  for (const k of SYNCED) {
+    const b = before[k], a = state[k], ch = {};
+    for (const id of new Set([...Object.keys(b), ...Object.keys(a)])) if (b[id] !== a[id]) ch[id] = b[id] ?? null;
+    if (Object.keys(ch).length) colls[k] = ch;
+  }
+  const streams = (await streamIds()).filter(id => !had.has(id));
+  const key = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  await idbSet('kv', 'coworkUndo:' + key, { colls, streams });
+  const keys = local().undoKeys; keys.push(key);
+  while (keys.length > UNDO_KEEP) await idbDel('kv', 'coworkUndo:' + keys.shift());   // ponytail: undo reaches back 20 applies
+  return { ...res, undoKey: key };
+}
+export async function undoRun(key) {
+  const u = await idbGet('kv', 'coworkUndo:' + key);
+  if (!u) throw new Error('That change can no longer be undone.');
+  let n = 0;
+  for (const [k, recs] of Object.entries(u.colls))
+    for (const [id, prev] of Object.entries(recs)) { if (prev) put(state, k, id, prev); else if (state[k][id]) remove(state, k, id); n++; }
+  for (const id of u.streams) await idbDel('streams', id);
+  await idbDel('kv', 'coworkUndo:' + key);
+  local().undoKeys = local().undoKeys.filter(x => x !== key);
+  for (const r of local().runs) if (r.undoKey === key) r.undone = true;
+  recordRun({ kind: 'undo', ok: true, note: `undid ${n} record change${n === 1 ? '' : 's'}` + (u.streams.length ? ` and ${u.streams.length} streams` : '') });
+  save('cowork-import');
+  return n;
+}
+
+// The athlete's decision on a reply waiting for review.
+async function archive(chDir, inbox, name, text) {
+  const pd = await dir(chDir, 'processed');
+  const w = await (await pd.getFileHandle(name, { create: true })).createWritable(); await w.write(text); await w.close();
+  await inbox.removeEntry(name);
+}
+async function takePending(key) {
+  const p = local().pending[key];
+  if (!p) throw new Error('Nothing is waiting under that name.');
+  const r = await root(true);
+  if (!r) throw new Error('The cowork folder needs access again.');
+  const chDir = await dir(r, p.channel), inbox = await dir(chDir, 'inbox');
+  let text = null;
+  try { text = await (await (await inbox.getFileHandle(p.name)).getFile()).text(); } catch { /* gone */ }
+  if (text == null || hashText(text) !== p.hash) {
+    delete local().pending[key]; save('cowork');
+    throw new Error(p.name + ' changed or is gone: check for replies again.');
+  }
+  return { p, chDir, inbox, text };
+}
+export async function approve(key, acceptedIds) {
+  const { p, chDir, inbox, text } = await takePending(key);
+  const env = parseEnvelope(text), payload = env.ok ? filterPayload(env.kind, env.payload, new Set(acceptedIds)) : null;
+  let res = { handled: true, note: 'nothing ticked' };
+  if (payload) {
+    try { res = await applyWithUndo(env.kind, payload); } catch (e) { res = { handled: false, note: 'import failed: ' + (e.message || e) }; }
+  }
+  (local().ledger[p.channel] = local().ledger[p.channel] || {})[p.hash] = { at: new Date().toISOString(), name: p.name, kind: p.kind, ok: res.handled, reviewed: true };
+  recordRun({ kind: 'apply', channel: p.channel, ok: res.handled, note: res.note + ` (${acceptedIds.length} of ${p.rows.length} parts)`, undoKey: res.undoKey });
+  await archive(chDir, inbox, p.name, text);
+  delete local().pending[key];
+  save('cowork-import');
+  if (res.handled && payload) await exportNow(true);   // new data -> the next requests ask for the next gap
+  return res;
+}
+export async function discard(key) {
+  const { p, chDir, inbox, text } = await takePending(key);
+  (local().ledger[p.channel] = local().ledger[p.channel] || {})[p.hash] = { at: new Date().toISOString(), name: p.name, skipped: 'discarded' };
+  recordRun({ kind: 'discard', channel: p.channel, ok: true, note: p.name + ' discarded unapplied' });
+  await archive(chDir, inbox, p.name, text);
+  delete local().pending[key];
+  save('cowork');
+}
+
 async function applyReply(kind, p) {
   if (kind === 'garmin-output' || kind === 'strava-output') {
     const r = kind === 'garmin-output' ? await importGarmin(state, p, putStream) : await importStrava(state, p, putStream, hasStream);
@@ -430,11 +562,7 @@ export async function pollAll(interactive = false) {
         }
         const text = await file.text();
         const hash = hashText(text), led = (local().ledger[c.key] = local().ledger[c.key] || {});
-        const done = async () => {
-          const pd = await dir(ch, 'processed');
-          const w = await (await pd.getFileHandle(name, { create: true })).createWritable(); await w.write(text); await w.close();
-          await inbox.removeEntry(name);
-        };
+        const done = () => archive(ch, inbox, name, text);
         if (led[hash]) { await done(); continue; }
         if (/^error-/i.test(name)) {
           let reason = 'no reason given'; try { reason = JSON.parse(text).reason || reason; } catch { /* keep default */ }
@@ -448,10 +576,19 @@ export async function pollAll(interactive = false) {
         }
         // An answer to a superseded request is still imported (usually still the answer you want) but noted.
         const stale = !!(env.requestHash && local().declared[c.key] && env.requestHash !== local().declared[c.key]);
+        if (reviewOn(c.key)) {
+          // Waits in inbox/ for the athlete; the next poll sees the same file and leaves it be.
+          const pk = c.key + ':' + hash;
+          if (!local().pending[pk]) {
+            local().pending[pk] = { channel: c.key, name, hash, kind: env.kind, at: new Date().toISOString(), stale, rows: previewReply(env.kind, env.payload) };
+            recordRun({ kind: 'check', channel: c.key, ok: true, auto: !interactive, note: `${name} is waiting for your review` + (stale ? ' (it answers an older request)' : '') });
+          }
+          continue;
+        }
         let res;
-        try { res = await applyReply(env.kind, env.payload); } catch (e) { res = { handled: false, note: 'import failed: ' + (e.message || e) }; }
+        try { res = await applyWithUndo(env.kind, env.payload); } catch (e) { res = { handled: false, note: 'import failed: ' + (e.message || e) }; }
         led[hash] = { at: new Date().toISOString(), name, kind: env.kind, ok: res.handled };
-        recordRun({ kind: 'check', channel: c.key, ok: res.handled, auto: !interactive, note: res.note + (stale ? ' (answered an older request)' : '') });
+        recordRun({ kind: 'check', channel: c.key, ok: res.handled, auto: !interactive, note: res.note + (stale ? ' (answered an older request)' : ''), undoKey: res.undoKey });
         await done();
         if (res.handled) imported++;
       }
@@ -515,7 +652,8 @@ export function panelData() {
     app: 'run315', folder: cfg().folderName || 'cowork folder',
     channels: CHANNELS.map(c => {
       const rep = Math.max(0, ...Object.values(led[c.key] || {}).map(e => t(e.at)));
-      return { channel: c.key, request_mtime: req, reply_mtime: rep, pending: !!req && rep < req, answered: !!req && rep >= req };
+      return { channel: c.key, request_mtime: req, reply_mtime: rep, pending: !!req && rep < req, answered: !!req && rep >= req,
+        review: pendingReviews().some(p => p.channel === c.key) || null };
     }),
     actions: [{ id: 'push', label: 'Send requests', primary: true }, { id: 'poll', label: 'Check for replies' }],
     channelActions: [],
