@@ -31,7 +31,7 @@ test('requests out, replies in, once', async () => {
 
   assert.ok(await cowork.exportNow(false));
   const manifest = JSON.parse(await read(root, 'cowork.json'));
-  assert.deepEqual(manifest.channels.map(c => c.name), ['garmin', 'strava', 'analysis', 'coach', 'pod', 'datareview']);
+  assert.deepEqual(manifest.channels.map(c => c.name), ['garmin', 'strava', 'analysis', 'coach', 'pod', 'datareview', 'run-review']);
   const ctx = JSON.parse(await read(root, 'garmin/context.json'));
   assert.equal(ctx.payload.lastActivityStart, null);                      // empty device: ask for everything
   assert.match(await read(root, 'BRIEF.md'), /No activities yet/);
@@ -87,6 +87,30 @@ test('requests out, replies in, once', async () => {
   cowork.setReview('analysis', false);                                     // switched to automatic for this channel
   await cowork.pollAll(true);
   assert.equal(store.state.analysisRequests[id].status, 'answered');
+
+  // The AI grades sessions beside the app's own numbers: request, reviewed reply, panel, undo.
+  const { runReviewContext, runReviewPanel } = await import('../js/runreview.js');
+  const rctx = await runReviewContext(store.state, new Date(2026, 9, 24, 20));
+  assert.ok(rctx.sessions.length > 0 && rctx.sessions.length <= 5 && rctx.history.length === 12);
+  const s0 = rctx.sessions[0];
+  assert.ok(s0.app && 'load' in s0.app && 'aerobic_drift_pct' in s0.app && s0.sessionHash);
+  assert.ok(s0.stream === null || s0.stream.startsWith('../data/streams/'));
+  await put(root, 'run-review/inbox/output-r.json', JSON.stringify({ protocol: 'run315-cowork', protocolVersion: 1, kind: 'run-review-output',
+    payload: { reviews: [{ sessionId: s0.sessionId, grade: 'B+', summary: 'Steady <b>aerobic</b> run.', strengths: ['Even splits'], fixes: ['Start slower'], next: ['Same again'] },
+      { sessionId: 'nope', grade: 'A', summary: 'invented' }] } }));
+  await cowork.pollAll(true);
+  const rr = cowork.pendingReviews().find(p => p.channel === 'run-review');
+  assert.equal(rr.rows.length, 2);
+  assert.match(rr.rows[0].label, /: B\+$/);
+  const rapplied = await cowork.approve(rr.key, rr.rows.map(r => r.id));
+  assert.match(rapplied.note, /1 session review, 1 skipped/);
+  assert.equal(store.state.runReviews[s0.sessionId].grade, 'B+');
+  const panel = String(runReviewPanel(store.state, s0.sessionId));
+  assert.match(panel, /Graded B\+/); assert.match(panel, /&lt;b&gt;aerobic/); assert.doesNotMatch(panel, /changed since/);
+  const again = await runReviewContext(store.state, new Date(2026, 9, 24, 20));
+  assert.ok(!again.sessions.some(x => x.sessionId === s0.sessionId), 'a reviewed session is not asked for again');
+  await cowork.undoRun(rapplied.undoKey);
+  assert.equal(store.state.runReviews[s0.sessionId], undefined);
 
   // Undo the Garmin import: every record it added goes (tombstoned, so Drive drops them too), and its streams.
   const before = Object.keys(store.state.activities).length;

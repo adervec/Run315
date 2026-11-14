@@ -22,6 +22,7 @@ import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
 import { dayKey } from './lib/dt.js';
 import { podContext, importPod } from './pod.js';
 import { reviewContext, importReview, scanRecord } from './datareview.js';
+import { runReviewContext, importRunReview, INSTRUCTIONS as RUN_REVIEW } from './runreview.js';
 
 export const PROTOCOL = 'run315-cowork', VERSION = 1;
 export const CHANNELS = [
@@ -31,6 +32,8 @@ export const CHANNELS = [
   { key: 'coach', replyKind: 'coach-output' },
   { key: 'pod', replyKind: 'pod-output' },
   { key: 'datareview', replyKind: 'datareview-output' },
+  // Last on purpose: a hub walking the manifest (and pollAll) handles it after garmin and strava.
+  { key: 'run-review', replyKind: 'run-review-output' },
 ];
 const HISTORY_DAYS = 365, HANDLE_KEY = 'coworkFolder';
 const MAX_REPLY_BYTES = 256 * 1048576;
@@ -169,6 +172,7 @@ export async function channelContext(key) {
   if (key === 'analysis') return { requests: dueRequests() };
   if (key === 'pod') return podContext(state, new Date());
   if (key === 'datareview') return reviewContext(state);
+  if (key === 'run-review') return runReviewContext(state, new Date());
   // coach: the standing weekly review
   const reviews = Object.values(state.reviews).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   return { lastReview: reviews[0]?.created_at || null, week: dayKey(new Date()) };
@@ -246,6 +250,7 @@ Every activity since \`lastActivityStart\` is pulled, all sports, plus streams f
 - Offer 2–3 options spanning the available time, including one that uses most of the maximum. Adapt to the outcomes: stop prescribing what keeps being skipped, shorten what keeps running long.
 - Targets come from the app's own training paces and HR zones in \`../brief.json\`. Respect niggles. Never prescribe through a readiness of "rest" without saying so plainly.
 `;
+  if (key === 'run-review') return head + RUN_REVIEW;
   if (key === 'datareview') return head + `## kind: \`datareview-output\` — review the data the app flagged
 
 \`\`\`json
@@ -415,7 +420,12 @@ export function previewReply(kind, p, st = state) {
     for (const a of p.answers || []) if (a && a.id) add(a.id, (st.analysisRequests[a.id] || {}).q || a.id, String(a.answer || '').slice(0, 140));
   } else if (kind === 'coach-output') add('review', 'This weekly review', String(p.review || '').split('\n').find(l => l.trim()) || '');
   else if (kind === 'pod-output') add('plans', `Plan of the day for ${p.date || '?'}`, (p.plans || []).map(x => x && x.name).filter(Boolean).join(' · '));
-  else if (kind === 'datareview-output') add('proposals', `${(p.proposals || []).length} proposals`, 'Each one still waits for your decision on the data review page');
+  else if (kind === 'run-review-output') {
+    for (const r of p.reviews || []) if (r && r.sessionId) {
+      const a = st.activities[r.sessionId];
+      add(r.sessionId, `${a ? String(a.start).slice(0, 10) + ' ' + a.name : r.sessionId + ' (not in this app)'}: ${r.grade || 'no grade'}`, String(r.summary || '').slice(0, 160));
+    }
+  } else if (kind === 'datareview-output') add('proposals', `${(p.proposals || []).length} proposals`, 'Each one still waits for your decision on the data review page');
   return rows;
 }
 // The reply with only the accepted rows left in it (null: nothing to apply).
@@ -426,6 +436,7 @@ export function filterPayload(kind, p, accepted) {
     personalRecords: ok('records') ? p.personalRecords : [] };
   if (kind === 'strava-output') return { ...p, activities: ok('activities') ? p.activities : [], gear: ok('gear') ? p.gear : [] };
   if (kind === 'analysis-output') return { ...p, answers: (p.answers || []).filter(a => a && ok(a.id)) };
+  if (kind === 'run-review-output') return { ...p, reviews: (p.reviews || []).filter(r => r && ok(r.sessionId)) };
   return accepted.size ? p : null;   // the single-row kinds: all or nothing
 }
 
@@ -531,6 +542,7 @@ async function applyReply(kind, p) {
   }
   if (kind === 'pod-output') return importPod(state, p);
   if (kind === 'datareview-output') return importReview(state, p);
+  if (kind === 'run-review-output') return importRunReview(state, p);
   return { handled: false, note: 'unknown kind ' + kind };
 }
 

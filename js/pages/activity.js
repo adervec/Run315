@@ -25,6 +25,7 @@ import { shareButton, airPanel, mountAir } from '../share.js';
 import { dprimePanel, dfaPanel } from '../physio.js';
 import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
+import { runReviewPanel } from '../runreview.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast } from '../ui.js';
 
 export const title = p => state.activities[p && p.id]?.name
@@ -225,6 +226,7 @@ export async function render(params = {}) {
 
     ${wxLine ? html`<p class="wx-line">${wxLine}</p>` : ''}
     ${hook(() => airPanel(id))}
+    ${hook(() => runReviewPanel(state, id))}
     ${physio}
 
     ${shape && findings.length ? formPanel(shape, formDrift, findings) : ''}

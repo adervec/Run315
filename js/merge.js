@@ -33,6 +33,7 @@ export const SYNCED = [
   'segmentEfforts',  // Strava effort id -> {id, segment_id, segment_name, activity_id, elapsed_time, moving_time, distance, start_date_local, pr_rank, ...}
   'places',          // ~2 km start-area cell -> {p: [municipality, region, country_code]} (js/share.js, Nominatim)
   'cities',          // area id -> street/trail completion for one municipality (js/cities.js): totals, base64 cover bitsets, completion dates
+  'runReviews',      // activity id -> the AI's grade of that session (js/runreview.js), kept beside the app's own numbers
 ];
 // Single records that sync on their own timestamp.
 export const SYNCED_SINGLE = ['profile'];
