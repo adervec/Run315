@@ -5,3 +5,7 @@ __pycache__/
 
 # local launcher for resuming the Claude Code session in this folder
 RESUME CLAUDE*.ps1
+
+# local Python environment and databases (never part of the app)
+.venv/
+*.db
