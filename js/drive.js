@@ -170,11 +170,11 @@ export async function connect() {
   stamp({ enabled: true, lastError: null });
   try {
     const r = await gfetch('https://www.googleapis.com/oauth2/v3/userinfo');
-    if (r.ok) { const u = await r.json(); stamp({ account: { name: u.name, picture: u.picture } }); }
+    if (r.ok) { const u = await r.json(); stamp({ account: { name: u.name, picture: u.picture } }); window.appFont?.setAccount({ name: u.name, picture: u.picture }); }
   } catch { /* the name is a nicety */ }
   return sync(true);
 }
-export function disconnect() { _token = null; stamp({ enabled: false, account: null }); }
+export function disconnect() { _token = null; stamp({ enabled: false, account: null }); window.appFont?.setAccount(null); }
 
 // Push soon after an edit; pull on focus and every few minutes.
 let _timer = null;
