@@ -79,6 +79,7 @@ export function render() {
 
 export async function mount(el) {
   const box = el.querySelector('#heatmap'), count = el.querySelector('#heatcount'), scale = el.querySelector('#heatscale');
+  if (!box) return;   // the empty state (no runs yet) has no map
   el.querySelectorAll('[data-k]').forEach(c => c.onchange = () => {
     ui[c.dataset.k] = c.type === 'checkbox' ? c.checked : c.value;
     if (c.dataset.k === 'dark') el.querySelector('.heatpage').classList.toggle('dark', ui.dark);
