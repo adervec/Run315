@@ -26,10 +26,10 @@ import { dprimePanel, dfaPanel } from '../physio.js';
 import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
 import { runReviewPanel } from '../runreview.js';
-import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast } from '../ui.js';
+import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast, t } from '../ui.js';
 
 export const title = p => state.activities[p && p.id]?.name
-  || (p && String(p.id || '').startsWith('gt') && D.activities(state).find(a => a.id === p.id)?.name) || 'Activity';
+  || (p && String(p.id || '').startsWith('gt') && D.activities(state).find(a => a.id === p.id)?.name) || t('Activity');
 
 // Another module's widget: its markup, or '' when it has nothing (the stubs) or throws.
 // Those modules return html``; String() + raw() takes a plain markup string the same way.
@@ -88,6 +88,12 @@ const SAMPLE_CHANNELS = new Set(['seconds', 'metres', 'hr', 'lat', 'lon', 'eleva
   'cadence_spm', 'run_cadence_spm', 'stride_m', 'gct_ms', 'vertical_oscillation_cm']);
 const sgn = (v, d = 0) => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(d);
 const fade = v => (v > 0.02 ? 'behind' : v < -0.02 ? 'ahead' : 'dim');
+// A translated sentence with markup inside: escape the sentence, then put each {slot}'s
+// (already escaped) html`` in place. t() leaves a {slot} it was not given as it is.
+const fill = (sentence, parts) => raw(esc(sentence).replace(/\{(\w+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(parts, k) ? String(parts[k]) : m)));
+const fmtN = n => (globalThis.appFont?.fmt?.number ? globalThis.appFont.fmt.number(n) : n.toLocaleString());
+// What classifyRun reads a run as, shown through t():
+// i18n-keys: easy | intervals | long | race | steady | tempo | unknown
 
 // What mount() needs to draw: the last render's route.
 let _view = { id: null, track: null, sx: null };
@@ -95,13 +101,15 @@ let _view = { id: null, track: null, sx: null };
 function dateLine(iso) {
   const d = new Date(iso);
   if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })
-    + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const f = globalThis.appFont?.fmt;
+  if (f && f.custom) return f.custom(d, { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(undefined, { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })
+    + ', ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 function sourceLabel(a, rec) {
   const both = a.source === 'garmin' && a.strava_id;
   const from = both ? 'Garmin + Strava' : a.source === 'strava' ? 'Strava' : 'Garmin';
-  return from + (rec ? ' · stream from ' + (rec.src === 'strava' ? 'Strava' : 'Garmin') : '');
+  return from + (rec ? ' · ' + t('stream from {source}', { source: rec.src === 'strava' ? 'Strava' : 'Garmin' }) : '');
 }
 
 export async function render(params = {}) {
@@ -112,13 +120,13 @@ export async function render(params = {}) {
   if (String(id || '').startsWith('gt')) {
     const g = D.activities(state).find(a => a.id === id);
     const body = hook(() => strengthDetail(id));
-    return html`${pageHead(g?.name || 'Strength session', g ? dateLine(g.start) : '', html`<a class="btn btn-ghost" href="#/activities">All activities</a>`)}
-      ${body || emptyState('Strength session', 'GymTracker has not shared the detail of this session with this device (yet).',
-        html`<a class="btn" href="#/activities">All activities</a>`)}`;
+    return html`${pageHead(g?.name || t('Strength session'), g ? dateLine(g.start) : '', html`<a class="btn btn-ghost" href="#/activities">${t('All activities')}</a>`)}
+      ${body || emptyState(t('Strength session'), t('GymTracker has not shared the detail of this session with this device (yet).'),
+        html`<a class="btn" href="#/activities">${t('All activities')}</a>`)}`;
   }
-  if (!act) return html`${pageHead('Activity')}${emptyState('No such activity',
-    'It may have been merged into its Garmin twin, or not synced to this device yet.',
-    html`<a class="btn" href="#/activities">All activities</a>`)}`;
+  if (!act) return html`${pageHead(t('Activity'))}${emptyState(t('No such activity'),
+    t('It may have been merged into its Garmin twin, or not synced to this device yet.'),
+    html`<a class="btn" href="#/activities">${t('All activities')}</a>`)}`;
 
   const isRun = F.RUN_TYPES.has(act.type);
   const acts = D.activities(state);
@@ -198,26 +206,26 @@ export async function render(params = {}) {
   const journal = hook(() => journalWidget(id)), segs = hook(() => segmentsButton(id));
 
   return html`
-    ${pageHead(act.name, dateLine(act.start), html`${!D.isVirtual(act) && state.derived[id]?.p0 ? replayButton(id) : ''}${hook(() => shareButton(id))}${segs ? html`<span data-hook="segments">${segs}</span>` : ''}<a class="btn btn-ghost" href="#/activities">All activities</a>`)}
+    ${pageHead(act.name, dateLine(act.start), html`${!D.isVirtual(act) && state.derived[id]?.p0 ? replayButton(id) : ''}${hook(() => shareButton(id))}${segs ? html`<span data-hook="segments">${segs}</span>` : ''}<a class="btn btn-ghost" href="#/activities">${t('All activities')}</a>`)}
 
     <section class="panel">
       <div class="panel-head">
-        <p class="eyebrow">${typeLabel(act.type)}${kind && kind !== act.type ? html` · read as <b>${kind}</b>` : ''}
-          <span class="act-src ${act.strava_id ? 'strava' : ''}" title="Where this activity came from">${sourceLabel(act, hasStream ? rec : null)}</span></p>
+        <p class="eyebrow">${typeLabel(act.type)}${kind && kind !== act.type ? html` · ${fill(t('read as {kind}'), { kind: html`<b>${t(kind)}</b>` })}` : ''}
+          <span class="act-src ${act.strava_id ? 'strava' : ''}" title="${t('Where this activity came from')}">${sourceLabel(act, hasStream ? rec : null)}</span></p>
       </div>
       <div class="race-headline">
         <div><div class="projected measured">${((act.distance_m || 0) / 1000).toFixed(2)} <small>km</small></div></div>
-        <div><div class="projected measured">${fmtTime(act.moving_s)} <small>moving</small></div></div>
-        <div><div class="projected measured">${F.fmtEffort(act)} <small>average</small></div></div>
-        ${adjustedPace ? html`<div><div class="projected">${fmtPace(adjustedPace, 1000)} <small>corrected for the heat</small></div></div>` : ''}
+        <div><div class="projected measured">${fmtTime(act.moving_s)} <small>${t('moving')}</small></div></div>
+        <div><div class="projected measured">${F.fmtEffort(act)} <small>${t('average')}</small></div></div>
+        ${adjustedPace ? html`<div><div class="projected">${fmtPace(adjustedPace, 1000)} <small>${t('corrected for the heat')}</small></div></div>` : ''}
         ${act.avg_hr ? html`<div><div class="projected measured">${act.avg_hr.toFixed(0)}
-          <small>avg bpm${act.max_hr ? html` · max ${act.max_hr.toFixed(0)}` : ''}</small></div></div>` : ''}
-        ${load ? html`<div><div class="projected measured">${load.toFixed(0)} <small>training load</small></div></div>` : ''}
+          <small>${t('avg bpm')}${act.max_hr ? html` · ${t('max {n}', { n: act.max_hr.toFixed(0) })}` : ''}</small></div></div>` : ''}
+        ${load ? html`<div><div class="projected measured">${load.toFixed(0)} <small>${t('training load')}</small></div></div>` : ''}
       </div>
     </section>
 
     ${journal ? html`<section class="panel" data-hook="journal">
-      <div class="panel-head"><p class="eyebrow">How it went</p><p class="panel-note">Your own words and numbers · synced</p></div>
+      <div class="panel-head"><p class="eyebrow">${t('How it went')}</p><p class="panel-note">${t('Your own words and numbers · synced')}</p></div>
       ${journal}</section>` : ''}
 
     ${newGroundPanel(id)}
@@ -234,59 +242,59 @@ export async function render(params = {}) {
     ${breaks ? breaksPanel(breaks) : ''}
 
     ${_view.track ? html`<section class="panel">
-      <div class="panel-head"><p class="eyebrow">Where you ran</p>
-        <p class="panel-note">${track.length} points${fullTrack.length ? '' : ' · thinned for sync'}</p>
-        ${_view.colour ? html`<label class="colourby">Colour by <select id="colourby"><option value="">one colour</option>
-          ${Object.keys(_view.colour.ch).map(k => html`<option value="${k}">${COLOUR_LABEL[k]}</option>`)}</select></label>` : ''}</div>
+      <div class="panel-head"><p class="eyebrow">${t('Where you ran')}</p>
+        <p class="panel-note">${fullTrack.length ? t.n('{n} point', '{n} points', track.length) : t.n('{n} point · thinned for sync', '{n} points · thinned for sync', track.length)}</p>
+        ${_view.colour ? html`<label class="colourby">${t('Colour by')} <select id="colourby"><option value="">${t('one colour')}</option>
+          ${Object.keys(_view.colour.ch).map(k => html`<option value="${k}">${t(COLOUR_LABEL[k])}</option>`)}</select></label>` : ''}</div>
       <div id="actmap"></div><div id="maplegend" class="maplegend"></div>
     </section>` : ''}
 
     ${_view.sx ? explorerPanel(_view.sx) : ''}
 
     ${splits.length ? html`<section class="panel">
-      <div class="panel-head"><p class="eyebrow">Kilometre splits</p>
-        <p class="panel-note">${evenness == null ? '' : evenness < 0.03 ? 'Very even pacing.'
-          : evenness < 0.08 ? 'Steady, with some variation.' : 'Uneven — a workout, or a run that got away from you.'}</p></div>
+      <div class="panel-head"><p class="eyebrow">${t('Kilometre splits')}</p>
+        <p class="panel-note">${evenness == null ? '' : evenness < 0.03 ? t('Very even pacing.')
+          : evenness < 0.08 ? t('Steady, with some variation.') : t('Uneven — a workout, or a run that got away from you.')}</p></div>
       <div class="splits">${splits.map(([k, , p]) => {
         const span = splitMax - splitMin, frac = span > 1 ? (p - splitMin) / span : 0.5;
         return html`<div class="split-row"><span class="split-k">${k}</span>
           <span class="split-bar-wrap"><span class="split-bar" style="width:${(45 + 55 * (1 - frac)).toFixed(0)}%"></span></span>
           <span class="split-pace">${fmtPace(p, 1000)}</span></div>`;
       })}</div>
-      <p class="stat-hint" style="margin-top:10px">Longer bar is faster. Last split may be partial.</p>
+      <p class="stat-hint" style="margin-top:10px">${t('Longer bar is faster. Last split may be partial.')}</p>
     </section>` : ''}
 
     ${laps.length ? lapsPanel(laps) : ''}
 
     <div class="grid-half">
       ${efforts.length ? html`<section class="panel">
-        <div class="panel-head"><p class="eyebrow">Best efforts in this run</p></div>
+        <div class="panel-head"><p class="eyebrow">${t('Best efforts in this run')}</p></div>
         <div class="table-scroll"><table>
-          <thead><tr><th>Distance</th><th class="num">Time</th><th class="num">Pace</th><th class="num">vs record</th></tr></thead>
+          <thead><tr><th>${t('Distance')}</th><th class="num">${t('Time')}</th><th class="num">${t('Pace')}</th><th class="num">${t('vs record')}</th></tr></thead>
           <tbody>${efforts.map(([d, s, pr, isPr]) => html`<tr>
-            <td>${(d / 1000).toFixed(2)} km${isPr ? html` <span class="tag">PR</span>` : ''}</td>
+            <td>${t('{n} km', { n: (d / 1000).toFixed(2) })}${isPr ? html` <span class="tag">${t('PR')}</span>` : ''}</td>
             <td class="num actual">${fmtTime(s)}</td>
             <td class="num dim">${fmtPace(s, d)}</td>
-            <td class="num dim">${pr ? (s > pr + 0.5 ? '+' + fmtTime(s - pr) : 'record') : '—'}</td>
+            <td class="num dim">${pr ? (s > pr + 0.5 ? '+' + fmtTime(s - pr) : t('record')) : '—'}</td>
           </tr>`)}</tbody>
         </table></div>
       </section>` : ''}
 
       <section class="panel">
-        <div class="panel-head"><p class="eyebrow">Signals</p></div>
+        <div class="panel-head"><p class="eyebrow">${t('Signals')}</p></div>
         ${drift != null ? html`<div class="stat">
           <div class="stat-value ${drift > 8 ? 'risk' : ''}">${sgn(drift, 1)}%</div>
-          <div class="stat-label">Cardiac drift</div>
-          <div class="stat-hint">${drift < 3 ? 'Well within aerobic range. This effort was sustainable.'
-            : drift < 8 ? 'Some drift — warm conditions, or the top end of easy.'
-            : 'High drift. Hotter, longer, or harder than it should have been.'}</div>
+          <div class="stat-label">${t('Cardiac drift')}</div>
+          <div class="stat-hint">${drift < 3 ? t('Well within aerobic range. This effort was sustainable.')
+            : drift < 8 ? t('Some drift — warm conditions, or the top end of easy.')
+            : t('High drift. Hotter, longer, or harder than it should have been.')}</div>
         </div>` : ''}
-        ${act.elev_gain_m ? html`<div class="stat"><div class="stat-value">${act.elev_gain_m.toFixed(0)}</div><div class="stat-label">Metres climbed</div></div>` : ''}
-        ${act.calories ? html`<div class="stat"><div class="stat-value">${act.calories.toFixed(0)}</div><div class="stat-label">Calories</div></div>` : ''}
+        ${act.elev_gain_m ? html`<div class="stat"><div class="stat-value">${act.elev_gain_m.toFixed(0)}</div><div class="stat-label">${t('Metres climbed')}</div></div>` : ''}
+        ${act.calories ? html`<div class="stat"><div class="stat-value">${act.calories.toFixed(0)}</div><div class="stat-label">${t('Calories')}</div></div>` : ''}
         ${extra.length ? channelsList(rec.channels, extra) : ''}
         ${hasStream ? '' : html`<div class="empty"><p>${der
-          ? 'The per-second stream is not on this device, so running form and the full-resolution map are missing. Splits, efforts, stops and the route above come from the analysis the importing device synced. ' + (state.local && driveOn() ? 'Drive has no copy of the stream yet; the importing device uploads it on its next sync.' : 'Connect Google Drive and the stream comes down with it.')
-          : 'No per-second data for this activity yet, so no splits, efforts, form or route. It fills in once the device that imports from Garmin or Strava has the stream — '}${der ? '' : html`<a class="quiet-link" href="#/sync">Sync &amp; cowork</a>.`}</p></div>`}
+          ? t('The per-second stream is not on this device, so running form and the full-resolution map are missing. Splits, efforts, stops and the route above come from the analysis the importing device synced.') + ' ' + (state.local && driveOn() ? t('Drive has no copy of the stream yet; the importing device uploads it on its next sync.') : t('Connect Google Drive and the stream comes down with it.'))
+          : fill(t('No per-second data for this activity yet, so no splits, efforts, form or route. It fills in once the device that imports from Garmin or Strava has the stream — {link}.'), { link: html`<a class="quiet-link" href="#/sync">${t('Sync & cowork')}</a>` })}</p></div>`}
       </section>
     </div>`;
 }
@@ -295,94 +303,105 @@ function sessionPanel(session, prescribed, band) {
   const paces = session.reps.map(r => r.pace), slow = Math.max(...paces), fast = Math.min(...paces), span = slow - fast;
   return html`<section class="panel">
     <div class="panel-head">
-      <p class="eyebrow">Session · ${session.name} ${session.on_track ? html`<span class="badge-track">TRACK</span>` : ''}</p>
-      <p class="panel-note"><a class="quiet-link" href="#/sessions">All sessions</a></p>
+      <p class="eyebrow">${t('Session · {name}', { name: session.name })} ${session.on_track ? html`<span class="badge-track">${t('TRACK')}</span>` : ''}</p>
+      <p class="panel-note"><a class="quiet-link" href="#/sessions">${t('All sessions')}</a></p>
     </div>
     <div class="race-headline" style="margin-bottom:20px">
-      <div><div class="projected measured">${session.reps.length} <small>reps</small></div></div>
-      <div><div class="projected measured">${fmtPace(session.avg_pace, 1000)} <small>average rep</small></div></div>
-      <div><div class="projected measured">${(session.work_m / 1000).toFixed(2)} <small>km at effort</small></div></div>
-      ${session.consistency != null ? html`<div><div class="projected measured">±${(session.consistency * 100).toFixed(1)}<small>% spread</small></div></div>` : ''}
+      <div><div class="projected measured">${session.reps.length} <small>${t('reps')}</small></div></div>
+      <div><div class="projected measured">${fmtPace(session.avg_pace, 1000)} <small>${t('average rep')}</small></div></div>
+      <div><div class="projected measured">${(session.work_m / 1000).toFixed(2)} <small>${t('km at effort')}</small></div></div>
+      ${session.consistency != null ? html`<div><div class="projected measured">±${(session.consistency * 100).toFixed(1)}<small>${t('% spread')}</small></div></div>` : ''}
       ${session.fade != null ? html`<div><div class="projected ${session.fade > 0.02 ? 'behind' : session.fade < -0.02 ? 'ahead' : 'measured'}">
-        ${sgn(session.fade * 100, 1)}<small>% fade</small></div></div>` : ''}
+        ${sgn(session.fade * 100, 1)}<small>${t('% fade')}</small></div></div>` : ''}
     </div>
     ${band ? html`<p class="stat-hint" style="margin-bottom:14px">
-      Your interval band right now is ${fmtTime(prescribed[0])}–${fmtPace(prescribed[1], 1000)}.
-      ${band.quicker === band.total ? html`Every rep was <span class="ahead">quicker than that</span> — either a good day,
-          or the band is stale and your next hard effort will move it.`
-        : band.slower === band.total ? html`Every rep came in <span class="behind">slower than that</span>.`
-        : html`${band.inside} of ${band.total} landed inside it${band.quicker ? html`, ${band.quicker} <span class="ahead">quicker</span>` : ''}${band.slower ? html`, ${band.slower} <span class="behind">slower</span>` : ''}.`}
+      ${t('Your interval band right now is {from}–{to}.', { from: fmtTime(prescribed[0]), to: fmtPace(prescribed[1], 1000) })}
+      ${band.quicker === band.total ? fill(t('Every rep was {quicker} — either a good day, or the band is stale and your next hard effort will move it.'),
+          { quicker: html`<span class="ahead">${t('quicker than that')}</span>` })
+        : band.slower === band.total ? fill(t('Every rep came in {slower}.'), { slower: html`<span class="behind">${t('slower than that')}</span>` })
+        : bandSplit(band)}
     </p>` : ''}
     <div class="table-scroll"><table>
-      <thead><tr><th>Rep</th><th class="num">Distance</th><th class="num">Time</th>
-        <th class="num">Pace</th><th class="num">HR</th><th class="num">Recovery</th><th></th></tr></thead>
+      <thead><tr><th>${t('Rep')}</th><th class="num">${t('Distance')}</th><th class="num">${t('Time')}</th>
+        <th class="num">${t('Pace')}</th><th class="num">${t('HR')}</th><th class="num">${t('Recovery')}</th><th></th></tr></thead>
       <tbody>${session.reps.map(r => html`<tr>
         <td>${r.n}</td>
-        <td class="num">${r.snapped_m ? html`${r.snapped_m} m <span class="dim">(${r.distance_m.toFixed(0)})</span>` : r.distance_m.toFixed(0) + ' m'}</td>
+        <td class="num">${r.snapped_m ? html`${t('{n} m', { n: r.snapped_m })} <span class="dim">(${r.distance_m.toFixed(0)})</span>` : t('{n} m', { n: r.distance_m.toFixed(0) })}</td>
         <td class="num actual">${fmtTime(r.seconds)}</td>
         <td class="num ${r.pace === fast ? 'actual' : 'dim'}">${fmtPace(r.pace, 1000)}</td>
         <td class="num dim">${r.avg_hr ? r.avg_hr.toFixed(0) : '—'}</td>
-        <td class="num dim">${r.recovery_s ? html`${fmtTime(r.recovery_s)}${r.recovery_m ? html` <span class="dim">/ ${r.recovery_m.toFixed(0)} m</span>` : ''}` : '—'}</td>
+        <td class="num dim">${r.recovery_s ? html`${fmtTime(r.recovery_s)}${r.recovery_m ? html` <span class="dim">/ ${t('{n} m', { n: r.recovery_m.toFixed(0) })}</span>` : ''}` : '—'}</td>
         <td style="width:34%"><span class="split-bar-wrap" style="display:block">
           <span class="split-bar" style="width:${(45 + 55 * (span > 1 ? (slow - r.pace) / span : 0.5)).toFixed(0)}%"></span></span></td>
       </tr>`)}</tbody>
     </table></div>
-    <p class="stat-hint" style="margin-top:10px">Reps were found from the pace stream, not from lap presses. Longer bar is faster.</p>
+    <p class="stat-hint" style="margin-top:10px">${t('Reps were found from the pace stream, not from lap presses. Longer bar is faster.')}</p>
   </section>`;
+}
+
+// Some reps inside the band, the rest either side: one whole sentence per case.
+function bandSplit(band) {
+  const p = { inside: band.inside, total: band.total,
+    quicker: html`${band.quicker} <span class="ahead">${t('quicker')}</span>`, slower: html`${band.slower} <span class="behind">${t('slower')}</span>` };
+  if (band.quicker && band.slower) return fill(t('{inside} of {total} landed inside it, {quicker}, {slower}.'), p);
+  if (band.quicker) return fill(t('{inside} of {total} landed inside it, {quicker}.'), p);
+  if (band.slower) return fill(t('{inside} of {total} landed inside it, {slower}.'), p);
+  return fill(t('{inside} of {total} landed inside it.'), p);
 }
 
 function formPanel(shape, fd, findings) {
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Running form</p><p class="panel-note">Over the running portion only</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Running form')}</p><p class="panel-note">${t('Over the running portion only')}</p></div>
     <div class="digest">
       ${shape.cadence && shape.cadence.mean ? html`<div class="stat">
         <div class="stat-value">${shape.cadence.mean.toFixed(0)}<small class="unit">spm</small></div>
-        <div class="stat-label">Cadence</div>
-        ${shape.cadence.sd ? html`<div class="stat-hint">±${shape.cadence.sd.toFixed(0)} spread</div>` : ''}
+        <div class="stat-label">${t('Cadence')}</div>
+        ${shape.cadence.sd ? html`<div class="stat-hint">${t('±{n} spread', { n: shape.cadence.sd.toFixed(0) })}</div>` : ''}
       </div>` : ''}
       ${shape.stride_m && shape.stride_m.mean ? html`<div class="stat">
         <div class="stat-value">${shape.stride_m.mean.toFixed(2)}<small class="unit">m</small></div>
-        <div class="stat-label">Stride length</div></div>` : ''}
+        <div class="stat-label">${t('Stride length')}</div></div>` : ''}
       ${shape.gct_ms && shape.gct_ms.mean ? html`<div class="stat">
         <div class="stat-value">${shape.gct_ms.mean.toFixed(0)}<small class="unit">ms</small></div>
-        <div class="stat-label">Ground contact</div></div>` : ''}
+        <div class="stat-label">${t('Ground contact')}</div></div>` : ''}
       ${shape.vertical_ratio ? html`<div class="stat">
         <div class="stat-value">${shape.vertical_ratio.toFixed(1)}<small class="unit">%</small></div>
-        <div class="stat-label">Vertical ratio</div>
-        <div class="stat-hint">Bounce as a share of stride.</div></div>` : ''}
+        <div class="stat-label">${t('Vertical ratio')}</div>
+        <div class="stat-hint">${t('Bounce as a share of stride.')}</div></div>` : ''}
     </div>
     ${fd && fd.cadence_delta != null ? html`<p class="stat-hint" style="margin-top:14px">
-      Second half against the first: cadence
-      <span class="${fd.cadence_delta < -2 ? 'behind' : 'dim'}">${sgn(fd.cadence_delta)} spm</span>${fd.gct_delta != null
-        ? html`, ground contact <span class="${fd.gct_delta > 5 ? 'behind' : 'dim'}">${sgn(fd.gct_delta)} ms</span>` : ''}.
-      ${fd.pace_first && fd.pace_second ? html`Pace went ${fmtPace(fd.pace_first, 1000)} to ${fmtPace(fd.pace_second, 1000)}, which moves cadence on its own.` : ''}
+      ${fill(fd.gct_delta != null ? t('Second half against the first: cadence {cadence}, ground contact {gct}.') : t('Second half against the first: cadence {cadence}.'), {
+        cadence: html`<span class="${fd.cadence_delta < -2 ? 'behind' : 'dim'}">${sgn(fd.cadence_delta)} spm</span>`,
+        gct: fd.gct_delta != null ? html`<span class="${fd.gct_delta > 5 ? 'behind' : 'dim'}">${sgn(fd.gct_delta)} ms</span>` : '' })}
+      ${fd.pace_first && fd.pace_second ? t('Pace went {from} to {to}, which moves cadence on its own.', { from: fmtPace(fd.pace_first, 1000), to: fmtPace(fd.pace_second, 1000) }) : ''}
     </p>` : ''}
     <ul class="findings">${findings.map(f => html`<li class="sev-${f.severity}"><span class="sev-dot"></span>${f.text}</li>`)}</ul>
   </section>`;
 }
 
+// Chip labels and interruption kinds, shown through t():
+// i18n-keys: Crossings | Rest stops | Climbs | Fatigue | Eased off | Crossing | Rest | Climb | Exhaustion | Eased
 const BREAK_KINDS = [['crossings', 'Crossings', 'k-crossing'], ['rests', 'Rest stops', 'k-rest'], ['climbs', 'Climbs', 'k-climb'],
   ['exhaustion', 'Fatigue', 'k-exhaustion'], ['eased', 'Eased off', 'k-eased']];
 function breaksPanel(b) {
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Why you stopped</p><p class="panel-note">${fmtTime(b.lost_s)} not running</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Why you stopped')}</p><p class="panel-note">${t('{time} not running', { time: fmtTime(b.lost_s) })}</p></div>
     ${b.verdict ? html`<p class="verdict">${b.verdict}</p>` : ''}
-    <div class="break-counts">${BREAK_KINDS.filter(([k]) => b[k]).map(([k, label, cls]) => html`<span class="break-chip ${cls}">${b[k]} ${label}</span>`)}</div>
+    <div class="break-counts">${BREAK_KINDS.filter(([k]) => b[k]).map(([k, label, cls]) => html`<span class="break-chip ${cls}">${b[k]} ${t(label)}</span>`)}</div>
     <div class="table-scroll" style="margin-top:16px"><table>
-      <thead><tr><th>At</th><th>What it was</th><th class="num">For</th><th class="num">HR</th><th class="num">Pace after</th><th></th></tr></thead>
+      <thead><tr><th>${t('At')}</th><th>${t('What it was')}</th><th class="num">${t('For')}</th><th class="num">${t('HR')}</th><th class="num">${t('Pace after')}</th><th></th></tr></thead>
       <tbody>${(b.interruptions || []).map(it => html`<tr>
-        <td class="dim">${(it.at_m / 1000).toFixed(2)} km</td>
-        <td><span class="break-dot k-${it.label}"></span> <b>${cap(it.label)}</b>
-          ${it.junction ? html`<span class="dim"> · known corner</span>` : ''}<br><span class="dim">${it.reason}</span></td>
+        <td class="dim">${t('{n} km', { n: (it.at_m / 1000).toFixed(2) })}</td>
+        <td><span class="break-dot k-${it.label}"></span> <b>${t(cap(it.label))}</b>
+          ${it.junction ? html`<span class="dim"> · ${t('known corner')}</span>` : ''}<br><span class="dim">${it.reason}</span></td>
         <td class="num actual">${fmtTime(it.seconds)}</td>
         <td class="num dim">${it.hr_drop != null ? '−' + it.hr_drop.toFixed(0) : '—'}</td>
         <td class="num">${it.penalty != null ? html`<span class="${fade(it.penalty)}">${sgn(it.penalty * 100, 1)}%</span>` : html`<span class="dim">—</span>`}</td>
-        <td class="num dim">${(it.confidence * 100).toFixed(0)}% sure</td>
+        <td class="num dim">${t('{n}% sure', { n: (it.confidence * 100).toFixed(0) })}</td>
       </tr>`)}</tbody>
     </table></div>
-    <p class="stat-hint" style="margin-top:10px">“Pace after” compares the 250 m before the interruption with the 250 m
-      after. A stop you recover from costs nothing; fatigue shows up here.</p>
+    <p class="stat-hint" style="margin-top:10px">${t('“Pace after” compares the 250 m before the interruption with the 250 m after. A stop you recover from costs nothing; fatigue shows up here.')}</p>
   </section>`;
 }
 
@@ -390,20 +409,20 @@ function breaksPanel(b) {
 function lapsPanel(laps) {
   const has = k => laps.some(l => l[k] != null);
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Laps</p><p class="panel-note">${laps.length} from the watch · what you pressed the button for</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Laps')}</p><p class="panel-note">${t.n('{n} from the watch · what you pressed the button for', '{n} from the watch · what you pressed the button for', laps.length)}</p></div>
     <div class="table-scroll"><table>
-      <thead><tr><th>Lap</th><th class="num">Distance</th><th class="num">Time</th><th class="num">Pace</th>
-        ${has('avg_hr') ? html`<th class="num">HR</th>` : ''}${has('elev_gain_m') ? html`<th class="num">Climb</th>` : ''}
-        ${has('avg_cadence') ? html`<th class="num">Cadence</th>` : ''}${has('avg_power') ? html`<th class="num">Power</th>` : ''}</tr></thead>
+      <thead><tr><th>${t('Lap')}</th><th class="num">${t('Distance')}</th><th class="num">${t('Time')}</th><th class="num">${t('Pace')}</th>
+        ${has('avg_hr') ? html`<th class="num">${t('HR')}</th>` : ''}${has('elev_gain_m') ? html`<th class="num">${t('Climb')}</th>` : ''}
+        ${has('avg_cadence') ? html`<th class="num">${t('Cadence')}</th>` : ''}${has('avg_power') ? html`<th class="num">${t('Power')}</th>` : ''}</tr></thead>
       <tbody>${laps.map((l, i) => html`<tr>
         <td>${l.index ?? i + 1}</td>
-        <td class="num">${l.distance_m != null ? (l.distance_m / 1000).toFixed(2) + ' km' : '—'}</td>
+        <td class="num">${l.distance_m != null ? t('{n} km', { n: (l.distance_m / 1000).toFixed(2) }) : '—'}</td>
         <td class="num actual">${l.duration_s != null ? fmtTime(l.duration_s) : '—'}</td>
         <td class="num dim">${fmtPace(l.duration_s, l.distance_m)}</td>
         ${has('avg_hr') ? html`<td class="num dim">${l.avg_hr != null ? Math.round(l.avg_hr) : '—'}</td>` : ''}
-        ${has('elev_gain_m') ? html`<td class="num dim">${l.elev_gain_m != null ? Math.round(l.elev_gain_m) + ' m' : '—'}</td>` : ''}
+        ${has('elev_gain_m') ? html`<td class="num dim">${l.elev_gain_m != null ? t('{n} m', { n: Math.round(l.elev_gain_m) }) : '—'}</td>` : ''}
         ${has('avg_cadence') ? html`<td class="num dim">${l.avg_cadence != null ? Math.round(l.avg_cadence) : '—'}</td>` : ''}
-        ${has('avg_power') ? html`<td class="num dim">${l.avg_power != null ? Math.round(l.avg_power) + ' W' : '—'}</td>` : ''}
+        ${has('avg_power') ? html`<td class="num dim">${l.avg_power != null ? t('{n} W', { n: Math.round(l.avg_power) }) : '—'}</td>` : ''}
       </tr>`)}</tbody>
     </table></div>
   </section>`;
@@ -415,10 +434,10 @@ function channelsList(ch, keys) {
     const v = ch[k].filter(x => typeof x === 'number' && isFinite(x));
     return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
   };
-  return html`<div class="stat"><div class="stat-label" style="margin-bottom:8px">Channels recorded</div>
+  return html`<div class="stat"><div class="stat-label" style="margin-bottom:8px">${t('Channels recorded')}</div>
     <ul class="channels">${keys.sort().map(k => { const m = avg(k); return html`<li><span>${k.replace(/_/g, ' ')}</span>
-      <span class="num" title="Average over the activity">${m == null ? '—' : Math.abs(m) >= 100 ? m.toFixed(0) : m.toFixed(1)}</span></li>`; })}</ul>
-    <div class="stat-hint">Recorded by the watch, not yet read by any analysis here. Averages over the whole activity.</div></div>`;
+      <span class="num" title="${t('Average over the activity')}">${m == null ? '—' : Math.abs(m) >= 100 ? m.toFixed(0) : m.toFixed(1)}</span></li>`; })}</ul>
+    <div class="stat-hint">${t('Recorded by the watch, not yet read by any analysis here. Averages over the whole activity.')}</div></div>`;
 }
 
 // ---- the stream explorer ----
@@ -427,27 +446,27 @@ function channelsList(ch, keys) {
 // height; text and the hover dots live in HTML so they never stretch with them.
 // renderChart cannot do this: it has no shared crosshair and no zoom.
 const VW = 680, VH = 56;
+// The channel names streams.js gives each plot (and the gap row), shown through t():
+// i18n-keys: Pace | Speed | Heart rate | Elevation | Cadence | Power | Stride length | Ground contact | Vertical oscillation | Vertical ratio | Respiration | Grade | Temperature | Gap
 
 function explorerPanel(sx) {
   const { built, candidates } = sx;
   const route = candidates.filter(c => c.why === 'route'), near = candidates.filter(c => c.why === 'distance');
   return html`<section class="panel" id="sx">
-    <div class="panel-head"><p class="eyebrow">Stream explorer</p>
-      <p class="panel-note">${built.n.toLocaleString('en-GB')} samples · ${built.series.length} channel${built.series.length === 1 ? '' : 's'} · drag across to zoom</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Stream explorer')}</p>
+      <p class="panel-note">${t.n('{n} sample', '{n} samples', built.n, { n: fmtN(built.n) })} · ${t.n('{n} channel', '{n} channels', built.series.length)} · ${t('drag across to zoom')}</p></div>
     <div class="sx-bar">
-      <span class="sx-seg" role="group" aria-label="x axis"><button type="button" data-x="d" aria-pressed="true">Distance</button><button type="button" data-x="t" aria-pressed="false">Time</button></span>
-      <button class="btn btn-quiet" type="button" data-sx="reset" hidden>Reset zoom</button>
-      ${candidates.length ? html`<label>Compare <select data-sx="compare"><option value="">nothing</option>
-        ${route.length ? html`<optgroup label="${'Same route' + (route[0].group ? ' · ' + route[0].group : '')}">${route.map(c => html`<option value="${c.id}">${c.label}</option>`)}</optgroup>` : ''}
-        ${near.length ? html`<optgroup label="Similar distance (±10%)">${near.map(c => html`<option value="${c.id}">${c.label}</option>`)}</optgroup>` : ''}
+      <span class="sx-seg" role="group" aria-label="${t('x axis')}"><button type="button" data-x="d" aria-pressed="true">${t('Distance')}</button><button type="button" data-x="t" aria-pressed="false">${t('Time')}</button></span>
+      <button class="btn btn-quiet" type="button" data-sx="reset" hidden>${t('Reset zoom')}</button>
+      ${candidates.length ? html`<label>${t('Compare')} <select data-sx="compare"><option value="">${t('nothing')}</option>
+        ${route.length ? html`<optgroup label="${route[0].group ? t('Same route · {group}', { group: route[0].group }) : t('Same route')}">${route.map(c => html`<option value="${c.id}">${c.label}</option>`)}</optgroup>` : ''}
+        ${near.length ? html`<optgroup label="${t('Similar distance (±10%)')}">${near.map(c => html`<option value="${c.id}">${c.label}</option>`)}</optgroup>` : ''}
       </select></label>` : ''}
     </div>
     <p class="sx-readout" aria-live="polite"></p>
     <div class="sx-stack"></div>
     <div class="sx-legend" hidden></div>
-    <p class="stat-hint" style="margin-top:8px">Pace is distance over a 20-second window, drawn faster-up; standing still is a gap,
-      not a line. Charts are thinned to about 600 points, keeping each stretch's highs and lows; zoom in to see every second.
-      The overlay lines the two runs up by distance, and the gap counts stops: it is the race against your own earlier self.</p>
+    <p class="stat-hint" style="margin-top:8px">${t("Pace is distance over a 20-second window, drawn faster-up; standing still is a gap, not a line. Charts are thinned to about 600 points, keeping each stretch's highs and lows; zoom in to see every second. The overlay lines the two runs up by distance, and the gap counts stops: it is the race against your own earlier self.")}</p>
   </section>`;
 }
 
@@ -467,16 +486,16 @@ function explorer(el, sx, mapRef) {
   const fmtV = (c, y) => (y == null ? '—' : c.isGap ? (y > 0.5 ? '+' : y < -0.5 ? '−' : '') + fmtTime(Math.abs(y))
     : c.key === 'pace' ? fmtTime(y) : y.toFixed(c.dp || 0));
   const pctX = x => ((x - v.x0) / (v.x1 - v.x0)) * 100;
-  const defaultReadout = () => (v.zoom ? `Zoomed: ${fmtX(v.x0)} to ${fmtX(v.x1)}` : 'Hover or touch for values');
-  const fmtX = x => (v.x === 'd' ? (x / 1000).toFixed(v.x1 - v.x0 < 3000 ? 2 : 1) + ' km' : fmtTime(x - t0));
+  const defaultReadout = () => (v.zoom ? t('Zoomed: {from} to {to}', { from: fmtX(v.x0), to: fmtX(v.x1) }) : t('Hover or touch for values'));
+  const fmtX = x => (v.x === 'd' ? t('{n} km', { n: (x / 1000).toFixed(v.x1 - v.x0 < 3000 ? 2 : 1) }) : fmtTime(x - t0));
 
   function rowHtml(c, X) {
     const Y = c.range ? yOf(c) : null;
     const lim = c.lim ? (c.key === 'pace' ? `${fmtTime(c.lim[0])}–${fmtTime(c.lim[1])}` : c.isGap
-      ? `${fmtV(c, c.lim[0])} to ${fmtV(c, c.lim[1])}` : `${c.lim[0].toFixed(c.dp || 0)}–${c.lim[1].toFixed(c.dp || 0)}`) : 'no data here';
-    return String(html`<div class="sx-row"><div class="sx-head"><span class="sx-name">${c.label}</span>
+      ? t('{from} to {to}', { from: fmtV(c, c.lim[0]), to: fmtV(c, c.lim[1]) }) : `${c.lim[0].toFixed(c.dp || 0)}–${c.lim[1].toFixed(c.dp || 0)}`) : t('no data here');
+    return String(html`<div class="sx-row"><div class="sx-head"><span class="sx-name">${t(c.label)}</span>
       <span class="sx-val" data-v></span>${c.other ? html`<span class="sx-val2" data-v2></span>` : ''}<span>${c.unit}</span>
-      <span class="sx-lim" title="${c.key === 'pace' ? '2nd to 98th percentile in view' : 'Range in view'}">${lim}</span></div>
+      <span class="sx-lim" title="${c.key === 'pace' ? t('2nd to 98th percentile in view') : t('Range in view')}">${lim}</span></div>
       <div class="sx-plot"><svg viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true">
         <line class="grid" x1="0" x2="${VW}" y1="${VH / 2}" y2="${VH / 2}"/>
         ${c.zero && Y ? raw(`<line class="zero" x1="0" x2="${VW}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>`) : ''}
@@ -486,7 +505,7 @@ function explorer(el, sx, mapRef) {
   }
   function axisHtml() {
     const ticks = v.x === 'd'
-      ? S.niceTicks(v.x0 / 1000, v.x1 / 1000, 5).map(k => [k * 1000, +k.toFixed(2) + ' km'])
+      ? S.niceTicks(v.x0 / 1000, v.x1 / 1000, 5).map(k => [k * 1000, t('{n} km', { n: +k.toFixed(2) })])
       : S.niceTicks((v.x0 - t0) / 60, (v.x1 - t0) / 60, 5).map(m => [t0 + m * 60, fmtTime(m * 60)]);
     return `<div class="sx-axis">${ticks.filter(([x]) => x >= v.x0 && x <= v.x1)
       .map(([x, l]) => `<span style="left:${pctX(x).toFixed(2)}%">${esc(l)}</span>`).join('')}</div>`;
@@ -506,7 +525,7 @@ function explorer(el, sx, mapRef) {
     const o = v.x === 'd' ? v.other : null, charts = [];
     if (o && o.gap.d.length) {
       const [j0, j1] = visibleRange(o.gap.d, v.x0, v.x1), vis = o.gap.gap.slice(j0, j1);
-      charts.push({ key: 'gap', label: 'Gap', unit: 'behind (+) / ahead (−)', invert: true, isGap: true, zero: true,
+      charts.push({ key: 'gap', label: 'Gap', unit: t('behind (+) / ahead (−)'), invert: true, isGap: true, zero: true,
         xs: o.gap.d, values: o.gap.gap, range: S.yRange([...vis, 0]), lim: limOf(vis), pts: S.downsample(o.gap.d, o.gap.gap, j0, j1) });
     }
     for (const s of b.series) {
@@ -526,9 +545,9 @@ function explorer(el, sx, mapRef) {
     reset.hidden = !v.zoom;
     root.querySelectorAll('[data-x]').forEach(bt => bt.setAttribute('aria-pressed', String(bt.dataset.x === v.x)));
     legend.hidden = !v.other;
-    if (v.other) legend.innerHTML = String(html`<span><i style="background:var(--measured)"></i>This run</span>
+    if (v.other) legend.innerHTML = String(html`<span><i style="background:var(--measured)"></i>${t('This run')}</span>
       <span><i style="background:var(--series-2)"></i>${v.other.label}</span>
-      ${v.x === 'd' ? html`<span>Gap: above the dashed line is ahead of that run</span>` : html`<span>The overlay is by distance: switch the axis back to see it</span>`}`);
+      ${v.x === 'd' ? html`<span>${t('Gap: above the dashed line is ahead of that run')}</span>` : html`<span>${t('The overlay is by distance: switch the axis back to see it')}</span>`}`);
     readout.textContent = defaultReadout();
   }
 
@@ -558,7 +577,7 @@ function explorer(el, sx, mapRef) {
         place(row.querySelector('[data-d2]'), c, c.other.xs[j2], c.other.values[j2]);
       }
     });
-    readout.textContent = `${(ax.d[i] / 1000).toFixed(2)} km · ${fmtTime(ax.t[i] - t0)}`;
+    readout.textContent = `${t('{n} km', { n: (ax.d[i] / 1000).toFixed(2) })} · ${fmtTime(ax.t[i] - t0)}`;
     map() && map().hover(sx.ll[i]);
   }
   function unhover() {
@@ -602,7 +621,7 @@ function explorer(el, sx, mapRef) {
     if (Math.abs(f - d.f0) < 0.015) return;
     const xa = v.x0 + d.f0 * (v.x1 - v.x0), xb = v.x0 + f * (v.x1 - v.x0);
     const [i0, i1] = visibleRange(ax[v.x], Math.min(xa, xb), Math.max(xa, xb));
-    if (i1 - i0 < 30) { toast('That is about as close as the stream goes.'); return; }
+    if (i1 - i0 < 30) { toast(t('That is about as close as the stream goes.')); return; }
     zoomTo(xa, xb);
   });
   stack.addEventListener('pointercancel', () => { v.drag = null; const sel = stack.querySelector('.sx-sel'); if (sel) sel.style.display = 'none'; });
@@ -628,7 +647,7 @@ function explorer(el, sx, mapRef) {
     const a = D.activities(state).find(x => x.id === id);
     const ob = rec && rec.channels ? S.buildSeries(rec.channels, a ? a.type : sx.act.type) : null;
     if (!ob) {
-      toast(driveOn() ? 'That run has no per-second stream on this device or on Drive.' : 'That run has no per-second stream on this device.');
+      toast(driveOn() ? t('That run has no per-second stream on this device or on Drive.') : t('That run has no per-second stream on this device.'));
       pick.value = ''; v.other = null; draw(); return;
     }
     v.other = { id, b: ob, dx: S.monotone(ob.d), gap: S.gapByDistance(b, ob), label: pick.selectedOptions[0] ? pick.selectedOptions[0].textContent : id };
@@ -642,6 +661,7 @@ function explorer(el, sx, mapRef) {
 // Five quantile bands of a warm sequential ramp (light = low, dark = high); pace and speed are
 // flipped so darker is always the harder or faster end. Each band is one polyline per run of
 // consecutive points, so a 9,000-point track stays a few hundred map objects.
+// i18n-keys: pace | heart rate | grade | cadence | power | elevation
 const COLOUR_LABEL = { pace: 'pace', hr: 'heart rate', grade: 'grade', cadence: 'cadence', power: 'power', elevation: 'elevation' };
 const RAMP = ['#fde3a7', '#f6b26b', '#e8743b', '#c4402f', '#7a1f3d'];
 function trackChannels(samples, ch = {}) {
@@ -693,11 +713,11 @@ function colourLine(L, map, pts, vals, key) {
   const lo = [null, ...cut], hi = [...cut, null];
   // Bands are cut on the value (speed, for pace), so a pace label reads the other way round.
   const label = i => key === 'pace'
-    ? (lo[i] == null ? 'slower than ' + fmt(hi[i]) : hi[i] == null ? 'faster than ' + fmt(lo[i]) : fmt(hi[i]) + '–' + fmt(lo[i]))
+    ? (lo[i] == null ? t('slower than {x}', { x: fmt(hi[i]) }) : hi[i] == null ? t('faster than {x}', { x: fmt(lo[i]) }) : fmt(hi[i]) + '–' + fmt(lo[i]))
     : (lo[i] == null ? '≤ ' + fmt(hi[i]) : hi[i] == null ? '> ' + fmt(lo[i]) : fmt(lo[i]) + '–' + fmt(hi[i]));
-  const legend = `<span class="lg-title">${COLOUR_LABEL[key]}</span>` + RAMP.map((c, i) =>
-    `<span><i style="background:${c}"></i>${label(i)}</span>`).join('')
-    + (key === 'pace' ? '<span class="dim">darker = faster</span>' : '');
+  const legend = `<span class="lg-title">${esc(t(COLOUR_LABEL[key]))}</span>` + RAMP.map((c, i) =>
+    `<span><i style="background:${c}"></i>${esc(label(i))}</span>`).join('')
+    + (key === 'pace' ? `<span class="dim">${esc(t('darker = faster'))}</span>` : '');
   return { layers, legend };
 }
 const fmtPaceShort = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
@@ -705,7 +725,7 @@ const fmtPaceShort = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).
 // Draw the route; return what the explorer drives on it: a hover marker and a highlighted stretch.
 async function drawMap(box, pts, colour = null) {
   let L;
-  try { L = await loadLeaflet(); } catch (e) { box.textContent = 'The map did not load (offline?).'; return null; }
+  try { L = await loadLeaflet(); } catch (e) { box.textContent = t('The map did not load (offline?).'); return null; }
   if (!box.isConnected) return null;
   const map = L.map(box, { preferCanvas: true });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
@@ -722,8 +742,8 @@ async function drawMap(box, pts, colour = null) {
     coloured = r.layers;
     if (legendBox) legendBox.innerHTML = r.legend;
   };
-  L.circleMarker(pts[0], { radius: 6, color: token('--ahead', '#17694a'), fillOpacity: 1 }).addTo(map).bindTooltip('Start');
-  L.circleMarker(pts[pts.length - 1], { radius: 6, color: token('--behind', '#a5321f'), fillOpacity: 1 }).addTo(map).bindTooltip('Finish');
+  L.circleMarker(pts[0], { radius: 6, color: token('--ahead', '#17694a'), fillOpacity: 1 }).addTo(map).bindTooltip(t('Start'));
+  L.circleMarker(pts[pts.length - 1], { radius: 6, color: token('--behind', '#a5321f'), fillOpacity: 1 }).addTo(map).bindTooltip(t('Finish'));
   let marker = null, sel = null;
   return {
     hover(ll) {

@@ -2,10 +2,12 @@
 import { state } from '../store.js';
 import * as D from '../derive.js';
 import { RUN_TYPES } from '../lib/fitness.js';
-import { html, pageHead, emptyState, km, pace, fmtTime, day, typeLabel, useCss } from '../ui.js';
+import { html, pageHead, emptyState, km, pace, fmtTime, day, typeLabel, useCss, t } from '../ui.js';
 
 export const title = 'Activities';
 const RIDES = /cycl|biking|ride/;
+// The filter buttons show their key through t():
+// i18n-keys: all | runs | rides | other
 const FILTERS = { all: () => true, runs: a => RUN_TYPES.has(a.type), rides: a => RIDES.test(a.type), other: a => !RUN_TYPES.has(a.type) && !RIDES.test(a.type) };
 let filter = 'all', limit = 100;
 
@@ -19,31 +21,31 @@ const CSS = `
 export function render() {
   useCss('activities', CSS);
   const all = D.activities(state);
-  if (!all.length) return html`${pageHead('Activities')}${emptyState('No activities yet',
-    'Bring in Garmin and Strava through the cowork folder, or load the demo athlete to look around.',
-    html`<a class="btn" href="#/sync">Set up sync</a>`)}`;
+  if (!all.length) return html`${pageHead(t('Activities'))}${emptyState(t('No activities yet'),
+    t('Bring in Garmin and Strava through the cowork folder, or load the demo athlete to look around.'),
+    html`<a class="btn" href="#/sync">${t('Set up sync')}</a>`)}`;
   const shown = all.filter(FILTERS[filter]);
   return html`
-    ${pageHead('Activities', `${all.length} activities · ${all.filter(a => a.strava_id).length} linked to Strava`)}
-    <div class="act-filters" role="group" aria-label="Filter">
-      ${Object.keys(FILTERS).map(k => html`<button class="btn btn-ghost" data-filter="${k}" aria-pressed="${k === filter}">${k}</button>`)}
+    ${pageHead(t('Activities'), `${t.n('{n} activity', '{n} activities', all.length)} · ${t.n('{n} linked to Strava', '{n} linked to Strava', all.filter(a => a.strava_id).length)}`)}
+    <div class="act-filters" role="group" aria-label="${t('Filter')}">
+      ${Object.keys(FILTERS).map(k => html`<button class="btn btn-ghost" data-filter="${k}" aria-pressed="${k === filter}">${t(k)}</button>`)}
     </div>
     <section class="panel"><div class="table-scroll"><table>
-      <thead><tr><th>Date</th><th>Activity</th><th class="num">Distance</th><th class="num">Time</th>
-        <th class="num">Pace</th><th class="num">HR</th><th class="num">Climb</th></tr></thead>
+      <thead><tr><th>${t('Date')}</th><th>${t('Activity')}</th><th class="num">${t('Distance')}</th><th class="num">${t('Time')}</th>
+        <th class="num">${t('Pace')}</th><th class="num">${t('HR')}</th><th class="num">${t('Climb')}</th></tr></thead>
       <tbody>${shown.slice(0, limit).map(a => html`<tr>
         <td class="dim">${day(a.start.toISOString())}</td>
         <td><a class="quiet-link" href="#/activity/${a.id}">${a.name}</a>
           <span class="dim"> · ${typeLabel(a.type)}</span>
-          ${a.strava_id ? html` <span class="src strava" title="Also on Strava">Strava</span>` : ''}
-          ${state.derived[a.id] ? '' : html` <span class="src" title="No per-second stream yet">no stream</span>`}</td>
-        <td class="num">${km(a.distance_m, 2)} km</td>
+          ${a.strava_id ? html` <span class="src strava" title="${t('Also on Strava')}">Strava</span>` : ''}
+          ${state.derived[a.id] ? '' : html` <span class="src" title="${t('No per-second stream yet')}">${t('no stream')}</span>`}</td>
+        <td class="num">${t('{n} km', { n: km(a.distance_m, 2) })}</td>
         <td class="num">${fmtTime(a.moving_s)}</td>
-        <td class="num">${RUN_TYPES.has(a.type) ? pace(a.moving_s, a.distance_m) : a.distance_m && a.moving_s ? (a.distance_m / a.moving_s * 3.6).toFixed(1) + ' km/h' : '--'}</td>
+        <td class="num">${RUN_TYPES.has(a.type) ? pace(a.moving_s, a.distance_m) : a.distance_m && a.moving_s ? t('{n} km/h', { n: (a.distance_m / a.moving_s * 3.6).toFixed(1) }) : '--'}</td>
         <td class="num">${a.avg_hr ? Math.round(a.avg_hr) : '--'}</td>
-        <td class="num">${a.elev_gain_m ? Math.round(a.elev_gain_m) + ' m' : '--'}</td>
+        <td class="num">${a.elev_gain_m ? t('{n} m', { n: Math.round(a.elev_gain_m) }) : '--'}</td>
       </tr>`)}</tbody></table></div>
-      ${shown.length > limit ? html`<p><button class="btn btn-ghost" id="more-acts">Show ${Math.min(100, shown.length - limit)} more</button></p>` : ''}
+      ${shown.length > limit ? html`<p><button class="btn btn-ghost" id="more-acts">${t('Show {n} more', { n: Math.min(100, shown.length - limit) })}</button></p>` : ''}
     </section>`;
 }
 

@@ -1,4 +1,7 @@
 [
+  { "date": "2026-11-15", "items": [
+    "Today, the Activities list and each activity page are now in all 16 languages too, with dates written your way."
+  ] },
   { "date": "2026-11-14", "items": [
     "Run315 starts speaking your language: the menus, tab bar and the Sync & cowork page are now in French, Spanish, Portuguese, Italian, Croatian, German, Chinese, Ukrainian, Esperanto, Swahili, Hindi, Bengali, Indonesian, Urdu, Farsi and Arabic (machine translated from English; pick yours under the font settings). Arabic, Farsi and Urdu lay out right to left. The rest of the app follows page by page.",
     "Fifteen colour themes, the same in every app by this maker (Midnight, Ocean, Forest, Ember, Paper, High contrast and more): pick one under Sync & cowork. A light or dark choice you made before carries over.",
