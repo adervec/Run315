@@ -1,6 +1,8 @@
 [
   { "date": "2026-11-14", "items": [
-    "Run315 starts speaking your language: the menus, tab bar and the Sync & cowork page are now in French, Spanish, Portuguese, Italian, Croatian, German, Chinese, Ukrainian, Esperanto, Swahili, Hindi, Bengali, Indonesian, Urdu, Farsi and Arabic (machine translated from English; pick yours under the font settings). Arabic, Farsi and Urdu lay out right to left. The rest of the app follows page by page."
+    "Run315 starts speaking your language: the menus, tab bar and the Sync & cowork page are now in French, Spanish, Portuguese, Italian, Croatian, German, Chinese, Ukrainian, Esperanto, Swahili, Hindi, Bengali, Indonesian, Urdu, Farsi and Arabic (machine translated from English; pick yours under the font settings). Arabic, Farsi and Urdu lay out right to left. The rest of the app follows page by page.",
+    "Fifteen colour themes, the same in every app by this maker (Midnight, Ocean, Forest, Ember, Paper, High contrast and more): pick one under Sync & cowork. A light or dark choice you made before carries over.",
+    "Tighter security: the app now only talks to the services it needs (Google Drive, the map tiles, weather and place lookups, and Anthropic if you saved a key)."
   ] },
   { "date": "2026-11-13", "items": [
     "New cowork channel, run-review: an AI grades each finished run or ride against what it was for (easy, long, tempo, intervals, race), using the app's own numbers, your splits, the night before and your journal. You review each grade before it is kept; it then shows on the activity page beside the app's numbers, and can be undone.",

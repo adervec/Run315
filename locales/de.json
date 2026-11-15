@@ -116,7 +116,6 @@
  "That page did not load: {error}": "Diese Seite wurde nicht geladen: {error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "Die Kopie in deinem Google Drive bleibt unberührt: Verbinde Drive erneut, um sie zurückzuholen. Andere Apps auf dieser Seite sind nicht betroffen. Das kann nicht rückgängig gemacht werden.",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "Der cowork-Ordner braucht einen Chromium-Desktop-Browser (Chrome, Edge). Auf diesem Gerät kommen die Daten über Drive vom Desktop, auf dem er läuft.",
- "Theme": "Design",
  "Time-lapse": "Zeitraffer",
  "Today": "Heute",
  "Track & intervals": "Bahn & Intervalle",
@@ -132,13 +131,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "Mit deinem eigenen Anthropic-Schlüssel antworten Fragen und der Coach sofort, ohne den Ordner. Nur auf diesem Gerät gespeichert; nur an api.anthropic.com gesendet. Modell: {model}.",
  "answers an older request": "beantwortet eine ältere Anfrage",
  "connected": "verbunden",
- "dark": "dunkel",
  "failed": "fehlgeschlagen",
  "just now": "gerade eben",
- "light": "hell",
  "never": "nie",
  "ok": "ok",
- "system": "System",
  "{n} run|{n} runs": {
   "one": "{n} Lauf",
   "other": "{n} Läufe"

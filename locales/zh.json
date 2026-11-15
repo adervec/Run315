@@ -113,7 +113,6 @@
  "That page did not load: {error}": "该页面未能加载：{error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "你 Google Drive 中的副本不受影响：重新连接 Drive 即可找回。本站的其他应用不受影响。此操作无法撤销。",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "cowork 文件夹需要桌面版 Chromium 浏览器（Chrome、Edge）。在此设备上，数据会通过 Drive 从运行它的电脑传来。",
- "Theme": "主题",
  "Time-lapse": "延时回放",
  "Today": "今天",
  "Track & intervals": "田径场与间歇跑",
@@ -128,13 +127,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "使用你自己的 Anthropic 密钥，提问和教练无需文件夹即可立即回答。仅保存在此设备上；只发送到 api.anthropic.com。模型：{model}。",
  "answers an older request": "回复的是较早的请求",
  "connected": "已连接",
- "dark": "深色",
  "failed": "失败",
  "just now": "刚刚",
- "light": "浅色",
  "never": "从未",
  "ok": "正常",
- "system": "跟随系统",
  "{n} run|{n} runs": {
   "other": "{n} 次跑步"
  }

@@ -126,10 +126,13 @@ async function route(quiet = false) {
 }
 export const rerender = () => route(true);
 
-function applyTheme() {
-  const t = state.local.theme;
-  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-  else delete document.documentElement.dataset.theme;
+// House standard 24: the theme is font.js's (one list for every app). A choice made in Run315's old
+// three-way switch moves over once, then the old setting goes.
+function adoptHouseTheme() {
+  const old = state.local.theme;
+  if (old === undefined) return;
+  if ((old === 'light' || old === 'dark') && globalThis.appFont?.setTheme && appFont.theme() === 'system') appFont.setTheme(old);
+  delete state.local.theme; save('ui');
 }
 
 async function boot() {
@@ -142,15 +145,16 @@ async function boot() {
     const { slimAll } = await import('./derive.js');
     if (await slimAll(state)) save('derive-migrate');
   } catch (e) { console.warn('slimming derived records failed', e); }
-  applyTheme();
+  adoptHouseTheme();
   // Re-render on data that came from elsewhere (Drive, the cowork inbox); a page's own edits re-render themselves.
   let pending = null;
   onChange(why => {
-    if (why === 'theme') applyTheme();
-    if (['cloud-data', 'cloud-strength', 'cowork-import', 'demo', 'theme', 'derive'].includes(why)) { clearTimeout(pending); pending = setTimeout(() => route(true), 150); }
+    if (['cloud-data', 'cloud-strength', 'cowork-import', 'demo', 'derive'].includes(why)) { clearTimeout(pending); pending = setTimeout(() => route(true), 150); }
     else if (why === 'cloud-meta') renderNav(parseHash().route);
   });
   addEventListener('hashchange', () => route());
+  // charts and maps read the palette when they draw: redraw in the new theme
+  document.addEventListener('app-theme-change', () => route(true));
   await route();
   // Records derived under an older version (before the HR-trace load, say) are re-derived
   // quietly once the app is up, one stream at a time, from streams already on this device.

@@ -113,7 +113,6 @@
  "That page did not load: {error}": "Halaman itu gagal dimuat: {error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "Salinan di Google Drive Anda tidak disentuh: hubungkan ulang Drive untuk memulihkannya. Aplikasi lain di situs ini tidak terpengaruh. Tindakan ini tidak dapat dibatalkan.",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "Folder cowork memerlukan browser Chromium desktop (Chrome, Edge). Di perangkat ini, data datang lewat Drive dari desktop yang menjalankannya.",
- "Theme": "Tema",
  "Time-lapse": "Time-lapse",
  "Today": "Hari ini",
  "Track & intervals": "Lintasan & interval",
@@ -128,13 +127,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "Kunci Anthropic Anda sendiri membuat Tanya dan pelatih menjawab seketika, tanpa folder. Hanya disimpan di perangkat ini; hanya dikirim ke api.anthropic.com. Model: {model}.",
  "answers an older request": "menjawab permintaan lama",
  "connected": "terhubung",
- "dark": "gelap",
  "failed": "gagal",
  "just now": "baru saja",
- "light": "terang",
  "never": "tidak pernah",
  "ok": "ok",
- "system": "sistem",
  "{n} run|{n} runs": {
   "other": "{n} lari"
  }

@@ -496,22 +496,17 @@ export function render() {
 // remembered -- and the demo athlete is excluded, because a synthetic athlete's
 // runs are not yours.
 function reportToPortal() {
+  // House standard 25: one row per finished session in the hub's ledger, deduplicated by id.
+  if (!globalThis.appFont || !appFont.logSession) return;
   try {
-    const acts = D.activities(state).slice(0, 15).filter(a => !String(a.garmin_id || '').startsWith('demo-'));
-    const seenKey = 'run315-portal-seen', k = 'portal-activity';
-    const seen = JSON.parse(localStorage.getItem(seenKey) || '[]'), log = JSON.parse(localStorage.getItem(k) || '[]');
-    let added = 0;
-    for (const a of acts) {
-      if (seen.includes(a.id)) continue;
-      seen.push(a.id);
-      log.push([Math.round(Date.now() / 1000), 'Run315', 'cardio', Math.max(1, Math.round((a.moving_s || 0) / 600))]);
-      added++;
+    // Sessions the older hand-written log already counted (it kept no ids): never count them twice.
+    const before = new Set(JSON.parse(localStorage.getItem('run315-portal-seen') || '[]'));
+    for (const a of D.activities(state).slice(0, 15)) {
+      if (before.has(a.id) || String(a.garmin_id || '').startsWith('demo-') || a.source === 'gymtracker') continue;
+      appFont.logSession({ kind: /ride|cycl|bik/i.test(a.type || '') ? 'ride' : 'cardio', minutes: (a.moving_s || a.elapsed_s || 0) / 60,
+        id: a.id, at: +a.start + (a.elapsed_s || a.moving_s || 0) * 1000 });
     }
-    if (added) {
-      localStorage.setItem(k, JSON.stringify(log.slice(-2000)));
-      localStorage.setItem(seenKey, JSON.stringify(seen.slice(-500)));
-    }
-  } catch (e) { /* quota or private mode - ignore */ }
+  } catch (e) { /* storage blocked - the ledger is a nicety */ }
 }
 
 export function mount(el) {

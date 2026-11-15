@@ -26,8 +26,6 @@ const CSS = `
 .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; margin: 0; }
 .kv dt { color: var(--muted); }
 `;
-// The theme names, translated where the buttons are drawn:
-// i18n-keys: system | light | dark
 
 function drivePanel() {
   const c = state.local.cloud || {};
@@ -110,12 +108,10 @@ function errorsPanel() {
 }
 
 function settingsPanel() {
-  const theme = state.local.theme || 'system';
   return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('AI & appearance')}</p></div>
     <p class="panel-note" style="margin:0 0 8px">${t('Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.', { model: MODEL })}</p>
     <div class="row-actions"><input type="password" placeholder="sk-ant-…" data-key value="${apiKey() ? '••••••••' : ''}" style="flex:1"><button class="btn btn-ghost" data-act="key">${t('Save key')}</button></div>
-    <div class="row-actions" role="group" aria-label="${t('Theme')}">${['system', 'light', 'dark'].map(x =>
-      html`<button class="btn btn-ghost" data-theme="${x}" aria-pressed="${theme === x}">${t(x)}</button>`)}</div>
+    <div class="row-actions"><app-theme-picker></app-theme-picker></div>
     <div class="row-actions"><app-font-picker></app-font-picker></div></section>`;
 }
 
@@ -208,7 +204,6 @@ export function mount(el) {
       key: () => { const v = el.querySelector('[data-key]').value; if (!v.startsWith('•')) { setKey(v); toast(v ? t('Key saved on this device') : t('Key removed')); } },
     }[act] || (() => {}))();
   });
-  el.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => { state.local.theme = b.dataset.theme; save('theme'); redraw(); });
   el.querySelectorAll('[data-review]').forEach(i => i.onchange = () => cowork.setReview(i.dataset.review, i.checked));
   el.querySelectorAll('[data-sched]').forEach(i => i.onchange = () => {
     const c = state.local.cowork; c.schedules = { ...(c.schedules || {}), [i.dataset.sched]: Math.max(0, +i.value || 0) }; save('cowork');

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "localStorage": ["run315-portal-seen"],
+  "indexedDB": ["run315"],
+  "drive": ["run315-state.json", "stream-*.json", "detail-*.json"],
+  "caches": [],
+  "export": "Sync & cowork > Data > Download everything"
+}

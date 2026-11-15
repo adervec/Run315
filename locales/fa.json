@@ -116,7 +116,6 @@
  "That page did not load: {error}": "آن صفحه بارگذاری نشد: {error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "نسخهٔ موجود در Google Drive شما دست نمی‌خورد: برای بازگرداندن آن دوباره به Drive وصل شوید. برنامه‌های دیگر این سایت تحت تأثیر قرار نمی‌گیرند. این کار برگشت‌پذیر نیست.",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "پوشهٔ cowork به یک مرورگر Chromium رومیزی (Chrome، Edge) نیاز دارد. روی این دستگاه، داده‌ها از طریق Drive از رایانه‌ای که آن را اجرا می‌کند می‌رسند.",
- "Theme": "پوسته",
  "Time-lapse": "تایم‌لپس",
  "Today": "امروز",
  "Track & intervals": "پیست و اینتروال",
@@ -132,13 +131,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "کلید Anthropic خودتان باعث می‌شود «بپرس» و مربی بی‌درنگ و بدون پوشه پاسخ دهند. فقط روی این دستگاه نگه داشته می‌شود؛ فقط به api.anthropic.com فرستاده می‌شود. مدل: {model}.",
  "answers an older request": "پاسخ یک درخواست قدیمی‌تر است",
  "connected": "متصل",
- "dark": "تیره",
  "failed": "ناموفق",
  "just now": "همین الان",
- "light": "روشن",
  "never": "هرگز",
  "ok": "خوب",
- "system": "سیستم",
  "{n} run|{n} runs": {
   "one": "{n} دویدن",
   "other": "{n} دویدن"

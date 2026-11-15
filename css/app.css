@@ -1,25 +1,28 @@
 /* Run315 -- measured data reads teal, model projections read violet.
    That split is the whole point of the app, so colour carries it everywhere. */
 :root {
-  --ground: #eceff3;
-  --surface: #ffffff;
-  --hover: #f6f8fa;
-  --track: #e7ebf0;
-  --line: #d6dbe2;
-  --ink: #101828;
-  --ink-hover: #24304a;
-  --on-ink: #ffffff;
-  --muted: #5b6675;
-  --faint: #8b94a3;
+  /* House standard 24: the reader's theme (font.js, one list for every app) paints the shell.
+     Each token falls back to Run315's own light palette when font.js is not there. */
+  --ground: var(--t-bg, #eceff3);
+  --surface: var(--t-surface, #ffffff);
+  --hover: color-mix(in srgb, var(--surface) 94%, var(--ink));
+  --track: var(--t-surface2, #e7ebf0);
+  --line: var(--t-line, #d6dbe2);
+  --ink: var(--t-text, #101828);
+  --ink-hover: color-mix(in srgb, var(--ink) 82%, var(--ground));
+  --on-ink: var(--t-bg, #ffffff);
+  --muted: var(--t-dim, #5b6675);
+  --faint: color-mix(in srgb, var(--muted) 65%, var(--ground));
 
+  /* The data colours are the app's meaning, not a theme: measured reads teal, projected violet. */
   --measured: #0b6e79;
-  --measured-soft: #e0f0f2;
+  --measured-soft: color-mix(in srgb, var(--measured) 14%, var(--surface));
   --projected: #5b3fd6;
-  --projected-soft: #ece7fd;
+  --projected-soft: color-mix(in srgb, var(--projected) 14%, var(--surface));
 
-  --ahead: #17694a;
-  --behind: #a5321f;
-  --warn: #b07d2b;
+  --ahead: var(--t-good, #17694a);
+  --behind: var(--t-bad, #a5321f);
+  --warn: var(--t-warn, #b07d2b);
   /* Categorical series for charts (dataviz reference palette, validated light + dark). Fixed order, never cycled. */
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
   --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
@@ -29,22 +32,12 @@
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
   --nav-w: 216px;
-  color-scheme: light;
+  color-scheme: var(--t-scheme, light);
 }
-/* Dark: same split -- measured teal, projected violet -- lifted to read on near-black. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ground: #0d1117; --surface: #161b24; --hover: #1c2330; --track: #232b38; --line: #2b3442;
-    --ink: #e8ecf2; --ink-hover: #c9d1dc; --on-ink: #0d1117; --muted: #a0aab8; --faint: #6f7a8a;
-    --measured: #3fb8c4; --measured-soft: #12313a; --projected: #a48cff; --projected-soft: #2a2350;
-    --ahead: #4cc28f; --behind: #f07a63; --warn: #e0a64a; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --ground: #0d1117; --surface: #161b24; --hover: #1c2330; --track: #232b38; --line: #2b3442;
-  --ink: #e8ecf2; --ink-hover: #c9d1dc; --on-ink: #0d1117; --muted: #a0aab8; --faint: #6f7a8a;
-  --measured: #3fb8c4; --measured-soft: #12313a; --projected: #a48cff; --projected-soft: #2a2350;
-  --ahead: #4cc28f; --behind: #f07a63; --warn: #e0a64a; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767; color-scheme: dark;
+/* On a dark house theme the data colours lift to read on near-black; the split stays the same. */
+:root[data-house-dark="1"] {
+  --measured: #3fb8c4; --projected: #a48cff;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
 }
 
 /* ---------- the shell: a grouped side nav on desktop, a tab bar on the phone ---------- */

@@ -116,7 +116,6 @@
  "That page did not load: {error}": "Ukurasa huo haukupakia: {error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "Nakala iliyo kwenye Google Drive yako haiguswi: unganisha Drive tena ili uirudishe. Programu nyingine kwenye tovuti hii haziathiriwi. Hili haliwezi kutenduliwa.",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "Folda ya cowork inahitaji kivinjari cha Chromium cha kompyuta (Chrome, Edge). Kwenye kifaa hiki, data hufika kupitia Drive kutoka kwa kompyuta inayoiendesha.",
- "Theme": "Mandhari",
  "Time-lapse": "Mwendo wa haraka",
  "Today": "Leo",
  "Track & intervals": "Uwanja na vipindi",
@@ -132,13 +131,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "Ufunguo wako wa Anthropic huwezesha Uliza na kocha kujibu papo hapo, bila folda. Huhifadhiwa kwenye kifaa hiki pekee; hutumwa kwa api.anthropic.com pekee. Modeli: {model}.",
  "answers an older request": "linajibu ombi la zamani",
  "connected": "imeunganishwa",
- "dark": "giza",
  "failed": "imeshindwa",
  "just now": "sasa hivi",
- "light": "mwanga",
  "never": "kamwe",
  "ok": "sawa",
- "system": "mfumo",
  "{n} run|{n} runs": {
   "one": "mbio {n}",
   "other": "mbio {n}"

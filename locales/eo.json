@@ -116,7 +116,6 @@
  "That page did not load: {error}": "Tiu paĝo ne ŝargiĝis: {error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "La kopio en via Google Drive ne estas tuŝita: rekonektu Drive por rehavi ĝin. Aliaj apoj en ĉi tiu retejo ne estas trafitaj. Ĉi tio ne estas malfarebla.",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "La dosierujo cowork bezonas labortablan Chromium-retumilon (Chrome, Edge). En ĉi tiu aparato datumoj alvenas per Drive de la komputilo, kiu rulas ĝin.",
- "Theme": "Etoso",
  "Time-lapse": "Tempo-rapidigo",
  "Today": "Hodiaŭ",
  "Track & intervals": "Trako kaj intervaloj",
@@ -132,13 +131,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "Via propra Anthropic-ŝlosilo ebligas al Demandi kaj al la trejnisto respondi tuj, sen la dosierujo. Konservata nur en ĉi tiu aparato; sendata nur al api.anthropic.com. Modelo: {model}.",
  "answers an older request": "respondas al pli malnova peto",
  "connected": "konektita",
- "dark": "malhela",
  "failed": "malsukcesis",
  "just now": "ĵus",
- "light": "hela",
  "never": "neniam",
  "ok": "bone",
- "system": "sistemo",
  "{n} run|{n} runs": {
   "one": "{n} kuro",
   "other": "{n} kuroj"

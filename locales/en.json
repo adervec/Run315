@@ -104,7 +104,6 @@
  "That page did not load: {error}": "That page did not load: {error}",
  "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.": "The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.",
  "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.": "The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.",
- "Theme": "Theme",
  "Time-lapse": "Time-lapse",
  "Today": "Today",
  "Track & intervals": "Track & intervals",
@@ -116,13 +115,10 @@
  "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.": "Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.",
  "answers an older request": "answers an older request",
  "connected": "connected",
- "dark": "dark",
  "failed": "failed",
  "just now": "just now",
- "light": "light",
  "never": "never",
  "ok": "ok",
- "system": "system",
  "Copy {n} error|Copy {n} errors": {
   "one": "Copy {n} error",
   "other": "Copy {n} errors"

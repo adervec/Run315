@@ -12,7 +12,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
-      globals: { ...globals.browser, google: 'readonly', L: 'readonly' },
+      globals: { ...globals.browser, google: 'readonly', L: 'readonly', appFont: 'readonly' },
     },
     rules: {
       'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
