@@ -5,6 +5,16 @@ import { fmtTime, fmtPace } from './lib/fitness.js';
 import { renderChart } from './charts.js';
 export { fmtTime, fmtPace };
 
+// ---- languages (house standard 20) ----
+// Write English straight into the code: t('Saved {n} runs', { n }), t.n('{n} run', '{n} runs', count).
+// The English is the key; font.js holds the chosen language's dictionary (locales/<lang>.json, machine
+// translated, and the app says so). Without font.js (node tests) the English comes back as written.
+const interp = (s, p) => (p ? String(s).replace(/\{(\w+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(p, k) ? String(p[k]) : m)) : String(s));
+const AF = () => globalThis.appFont;
+export const t = (key, params) => (AF() && AF().t ? AF().t(key, params) : interp(key, params));
+t.n = (one, other, n, params) => (AF() && AF().t && AF().t.n ? AF().t.n(one, other, n, params) : interp(n === 1 ? one : other, { n, ...params }));
+const fmt = () => AF() && AF().fmt;
+
 // ---- templating: html`...` escapes every interpolation unless it is raw() or another html`` ----
 class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }
 export const raw = s => new Raw(String(s ?? ''));
@@ -27,11 +37,14 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export function day(v, withYear) {
   const s = typeof v === 'string' ? v : v.toISOString();
   const y = +s.slice(0, 4), m = +s.slice(5, 7), d = +s.slice(8, 10);
-  return d + ' ' + MONTHS[m - 1] + (withYear || y !== new Date().getFullYear() ? ' ' + y : '');
+  const year = withYear || y !== new Date().getFullYear();
+  if (fmt()) return fmt().custom(new Date(y, m - 1, d), { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) });
+  return d + ' ' + MONTHS[m - 1] + (year ? ' ' + y : '');
 }
 export const typeLabel = t => String(t || 'other').replace(/_/g, ' ');
 export function ago(iso) {
-  if (!iso) return 'never';
+  if (!iso) return t('never');
+  if (fmt()) return (Date.now() - new Date(iso)) < 90000 ? t('just now') : fmt().relative(iso);
   const s = (Date.now() - new Date(iso)) / 1000;
   if (s < 90) return 'just now';
   if (s < 5400) return Math.round(s / 60) + ' min ago';

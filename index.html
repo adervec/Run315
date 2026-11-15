@@ -9,6 +9,7 @@
 <script src="https://adervec.github.io/font.js"></script>
 <meta name="app-version" content="__BUILD__">
 <meta name="app-whatsnew" content="whatsnew.json">
+<meta name="app-locales" content="locales/">
 <link rel="stylesheet" href="https://adervec.github.io/fonts/archivo.css">
 <link rel="stylesheet" href="https://adervec.github.io/fonts/ibm-plex-mono.css">
 <link rel="stylesheet" href="https://adervec.github.io/fonts/ibm-plex-sans.css">
@@ -26,13 +27,13 @@
 <!-- house standard: the signed-in Google picture in the top-right corner of every page (font.js) -->
 <app-account corner></app-account>
 <div class="shell">
-  <nav class="nav" id="nav" aria-label="Sections"></nav>
-  <main class="main"><div class="wrap" id="page"><p class="panel-note" style="padding:40px 0">Loading…</p></div>
-    <footer class="maker-note">More apps by the same maker, all free and local-first &mdash;
+  <nav class="nav" id="nav" aria-label="Sections" data-t-attr="aria-label"></nav>
+  <main class="main"><div class="wrap" id="page"><p class="panel-note" style="padding:40px 0" data-t>Loading…</p></div>
+    <footer class="maker-note"><span data-t>More apps by the same maker, all free and local-first:</span>
       <a href="https://adervec.github.io/portal/" target="_blank" rel="noopener">adervec.github.io</a></footer>
   </main>
 </div>
-<nav class="tabbar" id="tabbar" aria-label="Quick sections"></nav>
+<nav class="tabbar" id="tabbar" aria-label="Quick sections" data-t-attr="aria-label"></nav>
 <style>
   .maker-note { max-width: 1100px; margin: 32px auto 24px; padding: 0 18px; font: 13px/1.5 var(--body); color: var(--faint); }
 </style>

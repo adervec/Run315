@@ -4,7 +4,7 @@
 import { loadState, state, save, onChange, logError } from './store.js';
 addEventListener('error', e => logError(e.error || e.message, 'window'));
 addEventListener('unhandledrejection', e => logError(e.reason, 'promise'));
-import { html, esc, avatar } from './ui.js';
+import { html, esc, avatar, t } from './ui.js';
 import * as drive from './drive.js';
 import * as cowork from './cowork.js';
 
@@ -56,6 +56,14 @@ export const NAV = [
     { route: 'sync', page: 'sync', label: 'Sync & cowork' },
   ] },
 ];
+// The labels are English keys, translated as the nav is drawn (house standard 20):
+// i18n-keys: Train | Analyse | Explore | Kit & data | Today | Plan of the day | Activities | Calendar
+// i18n-keys: Achievements | Track & intervals | Races | Strength (GymTracker) | Ask & coach | Experiments
+// i18n-keys: Vitals | Journal | Efficiency | Insights | Power | Response model | SQL console
+// i18n-keys: Records & collections | Year in review | Durability | Climbing | Second opinion | Career
+// i18n-keys: Segments | Route maker | My routes | Streets & trails | Trails | Heatmap | Territory
+// i18n-keys: Plan a new-ground run | Replay | Time-lapse | Gear | Data review | Sources & coverage
+// i18n-keys: Sync & cowork | Log | Ask | More
 // Detail routes that are not in the nav: prefix -> page.
 const DETAIL = { activity: 'activity', race: 'race' };
 
@@ -78,20 +86,20 @@ function parseHash() {
 
 function syncDot() {
   const c = state.local.cloud || {};
-  if (!c.enabled) return html`<span class="dot"></span>Not syncing`;
-  return c.lastError ? html`<span class="dot err"></span>${avatar(c.account)}Sync error` : html`<span class="dot ok"></span>${avatar(c.account)}Drive synced`;
+  if (!c.enabled) return html`<span class="dot"></span>${t('Not syncing')}`;
+  return c.lastError ? html`<span class="dot err"></span>${avatar(c.account)}${t('Sync error')}` : html`<span class="dot ok"></span>${avatar(c.account)}${t('Drive synced')}`;
 }
 function renderNav(current) {
   const nav = document.getElementById('nav');
   nav.innerHTML = String(html`
     <a class="brand" href="#/">Run<span>315</span></a>
-    ${NAV.map(g => html`<div class="nav-group"><p>${g.group}</p>
-      ${g.items.map(it => html`<a href="#/${it.route}" ${it.route === current ? html`aria-current="page"` : ''}>${it.label}</a>`)}</div>`)}
+    ${NAV.map(g => html`<div class="nav-group"><p>${t(g.group)}</p>
+      ${g.items.map(it => html`<a href="#/${it.route}" ${it.route === current ? html`aria-current="page"` : ''}>${t(it.label)}</a>`)}</div>`)}
     <div class="nav-foot">${syncDot()}</div>`);
   const tabs = NAV.flatMap(g => g.items).filter(it => it.tab);
   document.getElementById('tabbar').innerHTML = tabs.map(it =>
-    `<a href="#/${it.route}"${it.route === current ? ' aria-current="page"' : ''}>${icon(it.tab)}${esc(it.tab)}</a>`).join('')
-    + `<button type="button" id="more">${icon('More')}More</button>`;
+    `<a href="#/${it.route}"${it.route === current ? ' aria-current="page"' : ''}>${icon(it.tab)}${esc(t(it.tab))}</a>`).join('')
+    + `<button type="button" id="more">${icon('More')}${esc(t('More'))}</button>`;
   document.getElementById('more').onclick = () => nav.classList.toggle('open');
 }
 
@@ -104,15 +112,15 @@ async function route(quiet = false) {
   const main = document.getElementById('page');
   let mod;
   try { mod = await import(`./pages/${page}.js`); }
-  catch (e) { main.innerHTML = `<section class="panel"><p>That page did not load: ${esc(e.message)}</p></section>`; console.error(e); logError(e, 'load ' + page); return; }
+  catch (e) { main.innerHTML = `<section class="panel"><p>${esc(t('That page did not load: {error}', { error: e.message }))}</p></section>`; console.error(e); logError(e, 'load ' + page); return; }
   let out;
   try { out = await mod.render(params); }
-  catch (e) { console.error(e); logError(e, 'render ' + page); out = html`<section class="panel"><p class="eyebrow">Something broke</p><pre>${e.stack || e}</pre></section>`; }
+  catch (e) { console.error(e); logError(e, 'render ' + page); out = html`<section class="panel"><p class="eyebrow">${t('Something broke')}</p><pre>${e.stack || e}</pre></section>`; }
   if (seq !== _seq) return;   // a newer navigation won
   // Whatever the previous page started (maps, timers, observers) stops before its markup goes.
   if (_cleanup) { try { _cleanup(); } catch (e) { console.error(e); } _cleanup = null; }
   main.innerHTML = String(out);
-  document.title = (mod.title ? (typeof mod.title === 'function' ? mod.title(params) : mod.title) + ' · ' : '') + 'Run315';
+  document.title = (mod.title ? t(typeof mod.title === 'function' ? mod.title(params) : mod.title) + ' · ' : '') + 'Run315';
   if (mod.mount) { try { const c = await mod.mount(main, params); if (typeof c === 'function') _cleanup = c; } catch (e) { console.error(e); logError(e, 'mount ' + page); } }
   if (!quiet) window.scrollTo(0, 0);
 }
@@ -125,6 +133,8 @@ function applyTheme() {
 }
 
 async function boot() {
+  // The chosen language's words arrive with font.js; wait briefly so the first page is drawn in it.
+  await Promise.race([globalThis.appFont?.ready, new Promise(r => setTimeout(r, 2500))]).catch(() => {});
   await loadState();
   // Records derived before the core/detail split carry their heavy detail in the synced state;
   // move it out once, before anything renders (the next sync uploads the slim copy).

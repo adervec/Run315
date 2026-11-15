@@ -9,7 +9,7 @@ import * as D from '../derive.js';
 import { importGarmin, importStrava } from '../ingest.js';
 import { setKey, apiKey, MODEL } from '../ai.js';
 import { archivePanel, mountArchive } from '../archive.js';
-import { html, pageHead, ago, toast, useCss, avatar } from '../ui.js';
+import { html, raw, esc, pageHead, ago, toast, useCss, avatar, t } from '../ui.js';
 
 export const title = 'Sync & cowork';
 const CSS = `
@@ -26,17 +26,19 @@ const CSS = `
 .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; margin: 0; }
 .kv dt { color: var(--muted); }
 `;
+// The theme names, translated where the buttons are drawn:
+// i18n-keys: system | light | dark
 
 function drivePanel() {
   const c = state.local.cloud || {};
-  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Google Drive</p></div>
-    <p class="panel-note" style="margin:0 0 12px">Phone and desktop share one copy in Drive's private app folder: invisible in your Drive, readable only by this app.</p>
-    ${c.enabled ? html`<dl class="kv"><dt>Account</dt><dd>${avatar(c.account)}${c.account?.name || 'connected'}</dd>
-      <dt>Last sync</dt><dd>${ago(c.lastSync)}</dd>
-      ${c.lastError ? html`<dt>Error</dt><dd class="bad">${c.lastError}</dd>` : ''}</dl>
-      <div class="row-actions"><button class="btn" data-act="drive-sync">Sync now</button><button class="btn btn-ghost" data-act="drive-off">Disconnect</button></div>`
-    : html`<div class="row-actions"><button class="btn" data-act="drive-on" ${drive.originAllowed() ? '' : 'disabled'}>Connect Google Drive</button></div>
-      ${drive.originAllowed() ? '' : html`<p class="panel-note">Only on adervec.github.io or localhost.</p>`}`}
+  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('Google Drive')}</p></div>
+    <p class="panel-note" style="margin:0 0 12px">${t("Phone and desktop share one copy in Drive's private app folder: invisible in your Drive, readable only by this app.")}</p>
+    ${c.enabled ? html`<dl class="kv"><dt>${t('Account')}</dt><dd>${avatar(c.account)}${c.account?.name || t('connected')}</dd>
+      <dt>${t('Last sync')}</dt><dd>${ago(c.lastSync)}</dd>
+      ${c.lastError ? html`<dt>${t('Error')}</dt><dd class="bad">${c.lastError}</dd>` : ''}</dl>
+      <div class="row-actions"><button class="btn" data-act="drive-sync">${t('Sync now')}</button><button class="btn btn-ghost" data-act="drive-off">${t('Disconnect')}</button></div>`
+    : html`<div class="row-actions"><button class="btn" data-act="drive-on" ${drive.originAllowed() ? '' : 'disabled'}>${t('Connect Google Drive')}</button></div>
+      ${drive.originAllowed() ? '' : html`<p class="panel-note">${t('Only on adervec.github.io or localhost.')}</p>`}`}
   </section>`;
 }
 
@@ -44,75 +46,82 @@ function drivePanel() {
 function reviewBlock() {
   const waiting = cowork.pendingReviews();
   return html`${waiting.map(p => html`<div class="cw-review" data-pk="${p.key}">
-      <p style="margin:0"><b>${p.channel}</b> · ${p.name} · ${ago(p.at)}${p.stale ? html` · <span class="bad">answers an older request</span>` : ''}</p>
+      <p style="margin:0"><b>${p.channel}</b> · ${p.name} · ${ago(p.at)}${p.stale ? html` · <span class="bad">${t('answers an older request')}</span>` : ''}</p>
       ${p.rows.length ? p.rows.map(r => html`<label><input type="checkbox" checked data-row="${r.id}"><span>${r.label}${r.detail ? html` <span class="dim">${r.detail}</span>` : ''}</span></label>`)
-        : html`<p class="dim">Nothing in this reply would change anything.</p>`}
-      <div class="row-actions"><button class="btn" data-act="cw-approve" data-rkey="${p.key}">Apply ticked</button>
-        <button class="btn btn-ghost" data-act="cw-discard" data-rkey="${p.key}">Discard</button></div></div>`)}
-    <p class="panel-note" style="margin:12px 0 4px">Review replies before they change anything (untick to apply automatically):</p>
+        : html`<p class="dim">${t('Nothing in this reply would change anything.')}</p>`}
+      <div class="row-actions"><button class="btn" data-act="cw-approve" data-rkey="${p.key}">${t('Apply ticked')}</button>
+        <button class="btn btn-ghost" data-act="cw-discard" data-rkey="${p.key}">${t('Discard')}</button></div></div>`)}
+    <p class="panel-note" style="margin:12px 0 4px">${t('Review replies before they change anything (untick to apply automatically):')}</p>
     <div class="cw-switches">${cowork.CHANNELS.map(ch => html`<label><input type="checkbox" data-review="${ch.key}" ${cowork.reviewOn(ch.key) ? 'checked' : ''}> ${ch.key}</label>`)}</div>`;
+}
+
+// Two number inputs inside one translatable sentence: the sentence keeps {push} and {check}.
+function schedLine(s) {
+  const box = (k, v) => `<input type="number" min="0" style="width:70px" data-sched="${k}" value="${esc(v)}">`;
+  return raw(esc(t('Send every {push} min, check every {check} min (0 = manual).', { push: '\u0001', check: '\u0002' }))
+    .replace('\u0001', box('pushMin', s.pushMin)).replace('\u0002', box('checkMin', s.checkMin)));
 }
 
 function coworkPanel() {
   const c = state.local.cowork || {}, runs = cowork.runs().slice(0, 30), s = c.schedules || { pushMin: 60, checkMin: 5 };
-  if (!cowork.supported()) return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Cowork folder</p></div>
-    <p>The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.</p></section>`;
-  return html`<section class="panel" style="grid-column:1/-1"><div class="panel-head"><p class="eyebrow">Cowork folder</p>
-      <p class="panel-note">${c.enabled ? 'Folder: ' + (c.folderName || '?') : 'Not set up'}</p></div>
-    <p style="margin-top:0">A folder an AI agent shares with this app. The app writes what it is missing and what you asked; the agent runs the Garmin and Strava exporters (or uses its connectors), answers your questions, and drops the replies in each channel's <code>inbox/</code>. Point CoworkSyncHub (<code>coworkhub.py add run315 manifest &lt;folder&gt;</code>) or Claude Desktop at it.</p>
+  if (!cowork.supported()) return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('Cowork folder')}</p></div>
+    <p>${t('The cowork folder needs a desktop Chromium browser (Chrome, Edge). On this device, data arrives through Drive from the desktop that runs it.')}</p></section>`;
+  return html`<section class="panel" style="grid-column:1/-1"><div class="panel-head"><p class="eyebrow">${t('Cowork folder')}</p>
+      <p class="panel-note">${c.enabled ? t('Folder: {name}', { name: c.folderName || '?' }) : t('Not set up')}</p></div>
+    <p style="margin-top:0">${t("A folder an AI agent shares with this app. The app writes what it is missing and what you asked; the agent runs the Garmin and Strava exporters (or uses its connectors), answers your questions, and drops the replies in each channel's inbox/ folder.")}
+      ${t('Point CoworkSyncHub or Claude Desktop at it:')} <code>coworkhub.py add run315 manifest &lt;folder&gt;</code></p>
     <div id="cowork-panel-host"></div>
     <div class="row-actions">
-      <button class="btn" data-act="cw-pick">${c.enabled ? 'Change folder' : 'Choose folder'}</button>
-      ${c.enabled ? html`<button class="btn btn-ghost" data-act="cw-push">Send requests</button><button class="btn btn-ghost" data-act="cw-poll">Check for replies</button>` : ''}
+      <button class="btn" data-act="cw-pick">${c.enabled ? t('Change folder') : t('Choose folder')}</button>
+      ${c.enabled ? html`<button class="btn btn-ghost" data-act="cw-push">${t('Send requests')}</button><button class="btn btn-ghost" data-act="cw-poll">${t('Check for replies')}</button>` : ''}
     </div>
     ${c.enabled ? reviewBlock() : ''}
-    ${c.enabled ? html`<p class="panel-note" style="margin:12px 0 0">Send every <input type="number" min="0" style="width:70px" data-sched="pushMin" value="${s.pushMin}"> min,
-      check every <input type="number" min="0" style="width:70px" data-sched="checkMin" value="${s.checkMin}"> min (0 = manual).</p>` : ''}
+    ${c.enabled ? html`<p class="panel-note" style="margin:12px 0 0">${schedLine(s)}</p>` : ''}
     ${runs.length ? html`<div class="runlog"><table><tbody>${runs.map(r => html`<tr><td class="dim">${ago(r.at)}</td><td>${r.kind}${r.channel ? ' · ' + r.channel : ''}</td>
-      <td class="${r.ok ? 'good' : 'bad'}">${r.ok ? 'ok' : 'failed'}</td><td>${r.note || ''}${r.undoKey ? (r.undone ? html` <span class="dim">(undone)</span>` : html` <button class="btn-quiet" data-act="cw-undo" data-undo="${r.undoKey}">Undo</button>`) : ''}</td></tr>`)}</tbody></table></div>` : ''}
+      <td class="${r.ok ? 'good' : 'bad'}">${r.ok ? t('ok') : t('failed')}</td><td>${r.note || ''}${r.undoKey ? (r.undone ? html` <span class="dim">${t('(undone)')}</span>` : html` <button class="btn-quiet" data-act="cw-undo" data-undo="${r.undoKey}">${t('Undo')}</button>`) : ''}</td></tr>`)}</tbody></table></div>` : ''}
   </section>`;
 }
 
 function dataPanel() {
   const n = Object.keys(state.activities).length;
-  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Data</p></div>
-    <dl class="kv"><dt>Activities</dt><dd>${n}</dd><dt>Analysed streams</dt><dd>${Object.keys(state.derived).length}</dd>
-      <dt>Days / nights</dt><dd>${Object.keys(state.daily).length} / ${Object.keys(state.wellness).length}</dd></dl>
+  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('Data')}</p></div>
+    <dl class="kv"><dt>${t('Activities')}</dt><dd>${n}</dd><dt>${t('Analysed streams')}</dt><dd>${Object.keys(state.derived).length}</dd>
+      <dt>${t('Days / nights')}</dt><dd>${Object.keys(state.daily).length} / ${Object.keys(state.wellness).length}</dd></dl>
     <div class="row-actions">
-      <label class="btn btn-ghost">Import reply JSON<input type="file" accept=".json,application/json" data-act="import" hidden></label>
-      <button class="btn btn-ghost" data-act="export">Download everything</button>
-      <button class="btn btn-ghost" data-act="csv">Activities CSV</button>
-      <button class="btn btn-ghost" data-act="rederive">Re-analyse streams</button>
+      <label class="btn btn-ghost">${t('Import reply JSON')}<input type="file" accept=".json,application/json" data-act="import" hidden></label>
+      <button class="btn btn-ghost" data-act="export">${t('Download everything')}</button>
+      <button class="btn btn-ghost" data-act="csv">${t('Activities CSV')}</button>
+      <button class="btn btn-ghost" data-act="rederive">${t('Re-analyse streams')}</button>
     </div>
     <div class="row-actions">
-      <button class="btn btn-ghost" data-act="demo">Load demo athlete</button>
-      <button class="btn-quiet" data-act="wipe">Erase everything on this device</button>
+      <button class="btn btn-ghost" data-act="demo">${t('Load demo athlete')}</button>
+      <button class="btn-quiet" data-act="wipe">${t('Erase everything on this device')}</button>
     </div></section>`;
 }
 
 // The crash log store.js keeps: copy it into a bug report, or clear it.
 function errorsPanel() {
   const list = state.local.errors || [];
-  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Diagnostics</p></div>
+  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('Diagnostics')}</p></div>
     ${list.length ? html`<dl class="kv">${list.slice(0, 8).map(e => html`<dt>${ago(e.at)}${e.n > 1 ? ` ×${e.n}` : ''}</dt><dd><b>${e.where}</b> ${e.route} · ${e.msg}</dd>`)}</dl>
-      <div class="row-actions"><button class="btn" data-act="err-copy">Copy ${list.length} error${list.length > 1 ? 's' : ''}</button><button class="btn btn-ghost" data-act="err-clear">Clear</button></div>`
-    : html`<p class="panel-note" style="margin:0">No errors recorded on this device.</p>`}
+      <div class="row-actions"><button class="btn" data-act="err-copy">${t.n('Copy {n} error', 'Copy {n} errors', list.length)}</button><button class="btn btn-ghost" data-act="err-clear">${t('Clear')}</button></div>`
+    : html`<p class="panel-note" style="margin:0">${t('No errors recorded on this device.')}</p>`}
   </section>`;
 }
 
 function settingsPanel() {
-  const t = state.local.theme || 'system';
-  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">AI & appearance</p></div>
-    <p class="panel-note" style="margin:0 0 8px">Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: ${MODEL}.</p>
-    <div class="row-actions"><input type="password" placeholder="sk-ant-…" data-key value="${apiKey() ? '••••••••' : ''}" style="flex:1"><button class="btn btn-ghost" data-act="key">Save key</button></div>
-    <div class="row-actions" role="group" aria-label="Theme">${['system', 'light', 'dark'].map(x =>
-      html`<button class="btn btn-ghost" data-theme="${x}" aria-pressed="${t === x}">${x}</button>`)}</div>
+  const theme = state.local.theme || 'system';
+  return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('AI & appearance')}</p></div>
+    <p class="panel-note" style="margin:0 0 8px">${t('Your own Anthropic key lets Ask and the coach answer instantly, without the folder. Kept on this device only; sent only to api.anthropic.com. Model: {model}.', { model: MODEL })}</p>
+    <div class="row-actions"><input type="password" placeholder="sk-ant-…" data-key value="${apiKey() ? '••••••••' : ''}" style="flex:1"><button class="btn btn-ghost" data-act="key">${t('Save key')}</button></div>
+    <div class="row-actions" role="group" aria-label="${t('Theme')}">${['system', 'light', 'dark'].map(x =>
+      html`<button class="btn btn-ghost" data-theme="${x}" aria-pressed="${theme === x}">${t(x)}</button>`)}</div>
     <div class="row-actions"><app-font-picker></app-font-picker></div></section>`;
 }
 
 export function render() {
   useCss('sync', CSS);
-  return html`${pageHead('Sync & cowork', 'Garmin and Strava in · analysis out · every device in step')}
+  return html`${pageHead(t('Sync & cowork'), t('Garmin and Strava in · analysis out · every device in step'))}
     <div class="sync-grid">${coworkPanel()}${archivePanel()}${drivePanel()}${dataPanel()}${settingsPanel()}${errorsPanel()}</div>`;
 }
 
@@ -137,7 +146,7 @@ async function importFile(file) {
   if (!env.ok) throw new Error(env.reason);
   const r = env.kind === 'garmin-output' ? await importGarmin(state, env.payload, putStream)
     : env.kind === 'strava-output' ? await importStrava(state, env.payload, putStream, hasStream) : null;
-  if (!r) throw new Error('Not a garmin-output or strava-output file');
+  if (!r) throw new Error(t('Not a garmin-output or strava-output file'));
   for (const id of r.streams) await drive.queueStream(id);
   await D.deriveAll(state, r.streams);
   save('cowork-import');
@@ -168,34 +177,35 @@ export function mount(el) {
   }
   el.querySelectorAll('[data-act]').forEach(b => {
     const act = b.dataset.act;
-    if (act === 'import') { b.onchange = () => b.files[0] && busy(b, () => importFile(b.files[0]), r => `Imported ${r.activities} activities, ${r.streams.length} streams`); return; }
+    if (act === 'import') { b.onchange = () => b.files[0] && busy(b, () => importFile(b.files[0]), r => t('Imported {activities} activities, {streams} streams', { activities: r.activities, streams: r.streams.length })); return; }
     b.onclick = () => ({
-      'drive-on': () => busy(b, drive.connect, 'Google Drive connected'),
-      'drive-sync': () => busy(b, () => drive.sync(true), 'Synced'),
+      'drive-on': () => busy(b, drive.connect, t('Google Drive connected')),
+      'drive-sync': () => busy(b, () => drive.sync(true), t('Synced')),
       'drive-off': () => { drive.disconnect(); redraw(); },
-      'err-copy': () => busy(b, () => navigator.clipboard.writeText(JSON.stringify({ ua: navigator.userAgent, errors: state.local.errors }, null, 2)), 'Copied'),
+      'err-copy': () => busy(b, () => navigator.clipboard.writeText(JSON.stringify({ ua: navigator.userAgent, errors: state.local.errors }, null, 2)), t('Copied')),
       'err-clear': () => { state.local.errors = []; save('local'); redraw(); },
-      'cw-pick': () => busy(b, cowork.pickFolder, 'Cowork folder ready: requests written'),
-      'cw-push': () => busy(b, () => cowork.exportNow(false), 'Requests written'),
-      'cw-poll': () => busy(b, () => cowork.pollAll(true), n => n ? `Imported ${n} replies` : cowork.pendingReviews().length ? 'Replies are waiting for your review' : 'No new replies'),
+      'cw-pick': () => busy(b, cowork.pickFolder, t('Cowork folder ready: requests written')),
+      'cw-push': () => busy(b, () => cowork.exportNow(false), t('Requests written')),
+      'cw-poll': () => busy(b, () => cowork.pollAll(true), n => n ? t.n('Imported {n} reply', 'Imported {n} replies', n) : cowork.pendingReviews().length ? t('Replies are waiting for your review') : t('No new replies')),
       'cw-approve': () => busy(b, () => cowork.approve(b.dataset.rkey, [...b.closest('[data-pk]').querySelectorAll('[data-row]:checked')].map(x => x.dataset.row)),
-        r => (r.handled ? 'Applied: ' : '⚠ ') + r.note),
-      'cw-discard': () => busy(b, () => cowork.discard(b.dataset.rkey), 'Discarded: nothing was changed'),
-      'cw-undo': () => busy(b, () => cowork.undoRun(b.dataset.undo), n => `Undone: ${n} records put back`),
+        r => (r.handled ? t('Applied: {note}', { note: r.note }) : '⚠ ' + r.note)),
+      'cw-discard': () => busy(b, () => cowork.discard(b.dataset.rkey), t('Discarded: nothing was changed')),
+      'cw-undo': () => busy(b, () => cowork.undoRun(b.dataset.undo), n => t.n('Undone: {n} record put back', 'Undone: {n} records put back', n)),
       export: () => download('run315-' + dayKey(new Date()) + '.json', JSON.stringify(syncPayload(state))),
       csv: () => {
         const rows = [['start', 'name', 'type', 'distance_m', 'moving_s', 'elapsed_s', 'avg_hr', 'max_hr', 'elev_gain_m', 'calories', 'garmin_id', 'strava_id']];
         for (const a of D.activities(state)) rows.push([a.start.toISOString(), a.name, a.type, a.distance_m, a.moving_s, a.elapsed_s, a.avg_hr, a.max_hr, a.elev_gain_m, a.calories, a.garmin_id, a.strava_id]);
         download('run315-activities.csv', rows.map(r => r.map(v => v == null ? '' : /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v).join(',')).join('\n'), 'text/csv');
       },
-      rederive: () => busy(b, async () => { const n = await D.deriveAll(state, await streamIds()); save('derive'); return n; }, n => `Re-analysed ${n} streams`),
-      demo: () => busy(b, loadDemo, r => `Demo athlete loaded: ${r.activities} activities`),
+      rederive: () => busy(b, async () => { const n = await D.deriveAll(state, await streamIds()); save('derive'); return n; }, n => t.n('Re-analysed {n} stream', 'Re-analysed {n} streams', n)),
+      demo: () => busy(b, loadDemo, r => t('Demo athlete loaded: {n} activities', { n: r.activities })),
       wipe: () => {
-        if (!confirm('Erase every activity, race, stream and setting Run315 keeps on this device, and disconnect Google Drive?\n\nThe copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.')) return;
+        if (!confirm(t('Erase every activity, race, stream and setting Run315 keeps on this device, and disconnect Google Drive?') + '\n\n'
+          + t('The copy in your Google Drive is not touched: reconnect Drive to get it back. Other apps on this site are not affected. This cannot be undone.'))) return;
         drive.disconnect();
-        busy(b, async () => { await eraseDevice(); location.reload(); }, 'Erased');
+        busy(b, async () => { await eraseDevice(); location.reload(); }, t('Erased'));
       },
-      key: () => { const v = el.querySelector('[data-key]').value; if (!v.startsWith('•')) { setKey(v); toast(v ? 'Key saved on this device' : 'Key removed'); } },
+      key: () => { const v = el.querySelector('[data-key]').value; if (!v.startsWith('•')) { setKey(v); toast(v ? t('Key saved on this device') : t('Key removed')); } },
     }[act] || (() => {}))();
   });
   el.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => { state.local.theme = b.dataset.theme; save('theme'); redraw(); });
@@ -210,5 +220,5 @@ export function mount(el) {
     for (const id of r.streams) await drive.queueStream(id);
     await D.deriveAll(state, r.streams);
     save('garmin-archive');
-  }, onDone: s => toast(`Imported ${s.summaries} activities, ${s.withChannels} traces`) });
+  }, onDone: s => toast(t('Imported {activities} activities, {traces} traces', { activities: s.summaries, traces: s.withChannels })) });
 }
