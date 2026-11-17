@@ -14,6 +14,7 @@ import { idbGet, idbSet } from './store.js';
 import { penalty } from './lib/weather.js';
 import { tileBounds } from './lib/territory.js';
 import * as D from './derive.js';
+import { t } from './i18n.js';
 
 export const OPEN_METEO = 'https://api.open-meteo.com/v1/forecast';
 export const TTL_MS = 3600e3;          // refetch after an hour
@@ -61,16 +62,16 @@ export function cachedForecast(lat, lon, now = Date.now()) {
 export function _remember(key, e) { _mem.set(key, e); _lastKey = key; }   // exported for tests
 
 export async function forecastFor(lat, lon, { fetchFn = globalThis.fetch, now = Date.now(), force = false } = {}) {
-  if (lat == null || lon == null || !isFinite(lat) || !isFinite(lon)) throw new Error('No location for the forecast.');
+  if (lat == null || lon == null || !isFinite(lat) || !isFinite(lon)) throw new Error(t('No location for the forecast.'));
   const key = cacheKey(lat, lon);
   let e = _mem.get(key) || null;
   if (!e) { try { e = (await idbGet('cache', key)) || null; } catch { e = null; } }
   if (e && !force && now - Date.parse(e.fetchedAt) < TTL_MS) { _remember(key, e); return e; }
   try {
     const r = await fetchFn(forecastUrl(lat, lon));
-    if (!r.ok) throw new Error('Open-Meteo answered ' + r.status);
+    if (!r.ok) throw new Error(t('Open-Meteo answered {status}', { status: r.status }));
     const f = parseForecast(await r.json());
-    if (!f) throw new Error('Open-Meteo sent no hourly forecast.');
+    if (!f) throw new Error(t('Open-Meteo sent no hourly forecast.'));
     e = { ...f, fetchedAt: new Date(now).toISOString(), key };
     _remember(key, e);
     idbSet('cache', key, e).catch(() => {});

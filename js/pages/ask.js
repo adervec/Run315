@@ -9,7 +9,7 @@ import { state, save } from '../store.js';
 import { put, remove } from '../merge.js';
 import * as cowork from '../cowork.js';
 import * as ai from '../ai.js';
-import { html, pageHead, md, ago, day, toast, useCss } from '../ui.js';
+import { html, raw, esc, t, pageHead, md, ago, day, toast, useCss } from '../ui.js';
 
 export const title = 'Ask & coach';
 
@@ -52,7 +52,20 @@ const CSS = `
 `;
 
 // Deep dives worth a whole stream archive: each needs per-second data or a join across
-// sources that the dashboard's own numbers do not make.
+// sources that the dashboard's own numbers do not make. A chip shows t(q) but queues the
+// English q: the question is stored and the agent reads it (shown back through askedText).
+// i18n-keys: Is my aerobic decoupling improving on long runs, controlling for temperature?
+// i18n-keys: Which variables predict my best-feeling runs: sleep, HRV, load, weather?
+// i18n-keys: Where do I lose time on hills, and is it uphill or downhill?
+// i18n-keys: How does my cadence and ground contact change as I fatigue?
+// i18n-keys: Am I running my easy days easy enough?
+// i18n-keys: What does my Strava-only activity add to the training-load picture?
+// i18n-keys: How has my pace at a fixed heart rate moved over the last six months?
+// i18n-keys: Which weeks in the last three months carried the most injury risk, and why?
+// i18n-keys: Given my longest runs and how my pace holds late in them, is my race projection realistic?
+// i18n-keys: Chart my resting HR and HRV over the last 90 days against weekly running minutes: what moves together?
+// i18n-keys: Draw my easy-run pace at a fixed heart rate month by month as a line chart, and tell me what it shows.
+// i18n-keys: Plot long-run decoupling against temperature as a scatter chart: how much of my drift is heat?
 const SUGGESTED = [
   'Is my aerobic decoupling improving on long runs, controlling for temperature?',
   'Which variables predict my best-feeling runs: sleep, HRV, load, weather?',
@@ -69,6 +82,12 @@ const SUGGESTED = [
   'Plot long-run decoupling against temperature as a scatter chart: how much of my drift is heat?',
 ];
 
+// A question as the reader sees it: a suggested one in their language, their own as typed.
+const askedText = q => (SUGGESTED.includes(q) ? t(q) : q);
+// A sentence with a link inside it: one t() string with {link} as '\u0001', escaped, then the link goes in.
+const withLink = (translated, linkHtml) => raw(esc(translated).replace('\u0001', linkHtml));
+const syncLink = () => `<a class="quiet-link" href="#/sync">${esc(t('Sync & cowork'))}</a>`;
+
 // Answers in flight from this page (ids), and whether a review is being written.
 const busy = new Set();
 let reviewing = false;
@@ -80,14 +99,22 @@ const reviews = () => Object.values(state.reviews).sort((a, b) => String(b.creat
 
 function statusLine() {
   const cw = state.local.cowork?.enabled, key = !!ai.apiKey(), cloud = state.local.cloud?.enabled;
-  if (!cw && !key) return html`<p class="ask-status">Nothing on this device answers questions yet.
-    ${cloud ? 'Questions you ask here still travel through Drive to a desktop that runs the cowork folder. ' : ''}
-    <a class="quiet-link" href="#/sync">Set up the cowork folder or add an API key →</a></p>`;
+  if (!cw && !key) return html`<p class="ask-status">${t('Nothing on this device answers questions yet.')}
+    ${cloud ? t('Questions you ask here still travel through Drive to a desktop that runs the cowork folder.') + ' ' : ''}
+    <a class="quiet-link" href="#/sync">${t('Set up the cowork folder or add an API key →')}</a></p>`;
+  const bold = (sentence, b) => raw(esc(sentence).replace('\u0001', '<b>' + esc(b) + '</b>'));
   return html`<p class="ask-status">
-    ${cw ? html`<b>Cowork folder on</b> (${state.local.cowork.folderName || 'folder'}): queued questions are answered on the agent's next sweep, from every stream and the full export.` : ''}
+    ${cw ? bold(t("{on} ({folder}): queued questions are answered on the agent's next sweep, from every stream and the full export.",
+      { on: '\u0001', folder: state.local.cowork.folderName || t('folder') }), t('Cowork folder on')) : ''}
     ${cw && key ? ' ' : ''}
-    ${key ? html`<b>API key on this device</b>: “Answer now” asks Claude directly, from the app's own brief.` : ''}
+    ${key ? bold(t("{on}: “Answer now” asks Claude directly, from the app's own brief.", { on: '\u0001' }), t('API key on this device')) : ''}
   </p>`;
+}
+
+// "every [7] days": the number box sits inside the translated phrase.
+function everyField(translated, value) {
+  const box = `<input type="number" name="every" min="1" max="90" value="${esc(value)}" aria-label="${esc(t('Days between answers'))}">`;
+  return withLink(translated, box);
 }
 
 function askPanel() {
@@ -95,26 +122,27 @@ function askPanel() {
   const asked = new Set(requests().map(r => r.q));
   const chips = SUGGESTED.filter(q => !asked.has(q));
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Ask a question</p>
-      <p class="panel-note">anything the data could answer</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Ask a question')}</p>
+      <p class="panel-note">${t('anything the data could answer')}</p></div>
     ${statusLine()}
     <form class="ask-form" id="ask-form">
-      <label class="eyebrow" for="ask-q" style="display:block;margin-bottom:6px">Question</label>
-      <textarea id="ask-q" name="q" required placeholder="e.g. Did my threshold runs get faster at the same heart rate this spring?"></textarea>
-      <input type="text" id="ask-note" name="note" placeholder="Context (optional): a niggle, a goal race, what you suspect">
+      <label class="eyebrow" for="ask-q" style="display:block;margin-bottom:6px">${t('Question')}</label>
+      <textarea id="ask-q" name="q" required placeholder="${t('e.g. Did my threshold runs get faster at the same heart rate this spring?')}"></textarea>
+      <input type="text" id="ask-note" name="note" placeholder="${t('Context (optional): a niggle, a goal race, what you suspect')}">
       <div class="ask-standing-opt">
-        <label><input type="checkbox" name="standing"> Keep asking this</label>
-        <label>every <input type="number" name="every" min="1" max="90" value="7" aria-label="Days between answers"> days</label>
-        <span class="dim">— each answer starts with what changed since the last</span>
+        <label><input type="checkbox" name="standing"> ${t('Keep asking this')}</label>
+        <label>${everyField(t('every {field} days', { field: '\u0001' }), 7)}</label>
+        <span class="dim">${t('— each answer starts with what changed since the last')}</span>
       </div>
       <div class="ask-actions">
-        <button class="btn" type="submit" data-mode="queue">Queue for the cowork agent</button>
-        ${key ? html`<button class="btn btn-ghost" type="submit" data-mode="now">Answer now</button>` : ''}
+        <button class="btn" type="submit" data-mode="queue">${t('Queue for the cowork agent')}</button>
+        ${key ? html`<button class="btn btn-ghost" type="submit" data-mode="now">${t('Answer now')}</button>` : ''}
       </div>
     </form>
-    ${chips.length ? html`<p class="eyebrow" style="margin:22px 0 10px">Deep dives to try</p>
-      <div class="ask-chips">${chips.map(q => html`<button type="button" class="ask-chip" data-suggest="${q}">${q}</button>`)}</div>
-      <p class="stat-hint" style="margin-top:10px">One click queues it for the cowork agent${key ? '; “Answer now” on the question asks Claude straight away' : ''}.</p>` : ''}
+    ${chips.length ? html`<p class="eyebrow" style="margin:22px 0 10px">${t('Deep dives to try')}</p>
+      <div class="ask-chips">${chips.map(q => html`<button type="button" class="ask-chip" data-suggest="${q}">${t(q)}</button>`)}</div>
+      <p class="stat-hint" style="margin-top:10px">${key ? t('One click queues it for the cowork agent; “Answer now” on the question asks Claude straight away.')
+        : t('One click queues it for the cowork agent.')}</p>` : ''}
   </section>`;
 }
 
@@ -132,10 +160,15 @@ function splitChanged(answer, hasPrevious) {
   if (!hasPrevious || i < 0 || /^(```|\||#)/.test(lines[i].trim())) return [null, answer];
   return [lines[i].trim(), lines.slice(i + 1).join('\n')];
 }
+// Days until a standing question is next due: null before its first answer, 0 or less when due.
+function dueIn(r) {
+  if (!r.answeredAt) return null;
+  return Math.ceil((Date.parse(r.answeredAt) + everyDays(r) * 864e5 - Date.now()) / 864e5);
+}
 function nextDue(r) {
-  if (!r.answeredAt) return 'waiting for its first answer';
-  const days = Math.ceil((Date.parse(r.answeredAt) + everyDays(r) * 864e5 - Date.now()) / 864e5);
-  return days <= 0 ? 'due now' : 'next in ' + days + ' day' + (days === 1 ? '' : 's');
+  const days = dueIn(r);
+  if (days == null) return t('waiting for its first answer');
+  return days <= 0 ? t('due now') : t.n('next in {n} day', 'next in {n} days', days);
 }
 // Past answers, newest first, without the one already shown in full above them.
 function pastAnswers(r) {
@@ -145,8 +178,8 @@ function pastAnswers(r) {
 }
 function historyList(past) {
   if (!past.length) return '';
-  return html`<div class="sq-history"><p class="eyebrow" style="margin:0 0 4px">Earlier answers (${past.length})</p>
-    ${past.map(x => html`<details><summary><b>${x.at ? day(x.at) : '--'}</b>${firstLine(x.answer) || 'an answer'}</summary>
+  return html`<div class="sq-history"><p class="eyebrow" style="margin:0 0 4px">${t('Earlier answers ({n})', { n: past.length })}</p>
+    ${past.map(x => html`<details><summary><b>${x.at ? day(x.at) : '--'}</b>${firstLine(x.answer) || t('an answer')}</summary>
       <div class="q-answer review">${md(x.answer)}</div></details>`)}</div>`;
 }
 
@@ -154,19 +187,19 @@ function standingItem(r, key) {
   const past = pastAnswers(r), [changed, rest] = splitChanged(r.answer, past.length > 0);
   return html`<div class="q-item">
     <div class="q-head">
-      <span class="q-text">${r.q}</span>
-      ${busy.has(r.id) ? html`<span class="q-meta open">Claude is answering…</span>`
-        : html`<span class="q-meta ${r.answeredAt ? '' : 'open'}">every ${everyDays(r)} days${r.answeredAt ? html` · last ${day(r.answeredAt)}${r.via === 'api' ? ' · API' : ' · cowork'}` : ''} · ${nextDue(r)}</span>`}
-      ${key && !busy.has(r.id) ? html`<button class="btn-quiet" data-answer="${r.id}">Answer now</button>` : ''}
-      <button class="btn-quiet" data-stop="${r.id}">Stop asking</button>
-      <button class="btn-quiet" data-del="${r.id}" aria-label="Delete this question">Delete</button>
+      <span class="q-text">${askedText(r.q)}</span>
+      ${busy.has(r.id) ? html`<span class="q-meta open">${t('Claude is answering…')}</span>`
+        : html`<span class="q-meta ${r.answeredAt ? '' : 'open'}">${t.n('every {n} day', 'every {n} days', everyDays(r))}${r.answeredAt ? html` · ${t('last {day}', { day: day(r.answeredAt) })}${r.via === 'api' ? ' · API' : ' · cowork'}` : ''} · ${nextDue(r)}</span>`}
+      ${key && !busy.has(r.id) ? html`<button class="btn-quiet" data-answer="${r.id}">${t('Answer now')}</button>` : ''}
+      <button class="btn-quiet" data-stop="${r.id}">${t('Stop asking')}</button>
+      <button class="btn-quiet" data-del="${r.id}" aria-label="${t('Delete this question')}">${t('Delete')}</button>
     </div>
     ${r.note ? html`<p class="q-note">${r.note}</p>` : ''}
-    ${changed ? html`<div class="sq-changed"><p class="eyebrow">What changed</p>${md(changed)}</div>` : ''}
+    ${changed ? html`<div class="sq-changed"><p class="eyebrow">${t('What changed')}</p>${md(changed)}</div>` : ''}
     ${r.answer ? html`<div class="q-answer review">${md(rest)}</div>` : ''}
     <form class="sq-cadence" data-cadence="${r.id}">
-      <label>Ask every <input type="number" name="every" min="1" max="90" value="${everyDays(r)}" aria-label="Days between answers"> days</label>
-      <button class="btn-quiet" type="submit">Save</button>
+      <label>${everyField(t('Ask every {field} days', { field: '\u0001' }), everyDays(r))}</label>
+      <button class="btn-quiet" type="submit">${t('Save')}</button>
     </form>
     ${historyList(past)}
   </div>`;
@@ -175,10 +208,10 @@ function standingItem(r, key) {
 function standingPanel() {
   const rs = requests().filter(r => r.standing), key = !!ai.apiKey();
   if (!rs.length) return '';
-  const due = rs.filter(r => nextDue(r) === 'due now' || !r.answeredAt).length;
+  const due = rs.filter(r => !r.answeredAt || dueIn(r) <= 0).length;
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Standing questions</p>
-      <p class="panel-note">${rs.length} asked again on a schedule · ${due} due</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Standing questions')}</p>
+      <p class="panel-note">${t.n('{n} asked again on a schedule', '{n} asked again on a schedule', rs.length)} · ${t('{n} due', { n: due })}</p></div>
     ${rs.map(r => standingItem(r, key))}
   </section>`;
 }
@@ -188,14 +221,14 @@ function questionItem(r, key) {
   const stopped = r.status === 'answered' && !r.answer;   // a standing question stopped before its first answer
   return html`<div class="q-item">
     <div class="q-head">
-      <span class="q-text">${r.q}</span>
+      <span class="q-text">${askedText(r.q)}</span>
       ${answered
-        ? html`<span class="q-meta">answered ${r.answeredAt ? day(r.answeredAt) : ''}${r.via === 'api' ? ' · API' : ' · cowork'}</span>`
-        : busy.has(r.id) ? html`<span class="q-meta open">Claude is answering…</span>`
-        : stopped ? html`<span class="q-meta">stopped before an answer</span>`
-        : html`<span class="q-meta open">asked ${ago(r.created)} · waiting for the cowork agent</span>`}
-      ${!answered && !stopped && key && !busy.has(r.id) ? html`<button class="btn-quiet" data-answer="${r.id}">Answer now</button>` : ''}
-      <button class="btn-quiet" data-del="${r.id}" aria-label="Delete this question">Delete</button>
+        ? html`<span class="q-meta">${r.answeredAt ? t('answered {day}', { day: day(r.answeredAt) }) : t('answered')}${r.via === 'api' ? ' · API' : ' · cowork'}</span>`
+        : busy.has(r.id) ? html`<span class="q-meta open">${t('Claude is answering…')}</span>`
+        : stopped ? html`<span class="q-meta">${t('stopped before an answer')}</span>`
+        : html`<span class="q-meta open">${t('asked {when} · waiting for the cowork agent', { when: ago(r.created) })}</span>`}
+      ${!answered && !stopped && key && !busy.has(r.id) ? html`<button class="btn-quiet" data-answer="${r.id}">${t('Answer now')}</button>` : ''}
+      <button class="btn-quiet" data-del="${r.id}" aria-label="${t('Delete this question')}">${t('Delete')}</button>
     </div>
     ${r.note ? html`<p class="q-note">${r.note}</p>` : ''}
     ${answered ? html`<div class="q-answer review">${md(r.answer)}</div>` : ''}
@@ -208,8 +241,8 @@ function questionsPanel() {
   if (!rs.length) return '';
   const open = rs.filter(r => r.status !== 'answered').length;
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Your questions</p>
-      <p class="panel-note">${rs.length} asked · ${open} waiting</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Your questions')}</p>
+      <p class="panel-note">${t('{n} asked · {open} waiting', { n: rs.length, open })}</p></div>
     ${rs.map(r => questionItem(r, key))}
   </section>`;
 }
@@ -217,17 +250,15 @@ function questionsPanel() {
 function reviewsPanel() {
   const rv = reviews(), key = !!ai.apiKey(), latest = rv[0];
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Coach reviews</p>
-      ${latest ? html`<p class="panel-note">latest ${day(latest.created_at)} · ${latest.source === 'api' ? 'API' : 'cowork'}</p>` : ''}</div>
-    ${latest ? html`<div class="review">${md(latest.markdown)}</div>` : html`<div class="empty"><p>No review yet. A review reads your
-      training load, best efforts, projections, zones and readiness, and ends with at most four changes for the next four weeks.</p></div>`}
+    <div class="panel-head"><p class="eyebrow">${t('Coach reviews')}</p>
+      ${latest ? html`<p class="panel-note">${t('latest {day}', { day: day(latest.created_at) })} · ${latest.source === 'api' ? 'API' : 'cowork'}</p>` : ''}</div>
+    ${latest ? html`<div class="review">${md(latest.markdown)}</div>` : html`<div class="empty"><p>${t('No review yet. A review reads your training load, best efforts, projections, zones and readiness, and ends with at most four changes for the next four weeks.')}</p></div>`}
     ${rv.slice(1).map(r => html`<details class="review-old"><summary>${day(r.created_at)} · ${r.source === 'api' ? 'API' : 'cowork'}</summary>
       <div class="review">${md(r.markdown)}</div></details>`)}
     <div class="ask-actions">
-      ${key ? html`<button class="btn ${latest ? 'btn-ghost' : ''}" data-act="review" ${reviewing ? 'disabled' : ''}>${reviewing ? 'Writing the review…' : 'New review'}</button>`
-        : html`<p class="stat-hint" style="margin:0">The cowork agent writes a review each week through the folder's
-          <code>coach</code> channel, and it lands here (and on your phone, through Drive).
-          For one on demand, add an Anthropic API key on <a class="quiet-link" href="#/sync">Sync &amp; cowork</a>.</p>`}
+      ${key ? html`<button class="btn ${latest ? 'btn-ghost' : ''}" data-act="review" ${reviewing ? 'disabled' : ''}>${reviewing ? t('Writing the review…') : t('New review')}</button>`
+        : html`<p class="stat-hint" style="margin:0">${raw(esc(t("The cowork agent writes a review each week through the folder's {channel} channel, and it lands here (and on your phone, through Drive). For one on demand, add an Anthropic API key on {link}.",
+          { channel: '\u0002', link: '\u0001' })).replace('\u0002', '<code>coach</code>').replace('\u0001', syncLink()))}</p>`}
     </div>
   </section>`;
 }
@@ -235,7 +266,7 @@ function reviewsPanel() {
 export function render() {
   useCss('ask', CSS);
   return html`<div id="ask-page">
-    ${pageHead('Ask & coach', 'Deep analysis of every run, from the per-second streams up')}
+    ${pageHead(t('Ask & coach'), t('Deep analysis of every run, from the per-second streams up'))}
     ${askPanel()}
     ${standingPanel()}
     ${questionsPanel()}
@@ -262,10 +293,10 @@ async function answerNow(el, id) {
     // the question was deleted meanwhile.
     if (cowork.applyAnswer(id, answer, 'api')) {
       save('edit');
-      toast('Answered.');
+      toast(t('Answered.'));
     }
   } catch (e) {
-    toast((e.message || String(e)) + ' It stays queued for the cowork agent.', 6000);
+    toast(t('{error} It stays queued for the cowork agent.', { error: e.message || String(e) }), 6000);
   } finally { busy.delete(id); redraw(el); }
 }
 
@@ -274,24 +305,24 @@ export function mount(el) {
   if (form) form.onsubmit = ev => {
     ev.preventDefault();
     const q = form.q.value.trim(), note = form.note.value.trim();
-    if (!q) { toast('Write a question first.'); return; }
+    if (!q) { toast(t('Write a question first.')); return; }
     const standing = form.standing.checked, every = Math.round(+form.every.value);
-    if (standing && !(every >= 1 && every <= 90)) { toast('Ask again every 1 to 90 days.'); return; }
+    if (standing && !(every >= 1 && every <= 90)) { toast(t('Ask again every 1 to 90 days.')); return; }
     const id = cowork.ask(q, note, standing ? { standing: true, everyDays: every } : {});
     const now = ev.submitter?.dataset.mode === 'now';
-    if (!now) toast(state.local.cowork?.enabled ? 'Queued: the cowork agent answers on its next sweep.' : 'Queued for the cowork agent.');
+    if (!now) toast(state.local.cowork?.enabled ? t('Queued: the cowork agent answers on its next sweep.') : t('Queued for the cowork agent.'));
     redraw(el, false);
     if (now) answerNow(el, id);
   };
   el.querySelectorAll('[data-suggest]').forEach(b => b.onclick = () => {
     cowork.ask(b.dataset.suggest, '');
-    toast('Queued for the cowork agent.');
+    toast(t('Queued for the cowork agent.'));
     redraw(el);
   });
   el.querySelectorAll('[data-answer]').forEach(b => b.onclick = () => answerNow(el, b.dataset.answer));
   el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
     const rq = state.analysisRequests[b.dataset.del];
-    if (!rq || !confirm('Delete this question' + (rq.answer ? ' and its answer' : '') + '?')) return;
+    if (!rq || !confirm(rq.answer ? t('Delete this question and its answer?') : t('Delete this question?'))) return;
     remove(state, 'analysisRequests', rq.id);
     save('edit');
     redraw(el);
@@ -302,17 +333,17 @@ export function mount(el) {
     if (!rq) return;
     put(state, 'analysisRequests', rq.id, { ...rq, standing: false, status: 'answered' });
     save('edit');
-    toast('Stopped. Its answers stay below.');
+    toast(t('Stopped. Its answers stay below.'));
     redraw(el);
   });
   el.querySelectorAll('form[data-cadence]').forEach(f => f.onsubmit = ev => {
     ev.preventDefault();
     const rq = state.analysisRequests[f.dataset.cadence], every = Math.round(+f.every.value);
     if (!rq) return;
-    if (!(every >= 1 && every <= 90)) { toast('Ask again every 1 to 90 days.'); return; }
+    if (!(every >= 1 && every <= 90)) { toast(t('Ask again every 1 to 90 days.')); return; }
     put(state, 'analysisRequests', rq.id, { ...rq, everyDays: every });
     save('edit');
-    toast(`Asked every ${every} day${every === 1 ? '' : 's'} from now on.`);
+    toast(t.n('Asked every {n} day from now on.', 'Asked every {n} days from now on.', every));
     redraw(el);
   });
   const rev = el.querySelector('[data-act="review"]');
@@ -324,7 +355,7 @@ export function mount(el) {
       const id = 'r' + Date.now().toString(36);
       put(state, 'reviews', id, { id, created_at: new Date().toISOString(), markdown, source: 'api' });
       save('edit');
-      toast('New review in.');
+      toast(t('New review in.'));
     } catch (e) { toast(e.message || String(e), 6000); }
     finally { reviewing = false; redraw(el); }
   };

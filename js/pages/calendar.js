@@ -11,7 +11,8 @@ import * as D from '../derive.js';
 import * as F from '../lib/fitness.js';
 import { dayKey, addDayKey, fromDay, weekStart } from '../lib/dt.js';
 import { dayTagsWidget, mountDayTags } from '../journal.js';
-import { html, raw, pageHead, emptyState, fmtTime, typeLabel, day, useCss } from '../ui.js';
+import { html, raw, esc, pageHead, emptyState, fmtTime, typeLabel, day, useCss, t } from '../ui.js';
+import { fmt } from '../i18n.js';
 
 export const title = 'Calendar';
 
@@ -59,14 +60,16 @@ const CSS = `
 // ---- pure helpers (exported for tests) ----
 // Sport family for colour and the sport filter.
 export function sportOf(type) {
-  const t = String(type || '');
-  if (F.RUN_TYPES.has(t)) return 'run';
-  if (/cycl|bik|ride/.test(t)) return 'ride';
-  if (/swim/.test(t)) return 'swim';
-  if (/walk|hik/.test(t)) return 'walk';
-  if (/strength|gym|weight/.test(t)) return 'strength';
+  const ty = String(type || '');
+  if (F.RUN_TYPES.has(ty)) return 'run';
+  if (/cycl|bik|ride/.test(ty)) return 'ride';
+  if (/swim/.test(ty)) return 'swim';
+  if (/walk|hik/.test(ty)) return 'walk';
+  if (/strength|gym|weight/.test(ty)) return 'strength';
   return 'other';
 }
+// The sport label is shown through t():
+// i18n-keys: Run | Ride | Swim | Walk / hike | Strength | Other
 export const SPORTS = [['run', 'Run', 'var(--measured)'], ['ride', 'Ride', 'var(--series-1)'], ['swim', 'Swim', 'var(--series-3)'],
   ['walk', 'Walk / hike', 'var(--series-4)'], ['strength', 'Strength', 'var(--series-7)'], ['other', 'Other', 'var(--faint)']];
 const colourOf = s => (SPORTS.find(x => x[0] === s) || SPORTS[5])[2];
@@ -158,16 +161,26 @@ function context() {
 // Chip size: training load where there is a threshold to score it, else duration.
 const chipZ = (a, c) => { const l = c.load(a); return Math.min(1, Math.sqrt((l != null && l > 0 ? l / 150 : (a.moving_s || 0) / 5400))); };
 
+// Month and weekday names in the reader's language (Monday first, like the grid).
+const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const dowNames = () => (fmt() ? DOW.map((_, i) => fmt().custom(new Date(2026, 0, 5 + i), { weekday: 'short' })) : DOW);
+const monthLabel = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }));
+const longDay = d => (fmt() ? fmt().custom(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+// 'Race: <link>' as one translated sentence, the link put in after escaping.
+const raceLine = r => raw(esc(t('Race: {name}', { name: '\u0001' }))
+  .replace('\u0001', `<a class="quiet-link" href="#/race/${esc(r.id)}">${esc(r.name)}</a>`));
+
 function monthHtml(c) {
   const weeks = monthWeeks(_month), active = filtersActive(_f);
   const [y, m] = _month.split('-').map(Number);
-  const label = new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const label = monthLabel(new Date(y, m - 1, 1));
   return html`<div class="cal-nav"><h2>${label}</h2>
-      <button class="btn btn-quiet" type="button" data-nav="-1" aria-label="Previous month">←</button>
-      <button class="btn btn-quiet" type="button" data-nav="0">Today</button>
-      <button class="btn btn-quiet" type="button" data-nav="1" aria-label="Next month">→</button></div>
+      <button class="btn btn-quiet" type="button" data-nav="-1" aria-label="${t('Previous month')}">←</button>
+      <button class="btn btn-quiet" type="button" data-nav="0">${t('Today')}</button>
+      <button class="btn btn-quiet" type="button" data-nav="1" aria-label="${t('Next month')}">→</button></div>
     <div class="cal-grid" role="group" aria-label="${label}">
-      ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => html`<span class="cal-dow">${d}</span>`)}<span class="cal-dow wk">Week</span>
+      ${dowNames().map(d => html`<span class="cal-dow">${d}</span>`)}<span class="cal-dow wk">${t('Week')}</span>
       ${weeks.map(w => {
         let km = 0, secs = 0, load = 0;
         const cells = w.map(d => {
@@ -176,84 +189,84 @@ function monthHtml(c) {
           for (const a of acts) { km += (a.distance_m || 0) / 1000; secs += a.moving_s || 0; load += c.load(a) || 0; }
           const chosen = pod && pod.chosen != null && Array.isArray(pod.plans) ? pod.plans.find(p => p && (p.id === pod.chosen || p.name === pod.chosen)) : null;
           return html`<button type="button" class="cal-day${d.slice(0, 7) !== _month ? ' out' : ''}${d === c.today ? ' today' : ''}" data-day="${d}"
-              aria-pressed="${String(d === _day)}" aria-label="${day(d, true)}: ${acts.length} activities">
+              aria-pressed="${String(d === _day)}" aria-label="${t.n('{day}: {n} activity', '{day}: {n} activities', acts.length, { day: day(d, true) })}">
             <span class="cal-num"><span>${+d.slice(8)}</span>${pod && Array.isArray(pod.plans) && pod.plans.length
-              ? html`<span class="cal-plan${chosen ? ' chosen' : ''}" title="${chosen ? 'Plan: ' + (chosen.name || 'chosen') : pod.plans.length + ' plan options'}"></span>` : ''}</span>
+              ? html`<span class="cal-plan${chosen ? ' chosen' : ''}" title="${chosen ? t('Plan: {name}', { name: chosen.name || t('chosen') }) : t.n('{n} plan option', '{n} plan options', pod.plans.length)}"></span>` : ''}</span>
             <span class="cal-chips">${acts.map(a => html`<i class="cal-chip${active && !matches(a, _f, c) ? ' dim' : ''}"
               style="--c:${colourOf(sportOf(a.type))};--z:${chipZ(a, c).toFixed(2)}" title="${a.name} · ${typeLabel(a.type)} · ${((a.distance_m || 0) / 1000).toFixed(1)} km"></i>`)}</span>
             ${races.map(r => html`<span class="cal-race" title="${r.name}">${r.name}</span>`)}
-            ${tags.slice(0, 2).map(t => html`<span class="cal-tag">${t}</span>`)}${tags.length > 2 ? html`<span class="cal-tag">+${tags.length - 2}</span>` : ''}
+            ${tags.slice(0, 2).map(tg => html`<span class="cal-tag">${tg}</span>`)}${tags.length > 2 ? html`<span class="cal-tag">+${tags.length - 2}</span>` : ''}
           </button>`;
         });
-        return html`${cells}<span class="cal-week" title="Week of ${day(w[0], true)}"><b>${km.toFixed(1)} km</b><span>${(secs / 3600).toFixed(1)} h</span>${load ? html`<span>${Math.round(load)} load</span>` : ''}</span>`;
+        return html`${cells}<span class="cal-week" title="${t('Week of {day}', { day: day(w[0], true) })}"><b>${km.toFixed(1)} km</b><span>${(secs / 3600).toFixed(1)} h</span>${load ? html`<span>${t('{n} load', { n: Math.round(load) })}</span>` : ''}</span>`;
       })}
     </div>
-    <div class="cal-key">${SPORTS.map(([, l, col]) => html`<span><i style="background:${col}"></i>${l}</span>`)}
-      <span>Bigger chip, more load (or longer, without a threshold to score it)</span>
-      <span><i class="cal-plan chosen" style="border-radius:50%"></i>Plan of the day</span></div>`;
+    <div class="cal-key">${SPORTS.map(([, l, col]) => html`<span><i style="background:${col}"></i>${t(l)}</span>`)}
+      <span>${t('Bigger chip, more load (or longer, without a threshold to score it)')}</span>
+      <span><i class="cal-plan chosen" style="border-radius:50%"></i>${t('Plan of the day')}</span></div>`;
 }
 
 function dayHtml(c) {
-  if (!_day) return html`<p class="stat-hint">Pick a day for its sessions, plans and tags.</p>`;
+  if (!_day) return html`<p class="stat-hint">${t('Pick a day for its sessions, plans and tags.')}</p>`;
   const acts = c.byDay.get(_day) || [], races = c.racesByDay.get(_day) || [], pod = state.pod && state.pod[_day];
   const w = (() => { try { const s = String(dayTagsWidget(_day) ?? ''); return s.trim() ? raw(s) : ''; } catch (e) { return ''; } })();
-  return html`<div class="panel-head"><p class="eyebrow">${fromDay(_day).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
+  return html`<div class="panel-head"><p class="eyebrow">${longDay(fromDay(_day))}</p></div>
     ${acts.length ? html`<ul>${acts.map(a => html`<li><a class="quiet-link" href="#/activity/${a.id}"><b>${a.name}</b></a>
       <span class="dim">${typeLabel(a.type)}</span><span class="num">${((a.distance_m || 0) / 1000).toFixed(2)} km</span>
       <span class="num">${fmtTime(a.moving_s)}</span><span class="num dim">${F.fmtEffort(a)}</span></li>`)}</ul>`
-      : html`<p class="stat-hint">No activities${_day > c.today ? ' yet' : ''}.</p>`}
-    ${races.map(r => html`<p>Race: <a class="quiet-link" href="#/race/${r.id}">${r.name}</a>
-      <span class="dim">· ${((r.distance_m || 0) / 1000).toFixed(1)} km${r.actual_s ? ' · ran ' + fmtTime(r.actual_s) : ''}</span></p>`)}
-    ${pod && Array.isArray(pod.plans) && pod.plans.length ? html`<p class="eyebrow" style="margin-top:12px">Plan of the day</p>
-      <ul>${pod.plans.map(p => html`<li><b>${(p && p.name) || 'Plan'}</b>${p && (p.id === pod.chosen || p.name === pod.chosen) ? html` <span class="tag">chosen</span>` : ''}
-        ${p && p.minutes != null ? html`<span class="dim">${p.minutes} min</span>` : ''}${p && p.why ? html`<span class="dim">${p.why}</span>` : ''}</li>`)}</ul>` : ''}
+      : html`<p class="stat-hint">${_day > c.today ? t('No activities yet.') : t('No activities.')}</p>`}
+    ${races.map(r => html`<p>${raceLine(r)}
+      <span class="dim">· ${((r.distance_m || 0) / 1000).toFixed(1)} km${r.actual_s ? ' · ' + t('ran {time}', { time: fmtTime(r.actual_s) }) : ''}</span></p>`)}
+    ${pod && Array.isArray(pod.plans) && pod.plans.length ? html`<p class="eyebrow" style="margin-top:12px">${t('Plan of the day')}</p>
+      <ul>${pod.plans.map(p => html`<li><b>${(p && p.name) || t('Plan')}</b>${p && (p.id === pod.chosen || p.name === pod.chosen) ? html` <span class="tag">${t('chosen')}</span>` : ''}
+        ${p && p.minutes != null ? html`<span class="dim">${t('{n} min', { n: p.minutes })}</span>` : ''}${p && p.why ? html`<span class="dim">${p.why}</span>` : ''}</li>`)}</ul>` : ''}
     ${w ? html`<div data-hook="daytags" style="margin-top:12px">${w}</div>` : ''}`;
 }
 
 function resultsHtml(c) {
-  if (!filtersActive(_f)) return html`<p class="stat-hint">Search by name, note or tag, or narrow by sport, source, route, dates and distance.</p>`;
+  if (!filtersActive(_f)) return html`<p class="stat-hint">${t('Search by name, note or tag, or narrow by sport, source, route, dates and distance.')}</p>`;
   const hits = c.acts.filter(a => matches(a, _f, c));
   const km = hits.reduce((s, a) => s + (a.distance_m || 0), 0) / 1000, secs = hits.reduce((s, a) => s + (a.moving_s || 0), 0);
   const shown = hits.slice(0, 300);
-  return html`<p class="stat-hint">${hits.length} match${hits.length === 1 ? '' : 'es'}${hits.length ? html` · ${km.toFixed(1)} km · ${fmtTime(secs)}` : ''}${hits.length > shown.length ? ` · newest ${shown.length} shown` : ''}</p>
+  return html`<p class="stat-hint">${t.n('{n} match', '{n} matches', hits.length)}${hits.length ? html` · ${km.toFixed(1)} km · ${fmtTime(secs)}` : ''}${hits.length > shown.length ? ' · ' + t('newest {n} shown', { n: shown.length }) : ''}</p>
     ${shown.length ? html`<div class="table-scroll"><table>
-      <thead><tr><th>Date</th><th>Activity</th><th class="num">Distance</th><th class="num">Time</th><th class="num">Pace / speed</th><th>From</th></tr></thead>
+      <thead><tr><th>${t('Date')}</th><th>${t('Activity')}</th><th class="num">${t('Distance')}</th><th class="num">${t('Time')}</th><th class="num">${t('Pace / speed')}</th><th>${t('From')}</th></tr></thead>
       <tbody>${shown.map(a => html`<tr>
         <td class="dim"><a class="quiet-link" href="#/calendar" data-goto="${dayKey(a.start)}">${day(dayKey(a.start))}</a></td>
         <td><a class="quiet-link" href="#/activity/${a.id}">${a.name}</a><span class="dim"> · ${typeLabel(a.type)}</span></td>
         <td class="num">${((a.distance_m || 0) / 1000).toFixed(2)} km</td><td class="num">${fmtTime(a.moving_s)}</td>
         <td class="num dim">${F.fmtEffort(a)}</td>
-        <td class="dim">${onGarmin(a) && onStrava(a) ? 'both' : onStrava(a) ? 'Strava' : a.source === 'gymtracker' ? 'GymTracker' : 'Garmin'}</td></tr>`)}</tbody>
+        <td class="dim">${onGarmin(a) && onStrava(a) ? t('both') : onStrava(a) ? 'Strava' : a.source === 'gymtracker' ? 'GymTracker' : 'Garmin'}</td></tr>`)}</tbody>
     </table></div>` : ''}`;
 }
 
 function filtersHtml(c) {
   const sel = (k, opts) => html`<select data-f="${k}">${opts.map(([v, l]) => html`<option value="${v}" ${String(_f[k]) === v ? raw('selected') : ''}>${l}</option>`)}</select>`;
   return html`<div class="cal-filters">
-    <label class="wide">Search<input type="search" data-f="q" value="${_f.q}" placeholder="Name, note, tag…" enterkeyhint="search"></label>
-    <label>Sport${sel('sport', [['', 'Any'], ...SPORTS.map(([v, l]) => [v, l])])}</label>
-    <label>Source${sel('source', [['', 'Any'], ['garmin', 'Garmin'], ['strava', 'Strava'], ['both', 'On both']])}</label>
-    <label>Tag${sel('tag', [['', 'Any'], ...c.tags.map(t => [t, t])])}</label>
-    <label>Route${sel('route', [['', 'Any'], ...[...c.routes].map(([k, r]) => [k, `${r.name} (${r.count})`])])}</label>
-    <label>Dates<span class="pair"><input type="date" data-f="from" value="${_f.from}" aria-label="From"><input type="date" data-f="to" value="${_f.to}" aria-label="To"></span></label>
-    <label>Distance, km<span class="pair"><input type="number" inputmode="decimal" min="0" step="0.5" data-f="min" value="${_f.min}" placeholder="min" aria-label="Minimum km">
-      <input type="number" inputmode="decimal" min="0" step="0.5" data-f="max" value="${_f.max}" placeholder="max" aria-label="Maximum km"></span></label>
+    <label class="wide">${t('Search')}<input type="search" data-f="q" value="${_f.q}" placeholder="${t('Name, note, tag…')}" enterkeyhint="search"></label>
+    <label>${t('Sport')}${sel('sport', [['', t('Any')], ...SPORTS.map(([v, l]) => [v, t(l)])])}</label>
+    <label>${t('Source')}${sel('source', [['', t('Any')], ['garmin', 'Garmin'], ['strava', 'Strava'], ['both', t('On both')]])}</label>
+    <label>${t('Tag')}${sel('tag', [['', t('Any')], ...c.tags.map(tg => [tg, tg])])}</label>
+    <label>${t('Route')}${sel('route', [['', t('Any')], ...[...c.routes].map(([k, r]) => [k, `${r.name} (${r.count})`])])}</label>
+    <label>${t('Dates')}<span class="pair"><input type="date" data-f="from" value="${_f.from}" aria-label="${t('From')}"><input type="date" data-f="to" value="${_f.to}" aria-label="${t('To')}"></span></label>
+    <label>${t('Distance, km')}<span class="pair"><input type="number" inputmode="decimal" min="0" step="0.5" data-f="min" value="${_f.min}" placeholder="${t('min')}" aria-label="${t('Minimum km')}">
+      <input type="number" inputmode="decimal" min="0" step="0.5" data-f="max" value="${_f.max}" placeholder="${t('max')}" aria-label="${t('Maximum km')}"></span></label>
   </div>
-  <p style="margin-top:10px"><button class="btn btn-quiet" type="button" data-act="clear">Clear filters</button></p>`;
+  <p style="margin-top:10px"><button class="btn btn-quiet" type="button" data-act="clear">${t('Clear filters')}</button></p>`;
 }
 
 export function render() {
   useCss('calendar', CSS);
   initState();
   const c = context();
-  if (!c.acts.length && !Object.keys(state.races).length) return html`${pageHead('Calendar')}
-    ${emptyState('Nothing on the calendar yet', 'Activities appear here once Garmin or Strava data comes in through the cowork folder.',
-      html`<a class="btn" href="#/sync">Sync &amp; cowork</a>`)}`;
-  return html`<div class="cal-page">${pageHead('Calendar', `${c.acts.length} activities · search and browse`)}
+  if (!c.acts.length && !Object.keys(state.races).length) return html`${pageHead(t('Calendar'))}
+    ${emptyState(t('Nothing on the calendar yet'), t('Activities appear here once Garmin or Strava data comes in through the cowork folder.'),
+      html`<a class="btn" href="#/sync">${t('Sync & cowork')}</a>`)}`;
+  return html`<div class="cal-page">${pageHead(t('Calendar'), t.n('{n} activity · search and browse', '{n} activities · search and browse', c.acts.length))}
     <section class="panel" id="cal-month">${monthHtml(c)}</section>
     <section class="panel cal-detail" id="cal-day">${dayHtml(c)}</section>
-    <section class="panel"><div class="panel-head"><p class="eyebrow">Search</p>
-      <p class="panel-note">Matching days stay bright on the calendar</p></div>
+    <section class="panel"><div class="panel-head"><p class="eyebrow">${t('Search')}</p>
+      <p class="panel-note">${t('Matching days stay bright on the calendar')}</p></div>
       ${filtersHtml(c)}<div id="cal-results" style="margin-top:14px">${resultsHtml(c)}</div></section></div>`;
 }
 
@@ -280,15 +293,15 @@ export function mount(page) {
       const m = el.querySelector('#cal-month'); if (m && m.scrollIntoView) m.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
-  let t;
+  let timer;
   const onFilter = e => {
     const k = e.target.dataset && e.target.dataset.f;
     if (!k) return;
     _f[k] = e.target.value;
     remember();
     // Typing re-filters after a beat; a select or date re-filters at once.
-    clearTimeout(t);
-    t = setTimeout(() => { part('cal-results', resultsHtml); showMonth(); }, e.type === 'input' && k === 'q' ? 180 : 0);
+    clearTimeout(timer);
+    timer = setTimeout(() => { part('cal-results', resultsHtml); showMonth(); }, e.type === 'input' && k === 'q' ? 180 : 0);
   };
   el.addEventListener('input', onFilter);
   el.addEventListener('change', onFilter);

@@ -17,22 +17,23 @@ import * as PL from './lib/plan.js';
 import * as AD from './lib/adherence.js';
 import { dayKey, addDays, addDayKey, daysBetween, weekStart, isoLocal } from './lib/dt.js';
 import { cachedForecast, defaultLocation, bestWindow, daySummary, normHours, heatBand, forecastFor, shouldFetch } from './forecast.js';
-import { html, fmtPace, useCss } from './ui.js';
+import { html, raw, esc, fmtPace, useCss } from './ui.js';
+import { t, english } from './i18n.js';
 
 export const OUTCOME_DAYS = 14;
 export const MAX_PLANS = 5;
 
 // ---- sports: the agent writes free text, activities carry Garmin's type keys ----
 export function normSport(s) {
-  const t = String(s || '').toLowerCase().replace(/[\s-]+/g, '_');
-  if (!t) return 'other';
-  if (F.RUN_TYPES.has(t) || /run|jog/.test(t)) return 'running';
-  if (/cycl|bik|ride/.test(t)) return 'cycling';
-  if (/swim/.test(t)) return 'swimming';
-  if (/strength|gym|weight|lift/.test(t)) return 'strength';
-  if (/walk|hik/.test(t)) return 'walking';
-  if (/row/.test(t)) return 'rowing';
-  return t;
+  const k = String(s || '').toLowerCase().replace(/[\s-]+/g, '_');
+  if (!k) return 'other';
+  if (F.RUN_TYPES.has(k) || /run|jog/.test(k)) return 'running';
+  if (/cycl|bik|ride/.test(k)) return 'cycling';
+  if (/swim/.test(k)) return 'swimming';
+  if (/strength|gym|weight|lift/.test(k)) return 'strength';
+  if (/walk|hik/.test(k)) return 'walking';
+  if (/row/.test(k)) return 'rowing';
+  return k;
 }
 const minutesOf = a => ((a.moving_s || a.elapsed_s || 0) / 60);
 const r1 = v => (v == null ? null : Math.round(v * 10) / 10);
@@ -166,7 +167,11 @@ export function forecastToday(st, now = new Date(), opts = normOptions(st.profil
 const actRow = a => ({ date: dayKey(a.start), name: a.name || null, sport: normSport(a.type), minutes: Math.round(minutesOf(a)),
   km: a.distance_m ? r1(a.distance_m / 1000) : null, avg_hr: a.avg_hr ? Math.round(a.avg_hr) : null });
 
+// What the agent reads: English whatever language the reader picked (derived verdicts included).
 export function podContext(st, now = new Date()) {
+  return english(() => podContextEn(st, now));
+}
+function podContextEn(st, now) {
   const today = dayKey(now), s = D.summary(st, now), acts = D.activities(st);
   const opts = normOptions(st.profile && st.profile.podOptions);
   const rd = D.readinessToday(st, s ? s.tsb : null);
@@ -236,7 +241,8 @@ export function importPod(st, p) {
   put(st, 'pod', date, { date, rationale: String(p.rationale || '').slice(0, 2000), plans, generatedAt: new Date().toISOString(),
     via: p.via || 'cowork', chosen: prev.chosen ?? null, chosenAt: prev.chosenAt ?? null, outcome: prev.outcome ?? null });
   // ponytail: no pruning -- a plan day is ~2 KB, a year of them is under a megabyte.
-  return { handled: true, note: plans.length + ' plans for ' + date + (dropped ? ', ' + dropped + ' dropped' : '') };
+  // The note stays English (cowork's run history keeps it); `count` lets a page say it in the reader's language.
+  return { handled: true, count: plans.length, date, note: plans.length + ' plans for ' + date + (dropped ? ', ' + dropped + ' dropped' : '') };
 }
 
 // ---- the direct transport: "Plan it now" with the athlete's own key ----
@@ -250,19 +256,20 @@ export async function podSystemPrompt() {
     + '-- no envelope, no prose, no code fence.\n\n## kind:' + body;
 }
 export function parseReply(text) {
-  const t = String(text || '').replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-  const a = t.indexOf('{'), b = t.lastIndexOf('}');
-  if (a < 0 || b <= a) throw new Error('The reply held no JSON.');
-  return JSON.parse(t.slice(a, b + 1));
+  const body = String(text || '').replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  const a = body.indexOf('{'), b = body.lastIndexOf('}');
+  if (a < 0 || b <= a) throw new Error(t('The reply held no JSON.'));
+  return JSON.parse(body.slice(a, b + 1));
 }
 export async function planNow(now = new Date()) {
   const { apiKey, MODEL } = await import('./ai.js');
   const key = apiKey();
-  if (!key) throw new Error('No Anthropic API key on this device (Sync & cowork → AI).');
+  if (!key) throw new Error(t('No Anthropic API key on this device (Sync & cowork → AI).'));
   const { default: Anthropic } = await import(SDK);
   const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true });
-  const prompt = D.briefMarkdown(D.buildBrief(state, now)) + '\n\n---\ncontext.json payload:\n```json\n'
-    + JSON.stringify(podContext(state, now), null, 1) + '\n```';
+  // What Claude reads stays English whatever the reader's language.
+  const prompt = english(() => D.briefMarkdown(D.buildBrief(state, now)) + '\n\n---\ncontext.json payload:\n```json\n'
+    + JSON.stringify(podContext(state, now), null, 1) + '\n```');
   // Same setup as ai.js: streamed, adaptive thinking, server-side fallback on a declined request.
   const stream = client.beta.messages.stream({
     model: MODEL, max_tokens: 64000, system: await podSystemPrompt(),
@@ -271,10 +278,11 @@ export async function planNow(now = new Date()) {
     messages: [{ role: 'user', content: prompt }],
   });
   const msg = await stream.finalMessage();
-  if (msg.stop_reason === 'refusal') throw new Error('Claude declined this one' + (msg.stop_details?.explanation ? ': ' + msg.stop_details.explanation : '.'));
+  if (msg.stop_reason === 'refusal') throw new Error(msg.stop_details?.explanation
+    ? t('Claude declined this one: {why}', { why: msg.stop_details.explanation }) : t('Claude declined this one.'));
   const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
   const res = importPod(state, { ...parseReply(text), via: 'api' });
-  if (!res.handled) throw new Error('The plan could not be read: ' + res.note);
+  if (!res.handled) throw new Error(t('The plan could not be read: {why}', { why: res.note }));
   save('pod');
   return res;
 }
@@ -282,7 +290,10 @@ export async function planNow(now = new Date()) {
 // ---- shared bits for the page and the Today panel ----
 export const todayPod = (st = state, now = new Date()) => st.pod[dayKey(now)] || null;
 export const chosenPlan = rec => (rec ? rec.plans.find(p => p.name === rec.chosen) || null : null);
+// Plans store the number; the word is for the reader, through intensityLabel.
+// i18n-keys: very easy | easy | moderate | hard | very hard
 export const INTENSITY = ['', 'very easy', 'easy', 'moderate', 'hard', 'very hard'];
+export const intensityLabel = i => (INTENSITY[i] ? t(INTENSITY[i]) : '');
 const paceBand = b => fmtPace(b[0], 1000).replace(' /km', '') + '–' + fmtPace(b[1], 1000);
 // One step as a line: "40 min easy · 5:30–6:10 /km (heat 5:38–6:19) · HR 130–145 · conversational".
 export function stepLine(s, cond) {
@@ -291,9 +302,9 @@ export function stepLine(s, cond) {
   bits.push(((s.reps ? s.reps + ' × ' : '') + dur + (s.target ? ' ' + s.target : '')).trim());
   if (s.pace_s_per_km) {
     const hb = heatBand(s.pace_s_per_km, cond);
-    bits.push(paceBand(s.pace_s_per_km) + (hb ? ' (in this heat ' + paceBand(hb) + ')' : ''));
+    bits.push(hb ? t('{band} (in this heat {heat})', { band: paceBand(s.pace_s_per_km), heat: paceBand(hb) }) : paceBand(s.pace_s_per_km));
   }
-  if (s.hr) bits.push('HR ' + s.hr[0] + '–' + s.hr[1]);
+  if (s.hr) bits.push(t('HR {low}–{high}', { low: s.hr[0], high: s.hr[1] }));
   if (s.note) bits.push(s.note);
   return bits.filter(Boolean).join(' · ');
 }
@@ -301,20 +312,31 @@ export function stepLine(s, cond) {
 // ---- Today's panel ----
 const PANEL_CSS = `.pod-panel .pod-line { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 .pod-panel .pod-name { font-family: var(--display); font-size: 19px; font-weight: 600; margin: 0; }`;
-const wxLine = fc => (fc && fc.best ? 'Best window ' + fc.best.start + '–' + fc.best.end + ': ' + Math.round(fc.best.temp) + ' °C'
-  + (fc.best.dew != null ? ', dew point ' + Math.round(fc.best.dew) + ' °C' : '') + (fc.best.rain ? ', ' + fc.best.rain + '% rain' : '')
-  + (fc.best.penalty >= 0.005 ? ' — about ' + (fc.best.penalty * 100).toFixed(1) + '% slower' : '') : '');
+function wxLine(fc) {
+  const b = fc && fc.best;
+  if (!b) return '';
+  const parts = [t('Best window {start}–{end}: {temp} °C', { start: b.start, end: b.end, temp: Math.round(b.temp) })];
+  if (b.dew != null) parts.push(t('dew point {n} °C', { n: Math.round(b.dew) }));
+  if (b.rain) parts.push(t('{n}% rain', { n: b.rain }));
+  const line = parts.join(', ');
+  return b.penalty >= 0.005 ? t('{line} — about {pct}% slower', { line, pct: (b.penalty * 100).toFixed(1) }) : line;
+}
+// "No plan for today yet. Ask for one." with the link inside the translated sentence.
+function noPlanLine() {
+  return raw(esc(t('No plan for today yet. {link}.', { link: '\u0001' }))
+    .replace('\u0001', `<a class="quiet-link" href="#/pod">${esc(t('Ask for one'))}</a>`));
+}
 export function podPanel() {
   useCss('pod-panel', PANEL_CSS);
   const rec = todayPod(), now = new Date();
   if (!rec && !Object.keys(state.activities).length) return '';
   const fc = forecastToday(state, now), p = rec ? chosenPlan(rec) || rec.plans[0] : null, line = wxLine(fc);
   return html`<section class="panel pod-panel" data-pod-panel>
-    <div class="panel-head"><p class="eyebrow">Plan of the day</p>
-      <p class="panel-note"><a class="quiet-link" href="#/pod">${p ? (rec.chosen ? 'your pick' : rec.plans.length + ' options') : 'plan it'} →</a></p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Plan of the day')}</p>
+      <p class="panel-note"><a class="quiet-link" href="#/pod">${p ? (rec.chosen ? t('your pick') : t.n('{n} option', '{n} options', rec.plans.length)) : t('plan it')} →</a></p></div>
     ${p ? html`<p class="pod-name">${p.name}</p>
-      <p class="pod-line">${p.minutes != null ? p.minutes + ' min · ' : ''}${INTENSITY[p.intensity] || ''}${p.why ? ' — ' + p.why : ''}</p>`
-    : html`<p class="pod-line">No plan for today yet. <a class="quiet-link" href="#/pod">Ask for one</a>.</p>`}
+      <p class="pod-line">${p.minutes != null ? p.minutes + ' min · ' : ''}${intensityLabel(p.intensity)}${p.why ? ' — ' + p.why : ''}</p>`
+    : html`<p class="pod-line">${noPlanLine()}</p>`}
     ${line ? html`<p class="pod-line">${line}</p>` : ''}
   </section>`;
 }
@@ -325,7 +347,7 @@ export function mountPodPanel(el) {
   const fc = forecastToday(state);
   if (!fc.location || fc.forecast || !shouldFetch(fc.location.lat, fc.location.lon)) return;
   forecastFor(fc.location.lat, fc.location.lon).then(() => {
-    const t = document.createElement('div'); t.innerHTML = String(podPanel());
-    if (t.firstElementChild && node.isConnected) node.replaceWith(t.firstElementChild);
+    const box = document.createElement('div'); box.innerHTML = String(podPanel());
+    if (box.firstElementChild && node.isConnected) node.replaceWith(box.firstElementChild);
   }).catch(() => {});
 }

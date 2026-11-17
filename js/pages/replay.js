@@ -13,8 +13,9 @@ import * as D from '../derive.js';
 import { fetchStream, driveOn } from '../drive.js';
 import * as RP from '../replay.js';
 import { RUN_TYPES } from '../lib/fitness.js';
-import { html, pageHead, emptyState, useCss, km, fmtTime, fmtPace, day, typeLabel } from '../ui.js';
+import { html, raw, esc, pageHead, emptyState, useCss, km, fmtTime, fmtPace, day, typeLabel, t } from '../ui.js';
 import { loadLeaflet, whenGone, token } from '../routemaker.js';
+import { routeName } from './repeats.js';
 
 export const title = 'Replay';
 
@@ -49,8 +50,8 @@ const hasGround = id => { const d = state.derived[id]; return !!(d && ((d.tiles 
 
 // The link the activity page shows. The query survives the router (it routes on the path) and
 // render() moves it into state.local.ui.replay, so a reload keeps the choice.
-export function replayButton(id, label = 'Replay on the map') {
-  return html`<a class="btn btn-ghost" href="#/replay?id=${encodeURIComponent(id)}">${label}</a>`;
+export function replayButton(id, label) {
+  return html`<a class="btn btn-ghost" href="#/replay?id=${encodeURIComponent(id)}">${label || t('Replay on the map')}</a>`;
 }
 // The same from code: choose the activity, then go.
 export function openReplay(id) {
@@ -99,11 +100,11 @@ function ghostGroups(anchorId) {
   if (anchor && state.derived[anchorId]?.p0) {
     const cand = runs.map(a => ({ id: a.id, distance_m: a.distance_m, p0: state.derived[a.id].p0 }));
     const like = RP.similarRuns(cand, { id: anchor.id, distance_m: anchor.distance_m, p0: state.derived[anchorId].p0 }, { max: 60 });
-    if (like.length >= 2) groups.push({ key: 'like', label: `Runs like ${actLabel(anchor)} (${like.length})`, runs: like.map(r => state.activities[r.id]).filter(Boolean) });
+    if (like.length >= 2) groups.push({ key: 'like', label: t('Runs like {activity} ({n})', { activity: actLabel(anchor), n: like.length }), runs: like.map(r => state.activities[r.id]).filter(Boolean) });
   }
   let routes = [];
   try { routes = D.repeatedRoutes(state, new Date(), 3 * 365) || []; } catch (e) { console.warn('repeated routes', e); }
-  routes.slice(0, 30).forEach((r, i) => groups.push({ key: 'r' + i, label: `${r.name} · ${km(r.distance_m)} km (${r.count} runs)`,
+  routes.slice(0, 30).forEach((r, i) => groups.push({ key: 'r' + i, label: t.n('{name} · {km} km ({n} run)', '{name} · {km} km ({n} runs)', r.count, { name: routeName(r), km: km(r.distance_m) }),
     runs: r.runs.map(m => state.activities[m.id]).filter(Boolean) }));
   for (const g of groups) g.runs.sort((a, b) => String(b.start).localeCompare(String(a.start)));
   return groups;
@@ -125,25 +126,25 @@ export async function render() {
   fromHash();
   const u = ui(), mode = u.mode === 'ghost' ? 'ghost' : 'replay';
   const modes = html`<div class="modes">
-    <button type="button" class="btn btn-ghost" data-mode="replay" aria-pressed="${String(mode === 'replay')}">Replay</button>
-    <button type="button" class="btn btn-ghost" data-mode="ghost" aria-pressed="${String(mode === 'ghost')}">Ghost race</button></div>`;
-  const head = pageHead('Replay', mode === 'ghost' ? 'Runs of the same route, raced against each other at their real pace' : 'An activity played back on the map', modes);
-  if (!Object.keys(state.activities).length) return html`${head}${emptyState('No activities yet', 'Bring in Garmin and Strava through Sync & cowork, then come back to watch a run again.', html`<a class="btn" href="#/sync">Go and sync</a>`)}`;
+    <button type="button" class="btn btn-ghost" data-mode="replay" aria-pressed="${String(mode === 'replay')}">${t('Replay')}</button>
+    <button type="button" class="btn btn-ghost" data-mode="ghost" aria-pressed="${String(mode === 'ghost')}">${t('Ghost race')}</button></div>`;
+  const head = pageHead(t('Replay'), mode === 'ghost' ? t('Runs of the same route, raced against each other at their real pace') : t('An activity played back on the map'), modes);
+  if (!Object.keys(state.activities).length) return html`${head}${emptyState(t('No activities yet'), t('Bring in Garmin and Strava through Sync & cowork, then come back to watch a run again.'), html`<a class="btn" href="#/sync">${t('Go and sync')}</a>`)}`;
   const list = gpsActivities();
-  if (!list.length) return html`${head}${emptyState('Nothing with a GPS track', 'Replays need an outdoor activity with a GPS track — treadmill runs and virtual rides have no ground to move over.', '')}`;
+  if (!list.length) return html`${head}${emptyState(t('Nothing with a GPS track'), t('Replays need an outdoor activity with a GPS track — treadmill runs and virtual rides have no ground to move over.'), '')}`;
   const have = await localStreams();
   const id = chosenId(list, have);
   return html`<div class="replay">${head}${mode === 'ghost' ? ghostPanel(id) : replayPanel(list, have, id)}</div>`;
 }
 
 function speedSelect(cur) {
-  return html`<label>Speed <select data-speed>${RP.SPEEDS.map(s => html`<option value="${s}" ${s === cur ? 'selected' : ''}>${s}×</option>`)}</select></label>`;
+  return html`<label>${t('Speed')} <select data-speed>${RP.SPEEDS.map(s => html`<option value="${s}" ${s === cur ? 'selected' : ''}>${s}×</option>`)}</select></label>`;
 }
 const transport = speed => html`<div class="transport">
-  <button type="button" class="btn" data-play>Play</button>${speedSelect(speed)}
-  <input type="range" min="0" max="1" step="1" value="0" data-scrub aria-label="Position in the activity">
+  <button type="button" class="btn" data-play>${t('Play')}</button>${speedSelect(speed)}
+  <input type="range" min="0" max="1" step="1" value="0" data-scrub aria-label="${t('Position in the activity')}">
   <span class="clock" data-clock>0:00</span></div>
-  <p class="kbd">Space play/pause · ← → 10 s (shift: 1 min) · ↑ ↓ speed · Home start</p>`;
+  <p class="kbd">${t('Space play/pause · ← → 10 s (shift: 1 min) · ↑ ↓ speed · Home start')}</p>`;
 
 function replayPanel(list, have, id) {
   const u = ui(), a = state.activities[id];
@@ -151,39 +152,42 @@ function replayPanel(list, have, id) {
   const opts = list.slice(0, 300);
   if (a && !opts.includes(a)) opts.unshift(a);
   return html`<section class="panel">
-    <div class="pick"><label>Activity <select data-act>${opts.map(x => html`<option value="${x.id}" ${x.id === id ? 'selected' : ''}>${actLabel(x)}${have.has(x.id) ? '' : ' ☁'}</option>`)}</select></label>
-      <label><input type="checkbox" data-follow ${u.follow === false ? '' : 'checked'}> follow the dot</label>
-      <a class="quiet-link" href="#/activity/${id}">Open the activity</a></div>
+    <div class="pick"><label>${t('Activity')} <select data-act>${opts.map(x => html`<option value="${x.id}" ${x.id === id ? 'selected' : ''}>${actLabel(x)}${have.has(x.id) ? '' : ' ☁'}</option>`)}</select></label>
+      <label><input type="checkbox" data-follow ${u.follow === false ? '' : 'checked'}> ${t('follow the dot')}</label>
+      <a class="quiet-link" href="#/activity/${id}">${t('Open the activity')}</a></div>
     <div class="rmap" data-map></div>
     ${transport(u.speed || 10)}
     <div class="reads" data-reads></div>
-    <p class="panel-note" data-note>☁ = the stream is not on this device yet; it comes from Drive when you pick it${driveOn() ? '' : ' (Drive is not connected here)'}.
-      The tail is the last ${RP.TAIL_S} seconds; pace is over the last 30 seconds.</p></section>`;
+    <p class="panel-note" data-note>${driveOn() ? t('☁ = the stream is not on this device yet; it comes from Drive when you pick it.')
+      : t('☁ = the stream is not on this device yet; it comes from Drive when you pick it (Drive is not connected here).')}
+      ${t('The tail is the last {n} seconds; pace is over the last 30 seconds.', { n: RP.TAIL_S })}</p></section>`;
+}
+
+// The empty note, with the link to My routes placed inside the translated sentence.
+function noRouteNote() {
+  const link = `<a class="quiet-link" href="#/repeats">${esc(t('My routes'))}</a>`;
+  return raw(esc(t('No route has been run often enough to race yet. A race needs two or more runs that start in the same place and cover about the same distance — the routes on {link}, or runs like the one picked under Replay.', { link: '\u0001' }))
+    .replace('\u0001', link));
 }
 
 function ghostPanel(anchorId) {
   const u = ui(), groups = ghostGroups(anchorId);
-  if (!groups.length) return html`<section class="panel"><div class="empty"><p>No route has been run often enough to race yet. A race needs two or more runs
-    that start in the same place and cover about the same distance — the routes on ${html`<a class="quiet-link" href="#/repeats">My routes</a>`},
-    or runs like the one picked under Replay.</p></div></section>`;
+  if (!groups.length) return html`<section class="panel"><div class="empty"><p>${noRouteNote()}</p></div></section>`;
   const g = groups.find(x => x.key === u.group) || groups[0];
   const chosen = new Set((u.group === g.key && Array.isArray(u.ghosts) ? u.ghosts : defaultGhosts(g.runs)).filter(id => g.runs.some(r => r.id === id)));
   return html`<section class="panel">
-    <div class="pick"><label>Route <select data-group>${groups.map(x => html`<option value="${x.key}" ${x === g ? 'selected' : ''}>${x.label}</option>`)}</select></label>
-      <label>Line up by <select data-align><option value="time" ${u.align !== 'distance' ? 'selected' : ''}>elapsed time, each on its own track</option>
-        <option value="distance" ${u.align === 'distance' ? 'selected' : ''}>distance, all on one line</option></select></label></div>
+    <div class="pick"><label>${t('Route')} <select data-group>${groups.map(x => html`<option value="${x.key}" ${x === g ? 'selected' : ''}>${x.label}</option>`)}</select></label>
+      <label>${t('Line up by')} <select data-align><option value="time" ${u.align !== 'distance' ? 'selected' : ''}>${t('elapsed time, each on its own track')}</option>
+        <option value="distance" ${u.align === 'distance' ? 'selected' : ''}>${t('distance, all on one line')}</option></select></label></div>
     <div class="runs" data-runs>${g.runs.map(r => html`<label><input type="checkbox" value="${r.id}" ${chosen.has(r.id) ? 'checked' : ''}>
-      <span>${day(String(r.start), true)} · ${r.name || 'Run'}</span><span class="num">${km(r.distance_m, 2)} km · ${fmtTime(r.moving_s)} · ${fmtPace(r.moving_s, r.distance_m)}</span></label>`)}</div>
-    <p class="panel-note"><span data-count>${chosen.size}</span> of at most ${RP.MAX_GHOSTS} chosen.
-      <button type="button" class="btn" data-race>Start the race</button></p>
+      <span>${day(String(r.start), true)} · ${r.name || t('Run')}</span><span class="num">${km(r.distance_m, 2)} km · ${fmtTime(r.moving_s)} · ${fmtPace(r.moving_s, r.distance_m)}</span></label>`)}</div>
+    <p class="panel-note">${raw(esc(t('{n} of at most {max} chosen.', { n: '\u0001', max: RP.MAX_GHOSTS })).replace('\u0001', `<span data-count>${chosen.size}</span>`))}
+      <button type="button" class="btn" data-race>${t('Start the race')}</button></p>
     <div class="race-grid" data-race-area hidden>
       <div><div class="rmap" data-map></div>${transport(u.speed || 10)}</div>
-      <div><p class="eyebrow">Leaderboard</p><table class="board"><tbody data-board></tbody></table><p class="panel-note" data-racenote></p></div>
+      <div><p class="eyebrow">${t('Leaderboard')}</p><table class="board"><tbody data-board></tbody></table><p class="panel-note" data-racenote></p></div>
     </div>
-    <p class="panel-note">Everyone starts together and runs at the pace they ran that day. The race is over the distance
-      every recording covered, so a lap of the car park at the end does not count. Gaps are how long ago the leader was where
-      that runner is now. "Distance, all on one line" puts every dot on the first runner's track at the distance it had
-      covered, so two GPS traces on opposite pavements do not look like a gap.</p></section>`;
+    <p class="panel-note">${t('Everyone starts together and runs at the pace they ran that day. The race is over the distance every recording covered, so a lap of the car park at the end does not count. Gaps are how long ago the leader was where that runner is now. "Distance, all on one line" puts every dot on the first runner’s track at the distance it had covered, so two GPS traces on opposite pavements do not look like a gap.')}</p></section>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -243,12 +247,12 @@ function player(root, cleanup, dur, onFrame, onSlow) {
   const tick = now => {
     if (!playing) return;
     clock = Math.min(dur, clock + ((now - last) / 1000) * speed); last = now;
-    if (clock >= dur) { playing = false; playBtn.textContent = 'Play'; show(true); return; }
+    if (clock >= dur) { playing = false; playBtn.textContent = t('Play'); show(true); return; }
     show(false);
     raf = requestAnimationFrame(tick);
   };
   const setPlaying = p => {
-    playing = p; playBtn.textContent = p ? 'Pause' : 'Play';
+    playing = p; playBtn.textContent = p ? t('Pause') : t('Play');
     if (p) { if (clock >= dur) clock = 0; last = performance.now(); raf = requestAnimationFrame(tick); } else cancelAnimationFrame(raf);
   };
   const seek = t => { clock = Math.max(0, Math.min(dur, t)); show(true); };
@@ -292,19 +296,19 @@ async function startReplay(root, cleanup) {
   const u = ui(), id = root.querySelector('[data-act]')?.value, a = state.activities[id];
   const box = root.querySelector('[data-map]'), reads = root.querySelector('[data-reads]'), note = root.querySelector('[data-note]');
   if (!a) return;
-  reads.textContent = 'Loading the stream…';
+  reads.textContent = t('Loading the stream…');
   let tr = null;
   try { const rec = await fetchStream(id); tr = rec && RP.trackFromChannels(rec.channels); } catch (e) { console.warn('replay stream', e); }
   if (!box.isConnected) return;
   if (!tr) {
     reads.textContent = '';
     box.textContent = '';
-    note.textContent = driveOn() ? 'This activity has no GPS stream on this device or in Drive — it may have been imported without one.'
-      : 'The stream for this activity is not on this device, and Drive is not connected to fetch it. Open it on the device that imported it, or connect Drive on Sync & cowork.';
+    note.textContent = driveOn() ? t('This activity has no GPS stream on this device or in Drive — it may have been imported without one.')
+      : t('The stream for this activity is not on this device, and Drive is not connected to fetch it. Open it on the device that imported it, or connect Drive on Sync & cowork.');
     return;
   }
   let m;
-  try { m = await newMap(box, cleanup); } catch { box.textContent = 'The map did not load (offline?).'; return; }
+  try { m = await newMap(box, cleanup); } catch { box.textContent = t('The map did not load (offline?).'); return; }
   if (!m) return;
   const { L, map } = m, colour = token('--measured', '#0b6e79');
   const line = L.polyline(RP.thin(tr), { color: token('--faint', '#8b94a3'), weight: 3, opacity: 0.7, interactive: false }).addTo(map);
@@ -320,12 +324,12 @@ async function startReplay(root, cleanup) {
   };
   const onSlow = t => {
     const r = RP.readout(tr, t);
-    const speed = r.pace ? (ride ? stat('Speed', (3600 / r.pace).toFixed(1), 'km/h') : stat('Pace', fmtTime(r.pace), '/km')) : stat(ride ? 'Speed' : 'Pace', '--');
-    reads.innerHTML = String(html`${stat('Time', fmtTime(r.t))}${stat('Distance', km(r.d, 2), 'km')}${speed}
-      ${tr.hr ? stat('Heart rate', r.hr != null ? Math.round(r.hr) : '--', 'bpm') : ''}
-      ${tr.ele ? stat('Elevation', r.ele != null ? Math.round(r.ele) : '--', 'm') : ''}
-      ${tr.pw ? stat('Power', r.pw != null ? Math.round(r.pw) : '--', 'W') : ''}
-      ${tr.cad ? stat('Cadence', r.cad != null ? Math.round(r.cad) : '--', ride ? 'rpm' : 'spm') : ''}`);
+    const speed = r.pace ? (ride ? stat(t('Speed'), (3600 / r.pace).toFixed(1), 'km/h') : stat(t('Pace'), fmtTime(r.pace), '/km')) : stat(ride ? t('Speed') : t('Pace'), '--');
+    reads.innerHTML = String(html`${stat(t('Time'), fmtTime(r.t))}${stat(t('Distance'), km(r.d, 2), 'km')}${speed}
+      ${tr.hr ? stat(t('Heart rate'), r.hr != null ? Math.round(r.hr) : '--', 'bpm') : ''}
+      ${tr.ele ? stat(t('Elevation'), r.ele != null ? Math.round(r.ele) : '--', 'm') : ''}
+      ${tr.pw ? stat(t('Power'), r.pw != null ? Math.round(r.pw) : '--', 'W') : ''}
+      ${tr.cad ? stat(t('Cadence'), r.cad != null ? Math.round(r.cad) : '--', ride ? 'rpm' : 'spm') : ''}`);
   };
   player(root, cleanup, tr.dur, onFrame, onSlow);
 }
@@ -333,22 +337,24 @@ async function startReplay(root, cleanup) {
 async function startRace(root, cleanup) {
   const u = ui(), area = root.querySelector('[data-race-area]'), board = root.querySelector('[data-board]'), note = root.querySelector('[data-racenote]');
   const ids = (u.ghosts && u.ghosts.length ? u.ghosts : [...root.querySelectorAll('[data-runs] input:checked')].map(b => b.value)).slice(0, RP.MAX_GHOSTS);
-  if (ids.length < 2) { note.textContent = 'Pick at least two runs.'; area.hidden = false; return; }
+  if (ids.length < 2) { note.textContent = t('Pick at least two runs.'); area.hidden = false; return; }
   area.hidden = false;
   // One stream at a time, straight into typed arrays; the record goes out of scope each turn.
   const racers = [], missing = [];
   for (let i = 0; i < ids.length; i++) {
-    note.textContent = `Loading stream ${i + 1} of ${ids.length}…`;
+    note.textContent = t('Loading stream {i} of {n}…', { i: i + 1, n: ids.length });
     let tr = null;
     try { const rec = await fetchStream(ids[i]); tr = rec && RP.trackFromChannels(rec.channels, { lite: true }); } catch (e) { console.warn('ghost stream', e); }
     if (!root.isConnected) return;
     if (tr && tr.dist > 100) racers.push({ id: ids[i], a: state.activities[ids[i]], tr }); else missing.push(ids[i]);
   }
-  const missNote = missing.length ? `${missing.length} run${missing.length > 1 ? 's have' : ' has'} no stream on this device${driveOn() ? ' or in Drive' : ' (Drive is not connected)'} and ${missing.length > 1 ? 'are' : 'is'} sitting this one out. ` : '';
-  if (racers.length < 2) { note.textContent = missNote + 'A race needs two runs with streams.'; return; }
+  const missNote = !missing.length ? '' : (driveOn()
+    ? t.n('{n} run has no stream on this device or in Drive and is sitting this one out.', '{n} runs have no stream on this device or in Drive and are sitting this one out.', missing.length)
+    : t.n('{n} run has no stream on this device (Drive is not connected) and is sitting this one out.', '{n} runs have no stream on this device (Drive is not connected) and are sitting this one out.', missing.length)) + ' ';
+  if (racers.length < 2) { note.textContent = missNote + t('A race needs two runs with streams.'); return; }
   const box = root.querySelector('[data-map]');
   let m;
-  try { m = await newMap(box, cleanup); } catch { box.textContent = 'The map did not load (offline?).'; return; }
+  try { m = await newMap(box, cleanup); } catch { box.textContent = t('The map did not load (offline?).'); return; }
   if (!m) return;
   const { L, map } = m, mode = u.align === 'distance' ? 'distance' : 'time';
   const tracks = racers.map(r => r.tr), race = RP.prepareRace(tracks);
@@ -377,15 +383,15 @@ async function startRace(root, cleanup) {
     const rows = RP.standings(tracks, race, clock, mode);
     board.innerHTML = String(html`${rows.map(r => {
       const tr = tracks[r.k], p = r.done ? null : RP.paceAt(tr, clock);
-      const gap = r.place === 1 ? (r.done ? fmtTime(r.finish) : 'leads') : (r.done ? '+' + fmtTime(r.gap_s) : `+${fmtTime(r.gap_s)} · ${Math.round(r.gap_m)} m`);
+      const gap = r.place === 1 ? (r.done ? fmtTime(r.finish) : t('leads')) : (r.done ? '+' + fmtTime(r.gap_s) : `+${fmtTime(r.gap_s)} · ${Math.round(r.gap_m)} m`);
       return html`<tr class="${r.done ? 'done' : ''}"><td class="num">${r.place}</td>
         <td><span class="sw" style="background:${colours[r.k]}"></span> ${label(racers[r.k])}</td>
-        <td class="num">${km(r.d, 2)}</td><td class="num">${r.done ? 'finished' : p ? fmtTime(p) + '/km' : '--'}</td><td class="num">${gap}</td></tr>`;
+        <td class="num">${km(r.d, 2)}</td><td class="num">${r.done ? t('finished') : p ? fmtTime(p) + '/km' : '--'}</td><td class="num">${gap}</td></tr>`;
     })}`);
     const all = rows.every(r => r.done);
     note.textContent = missNote + (all
-      ? `Finishing order over ${km(race.raceDist, 2)} km: ` + rows.map(r => `${r.place}. ${label(racers[r.k])} ${fmtTime(r.finish)}`).join(' · ')
-      : `Race distance ${km(race.raceDist, 2)} km — the shortest recording of the ${racers.length}.`);
+      ? t('Finishing order over {km} km: {order}', { km: km(race.raceDist, 2), order: rows.map(r => `${r.place}. ${label(racers[r.k])} ${fmtTime(r.finish)}`).join(' · ') })
+      : t('Race distance {km} km — the shortest recording of the {n}.', { km: km(race.raceDist, 2), n: racers.length }));
   };
   player(root, cleanup, race.duration, onFrame, onSlow).setPlaying(true);
 }

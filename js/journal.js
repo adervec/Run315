@@ -19,6 +19,7 @@
 import { state, save } from './store.js';
 import { put, remove } from './merge.js';
 import { html, useCss } from './ui.js';
+import { t } from './i18n.js';
 import * as F from './lib/fitness.js';
 import { pearson, criticalR, label as vLabel, MIN_POINTS, MIN_INTERESTING, ALPHA } from './lib/vitals.js';
 import { addDayKey, dayKey, weekStart } from './lib/dt.js';
@@ -33,6 +34,15 @@ export const DAY_TAGS = ['illness', 'travel', 'alcohol', 'poor-sleep', 'stress',
 export const RPE_WORDS = ['', 'very easy', 'easy', 'moderate', 'somewhat hard', 'hard', 'hard',
   'very hard', 'very hard', 'near maximal', 'maximal'];
 export const FEEL_WORDS = ['', 'awful', 'poor', 'ok', 'good', 'great'];
+// The words, the preset tags and the stored tag ids stay English as data; they are translated
+// where they are shown. A tag the athlete typed is theirs and is shown as typed.
+// i18n-keys: very easy | easy | moderate | somewhat hard | hard | very hard | near maximal | maximal
+// i18n-keys: awful | poor | ok | good | great
+// i18n-keys: legs-heavy | felt-great | niggle | fasted | hot | windy | treadmill | race | workout | group | new-shoes
+// i18n-keys: illness | travel | alcohol | poor-sleep | stress | caffeine-late | rest-day | menstruation | heat
+const PRESET = new Set([...ACTIVITY_TAGS, ...DAY_TAGS]);
+export const tagText = tag => (PRESET.has(tag) ? t(tag) : tag);
+const word = w => (w ? t(w) : '');
 
 // Free-typed tags become one spelling, so "Poor sleep" and "poor-sleep" count together.
 export function normTag(s) {
@@ -59,10 +69,10 @@ function store(id, rec) {
 export function entrySummary(rec) {
   if (!rec) return '';
   const parts = [];
-  if (num(rec.rpe)) parts.push('RPE ' + rec.rpe);
-  if (num(rec.feel)) parts.push('feel ' + FEEL_WORDS[rec.feel]);
-  if ((rec.tags || []).length) parts.push(rec.tags.join(', '));
-  if ((rec.note || '').trim()) parts.push('note');
+  if (num(rec.rpe)) parts.push(t('RPE {n}', { n: rec.rpe }));
+  if (num(rec.feel)) parts.push(t('feel {word}', { word: word(FEEL_WORDS[rec.feel]) }));
+  if ((rec.tags || []).length) parts.push(rec.tags.map(tagText).join(', '));
+  if ((rec.note || '').trim()) parts.push(t('note'));
   return parts.join(' · ');
 }
 
@@ -92,17 +102,17 @@ const CSS = `
 `;
 
 function scale(kind, n, value, words) {
-  return html`<div class="jw-scale ${kind}" role="group" aria-label="${kind === 'rpe' ? 'Session effort, 1 to 10' : 'How it felt, 1 to 5'}">
+  return html`<div class="jw-scale ${kind}" role="group" aria-label="${kind === 'rpe' ? t('Session effort, 1 to 10') : t('How it felt, 1 to 5')}">
     ${Array.from({ length: n }, (_, i) => i + 1).map(v => html`<button type="button" data-${kind}="${v}"
-      aria-pressed="${String(value === v)}" title="${v} · ${words[v]}">${kind === 'feel' ? words[v] : v}</button>`)}
+      aria-pressed="${String(value === v)}" title="${v} · ${word(words[v])}">${kind === 'feel' ? word(words[v]) : v}</button>`)}
   </div>`;
 }
 function chips(preset, tags) {
-  const all = [...preset, ...tags.filter(t => !preset.includes(t))];
-  return html`<div class="jw-chips">${all.map(t => html`<button type="button" class="jw-chip" data-tag="${t}"
-    aria-pressed="${String(tags.includes(t))}">${t}</button>`)}</div>
-    <div class="jw-add"><input type="text" class="jw-new" placeholder="Add a tag" aria-label="Add a tag" maxlength="32"
-      enterkeyhint="done" autocapitalize="off"><button type="button" class="btn btn-ghost jw-addbtn">Add</button></div>`;
+  const all = [...preset, ...tags.filter(x => !preset.includes(x))];
+  return html`<div class="jw-chips">${all.map(x => html`<button type="button" class="jw-chip" data-tag="${x}"
+    aria-pressed="${String(tags.includes(x))}">${tagText(x)}</button>`)}</div>
+    <div class="jw-add"><input type="text" class="jw-new" placeholder="${t('Add a tag')}" aria-label="${t('Add a tag')}" maxlength="32"
+      enterkeyhint="done" autocapitalize="off"><button type="button" class="btn btn-ghost jw-addbtn">${t('Add')}</button></div>`;
 }
 
 export function journalWidget(id) {
@@ -110,12 +120,12 @@ export function journalWidget(id) {
   const rec = state.journal[id] || {}, tags = rec.tags || [];
   const rpe = num(rec.rpe), feel = num(rec.feel);
   return html`<div class="journal-widget" data-activity="${id}">
-    <div class="jw-row"><span class="jw-label">Effort (RPE)<em class="jw-rpe-word">${rpe ? RPE_WORDS[rpe] : ''}</em></span>
+    <div class="jw-row"><span class="jw-label">${t('Effort (RPE)')}<em class="jw-rpe-word">${rpe ? word(RPE_WORDS[rpe]) : ''}</em></span>
       ${scale('rpe', 10, rpe, RPE_WORDS)}</div>
-    <div class="jw-row"><span class="jw-label">How it felt</span>${scale('feel', 5, feel, FEEL_WORDS)}</div>
-    <div class="jw-row"><span class="jw-label">Tags</span>${chips(ACTIVITY_TAGS, tags)}</div>
-    <div class="jw-row"><span class="jw-label">Note</span>
-      <textarea class="jw-note" rows="2" placeholder="Anything the numbers will not show" aria-label="Note">${rec.note || ''}</textarea></div>
+    <div class="jw-row"><span class="jw-label">${t('How it felt')}</span>${scale('feel', 5, feel, FEEL_WORDS)}</div>
+    <div class="jw-row"><span class="jw-label">${t('Tags')}</span>${chips(ACTIVITY_TAGS, tags)}</div>
+    <div class="jw-row"><span class="jw-label">${t('Note')}</span>
+      <textarea class="jw-note" rows="2" placeholder="${t('Anything the numbers will not show')}" aria-label="${t('Note')}">${rec.note || ''}</textarea></div>
     <span class="jw-saved" aria-live="polite"></span>
   </div>`;
 }
@@ -124,9 +134,9 @@ export function dayTagsWidget(day) {
   useCss('journal', CSS);
   const rec = state.journal[day] || {}, tags = rec.tags || [];
   return html`<div class="daytags-widget" data-day="${day}">
-    <div class="jw-row"><span class="jw-label">The day</span>${chips(DAY_TAGS, tags)}</div>
-    <div class="jw-row"><span class="jw-label">Note</span>
-      <textarea class="jw-note" rows="2" placeholder="Anything about the day" aria-label="Day note">${rec.note || ''}</textarea></div>
+    <div class="jw-row"><span class="jw-label">${t('The day')}</span>${chips(DAY_TAGS, tags)}</div>
+    <div class="jw-row"><span class="jw-label">${t('Note')}</span>
+      <textarea class="jw-note" rows="2" placeholder="${t('Anything about the day')}" aria-label="${t('Day note')}">${rec.note || ''}</textarea></div>
     <span class="jw-saved" aria-live="polite"></span>
   </div>`;
 }
@@ -155,7 +165,7 @@ function wire(root, id, kind) {
     const rec = { ...current(), ...patch };
     store(id, rec);
     const m = root.querySelector('.jw-saved');
-    if (m) { m.textContent = 'saved'; m.classList.add('on'); clearTimeout(markTimer); markTimer = setTimeout(() => m.classList.remove('on'), 1400); }
+    if (m) { m.textContent = t('saved'); m.classList.add('on'); clearTimeout(markTimer); markTimer = setTimeout(() => m.classList.remove('on'), 1400); }
     root.dispatchEvent(new CustomEvent('journal:saved', { bubbles: true, detail: { id, kind } }));
   };
   const press = (sel, val) => root.querySelectorAll(sel).forEach(b => b.setAttribute('aria-pressed', String(val(b))));
@@ -167,41 +177,41 @@ function wire(root, id, kind) {
     if (b.dataset.rpe) {
       const v = +b.dataset.rpe, next = current().rpe === v ? null : v;
       press('[data-rpe]', x => +x.dataset.rpe === next);
-      const w = root.querySelector('.jw-rpe-word'); if (w) w.textContent = next ? RPE_WORDS[next] : '';
+      const w = root.querySelector('.jw-rpe-word'); if (w) w.textContent = next ? word(RPE_WORDS[next]) : '';
       commit({ rpe: next });
     } else if (b.dataset.feel) {
       const v = +b.dataset.feel, next = current().feel === v ? null : v;
       press('[data-feel]', x => +x.dataset.feel === next);
       commit({ feel: next });
     } else if (b.dataset.tag) {
-      const t = b.dataset.tag, tags = current().tags, on = !tags.includes(t);
+      const tag = b.dataset.tag, tags = current().tags, on = !tags.includes(tag);
       b.setAttribute('aria-pressed', String(on));
-      commit({ tags: on ? [...tags, t] : tags.filter(x => x !== t) });
+      commit({ tags: on ? [...tags, tag] : tags.filter(x => x !== tag) });
     } else if (b.classList.contains('jw-addbtn')) addTag();
   });
   const input = root.querySelector('.jw-new');
   function addTag() {
-    const t = normTag(input && input.value);
-    if (!t) return;
+    const tag = normTag(input && input.value);
+    if (!tag) return;
     input.value = '';
     const tags = current().tags;
-    let chip = [...root.querySelectorAll('[data-tag]')].find(x => x.dataset.tag === t);
+    let chip = [...root.querySelectorAll('[data-tag]')].find(x => x.dataset.tag === tag);
     if (!chip) {
       chip = document.createElement('button');
-      chip.type = 'button'; chip.className = 'jw-chip'; chip.dataset.tag = t; chip.textContent = t;
+      chip.type = 'button'; chip.className = 'jw-chip'; chip.dataset.tag = tag; chip.textContent = tagText(tag);
       root.querySelector('.jw-chips').appendChild(chip);
     }
     chip.setAttribute('aria-pressed', 'true');
-    if (!tags.includes(t)) commit({ tags: [...tags, t] });
+    if (!tags.includes(tag)) commit({ tags: [...tags, tag] });
   }
   if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } });
   // The note saves while typing (debounced) and on leaving the box, so closing the tab
   // straight after typing loses at most the last half second.
   const note = root.querySelector('.jw-note');
   if (note) {
-    let t;
-    const flush = () => { clearTimeout(t); if (note.value !== current().note) commit({ note: note.value }); };
-    note.addEventListener('input', () => { clearTimeout(t); t = setTimeout(flush, 600); });
+    let timer;
+    const flush = () => { clearTimeout(timer); if (note.value !== current().note) commit({ note: note.value }); };
+    note.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 600); });
     note.addEventListener('blur', flush);
   }
 }

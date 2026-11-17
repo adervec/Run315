@@ -15,10 +15,11 @@ import * as D from './derive.js';
 import * as C from './collect.js';
 import { renderChart } from './charts.js';
 import { html, raw, esc, toast, useCss, day } from './ui.js';
+import { t, fmt } from './i18n.js';
 
 const nowIso = () => new Date().toISOString();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const n0 = v => Math.round(v || 0).toLocaleString('en-US');
+const n0 = v => (fmt() ? fmt().number(Math.round(v || 0), { max: 0 }) : Math.round(v || 0).toLocaleString('en-US'));
 
 // ---------------------------------------------------------------------------
 // Privacy
@@ -43,25 +44,24 @@ const PRIV_CSS = `
 function privacyBody() {
   const p = C.privacyOf(state);
   return html`<ul class="privzones">${p.zones.length ? p.zones.map((z, i) => html`<li><span>${z.lat.toFixed(4)}, ${z.lon.toFixed(4)}</span>
-      <span class="dim">${n0(z.radius_m)} m</span><button type="button" class="btn-quiet" data-priv-del="${i}">Remove</button></li>`)
-    : html`<li class="dim">No zones yet: every share shows the whole track.</li>`}</ul>
+      <span class="dim">${n0(z.radius_m)} m</span><button type="button" class="btn-quiet" data-priv-del="${i}">${t('Remove')}</button></li>`)
+    : html`<li class="dim">${t('No zones yet: every share shows the whole track.')}</li>`}</ul>
     <div class="privform">
-      <label>Latitude <input type="number" step="0.0001" data-priv="lat"></label>
-      <label>Longitude <input type="number" step="0.0001" data-priv="lon"></label>
-      <label>Radius (m) <input type="number" step="50" min="100" value="400" data-priv="r"></label>
-      <button type="button" class="btn" data-priv-add>Add zone</button>
-      <button type="button" class="btn btn-ghost" data-priv-home>Use my usual start</button>
+      <label>${t('Latitude')} <input type="number" step="0.0001" data-priv="lat"></label>
+      <label>${t('Longitude')} <input type="number" step="0.0001" data-priv="lon"></label>
+      <label>${t('Radius (m)')} <input type="number" step="50" min="100" value="400" data-priv="r"></label>
+      <button type="button" class="btn" data-priv-add>${t('Add zone')}</button>
+      <button type="button" class="btn btn-ghost" data-priv-home>${t('Use my usual start')}</button>
     </div>
-    <p style="margin:10px 0 0;font-size:13px"><label><input type="checkbox" data-priv-trim ${p.trim_m ? 'checked' : ''}> Also trim the first and last ${C.DEFAULT_TRIM_M} m of every shared track</label></p>`;
+    <p style="margin:10px 0 0;font-size:13px"><label><input type="checkbox" data-priv-trim ${p.trim_m ? 'checked' : ''}> ${t('Also trim the first and last {n} m of every shared track', { n: C.DEFAULT_TRIM_M })}</label></p>`;
 }
 // The Sync & cowork (or records) panel: markup, then mountPrivacy(el) wires it.
 export function privacyPanel() {
   useCss('privacy', PRIV_CSS);
   return html`<section class="panel" data-privacy>
-    <div class="panel-head"><p class="eyebrow">Privacy zones</p><p class="panel-note">applied to every share card, poster and track wall</p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Privacy zones')}</p><p class="panel-note">${t('applied to every share card, poster and track wall')}</p></div>
     <div data-priv-body>${privacyBody()}</div>
-    <p class="stat-hint">Anything inside a zone is cut out of shared images, and the line is broken there rather than drawn across.
-      Zones sync with your profile. Your own maps on this device still show everything.</p></section>`;
+    <p class="stat-hint">${t('Anything inside a zone is cut out of shared images, and the line is broken there rather than drawn across. Zones sync with your profile. Your own maps on this device still show everything.')}</p></section>`;
 }
 export function mountPrivacy(el) {
   const root = el && el.querySelector('[data-privacy]');
@@ -69,22 +69,22 @@ export function mountPrivacy(el) {
   const body = root.querySelector('[data-priv-body]');
   const redraw = () => { body.innerHTML = String(privacyBody()); };
   root.addEventListener('click', async e => {
-    const t = e.target.closest('button,input');
-    if (!t) return;
+    const tg = e.target.closest('button,input');
+    if (!tg) return;
     const p = C.privacyOf(state);
-    if (t.dataset.privDel != null) { p.zones.splice(+t.dataset.privDel, 1); setPrivacy(p); redraw(); }
-    else if (t.hasAttribute('data-priv-add')) {
+    if (tg.dataset.privDel != null) { p.zones.splice(+tg.dataset.privDel, 1); setPrivacy(p); redraw(); }
+    else if (tg.hasAttribute('data-priv-add')) {
       const v = k => parseFloat(root.querySelector(`[data-priv="${k}"]`).value);
       const lat = v('lat'), lon = v('lon'), r = v('r');
-      if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && r >= 50)) { toast('A zone needs a latitude, a longitude and a radius of at least 50 m.'); return; }
+      if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && r >= 50)) { toast(t('A zone needs a latitude, a longitude and a radius of at least 50 m.')); return; }
       p.zones.push({ lat: +lat.toFixed(5), lon: +lon.toFixed(5), radius_m: Math.round(r) }); setPrivacy(p); redraw();
-    } else if (t.hasAttribute('data-priv-home')) {
+    } else if (tg.hasAttribute('data-priv-home')) {
       const { homePoint } = await import('./cities.js');
       const h = homePoint(state);
-      if (!h) { toast('No start points yet to take it from.'); return; }
+      if (!h) { toast(t('No start points yet to take it from.')); return; }
       root.querySelector('[data-priv="lat"]').value = h[0].toFixed(4);
       root.querySelector('[data-priv="lon"]').value = h[1].toFixed(4);
-    } else if (t.hasAttribute('data-priv-trim')) { p.trim_m = t.checked ? C.DEFAULT_TRIM_M : 0; setPrivacy(p); }
+    } else if (tg.hasAttribute('data-priv-trim')) { p.trim_m = tg.checked ? C.DEFAULT_TRIM_M : 0; setPrivacy(p); }
   });
 }
 
@@ -133,7 +133,7 @@ function fitText(g, text, maxW, size, weight = 800) {
 // and date, the chosen stats, the wordmark. stats: keys of C.CARD_STATS.
 export async function shareCard(id, { stats = C.CARD_STATS.map(s => s[0]), w = 1080, h = 1350 } = {}) {
   const a = state.activities[id];
-  if (!a) throw new Error('No such activity');
+  if (!a) throw new Error(t('No such activity'));
   let segs = [];
   if (!D.isVirtual(a)) {
     const det = await D.getDetail(id).catch(() => null);
@@ -142,15 +142,17 @@ export async function shareCard(id, { stats = C.CARD_STATS.map(s => s[0]), w = 1
   const [cv, g] = cardBase(w, h);
   const mapTop = 80, mapH = h - 520;
   if (segs.length) strokeTrack(g, C.fitSegments(segs, w - 120, mapH, 30).map(s => s.map(([x, y]) => [x + 60, y + mapTop])), 7);
-  else { g.fillStyle = FAINT; g.font = `500 28px ${FONT}`; g.fillText(D.isVirtual(a) ? 'Indoor / virtual: no map' : 'No track to draw', 60, mapTop + 40); }
+  else { g.fillStyle = FAINT; g.font = `500 28px ${FONT}`; g.fillText(D.isVirtual(a) ? t('Indoor / virtual: no map') : t('No track to draw'), 60, mapTop + 40); }
   g.fillStyle = FAINT; g.font = `500 30px ${FONT}`;
-  g.fillText(new Date(a.start).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), 60, h - 380);
-  g.fillStyle = INK; fitText(g, a.name || 'Run', w - 120, 64);
-  g.fillText(a.name || 'Run', 60, h - 310);
+  const dateOpts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  g.fillText(fmt() ? fmt().custom(new Date(a.start), dateOpts) : new Date(a.start).toLocaleDateString('en-GB', dateOpts), 60, h - 380);
+  const name = a.name || t('Run');
+  g.fillStyle = INK; fitText(g, name, w - 120, 64);
+  g.fillText(name, 60, h - 310);
   const rows = C.cardStats(a, new Set(stats)), colW = (w - 120) / Math.max(1, Math.min(rows.length, 3));
   rows.forEach(([label, value], i) => {
     const x = 60 + (i % 3) * colW, y = h - 220 + Math.floor(i / 3) * 110;
-    g.fillStyle = FAINT; g.font = `600 22px ${FONT}`; g.fillText(label.toUpperCase(), x, y - 46);
+    g.fillStyle = FAINT; g.font = `600 22px ${FONT}`; g.fillText(t(label).toLocaleUpperCase(), x, y - 46);
     g.fillStyle = INK; g.font = `800 50px ${FONT}`; g.fillText(value, x, y + 4);
   });
   wordmark(g, w, h);
@@ -165,14 +167,16 @@ const SHARE_CSS = `
 .sharecard .sharebox label { display: block; margin: 3px 0; }
 .sharecard .sharebox img { width: 100%; margin-top: 8px; border-radius: 4px; }
 `;
+// The stat labels come from C.CARD_STATS / C.cardStats in English and are translated here.
+// i18n-keys: Distance | Time | Pace | Speed | Avg HR | Climb
 // A button (with a little menu of which stats to show) for the activity page's head.
 export function shareButton(id) {
   useCss('sharecard', SHARE_CSS);
   listen();
-  return html`<details class="sharecard" data-share="${id}"><summary class="btn btn-ghost">Share card</summary>
-    <div class="sharebox">${C.CARD_STATS.map(([k, l]) => html`<label><input type="checkbox" data-share-stat="${k}" checked> ${l}</label>`)}
-      <p style="margin:8px 0 0"><button type="button" class="btn" data-share-go>Download PNG</button></p>
-      <p class="dim" style="margin:6px 0 0">Privacy zones apply. <a class="quiet-link" href="#/records">Set them</a></p></div></details>`;
+  return html`<details class="sharecard" data-share="${id}"><summary class="btn btn-ghost">${t('Share card')}</summary>
+    <div class="sharebox">${C.CARD_STATS.map(([k, l]) => html`<label><input type="checkbox" data-share-stat="${k}" checked> ${t(l)}</label>`)}
+      <p style="margin:8px 0 0"><button type="button" class="btn" data-share-go>${t('Download PNG')}</button></p>
+      <p class="dim" style="margin:6px 0 0">${raw(esc(t('Privacy zones apply. {link}', { link: '\u0001' })).replace('\u0001', `<a class="quiet-link" href="#/records">${esc(t('Set them'))}</a>`))}</p></div></details>`;
 }
 let _listening = false;
 function listen() {
@@ -188,7 +192,7 @@ function listen() {
       const blob = await shareCard(id, { stats });
       const a = state.activities[id];
       download(`${String(a?.start || '').slice(0, 10)}-${slug(a?.name)}.png`, blob);
-    } catch (err) { toast('The card did not draw: ' + err.message); }
+    } catch (err) { toast(t('The card did not draw: {error}', { error: err.message })); }
     b.disabled = false;
   });
 }
@@ -199,7 +203,7 @@ function listen() {
 function eddRow(label, e, unit) {
   const nx = e.next.slice(0, 3);
   return html`<tr><td>${label}</td><td class="num"><b>${e.E}</b></td>
-    <td class="dim">${nx.map(x => html`<span style="white-space:nowrap">${x.n} ${unit}: ${x.need} more day${x.need === 1 ? '' : 's'}</span>`).reduce((acc, v, i) => (i ? html`${acc} · ${v}` : v), '')}</td></tr>`;
+    <td class="dim">${nx.map(x => html`<span style="white-space:nowrap">${t.n('{dist} {unit}: {n} more day', '{dist} {unit}: {n} more days', x.need, { dist: x.n, unit })}</span>`).reduce((acc, v, i) => (i ? html`${acc} · ${v}` : v), '')}</td></tr>`;
 }
 export function eddingtonPanel(st = state, { link = true } = {}) {
   const e = C.eddington(st), hasRide = e.ride.km.days > 0;
@@ -208,21 +212,20 @@ export function eddingtonPanel(st = state, { link = true } = {}) {
   const top = Math.min(curve.curve.length, Math.max(curve.E * 2, 20));
   let chart = '';
   try {
-    chart = renderChart({ type: 'line', title: `Days at or over n km (${e.run.km.days ? 'running' : 'cycling'})`,
-      note: 'Where the two lines cross is your Eddington number.',
-      x: { label: 'n (km)', type: 'linear' }, y: { label: 'days', zero: true },
-      series: [{ name: 'Days at or over n km', points: curve.curve.slice(0, top) },
-        { name: 'n (the line to cross)', points: curve.curve.slice(0, top).map(([n]) => [n, n]) }] });
+    chart = renderChart({ type: 'line', title: e.run.km.days ? t('Days at or over n km (running)') : t('Days at or over n km (cycling)'),
+      note: t('Where the two lines cross is your Eddington number.'),
+      x: { label: t('n (km)'), type: 'linear' }, y: { label: t('days'), zero: true },
+      series: [{ name: t('Days at or over n km'), points: curve.curve.slice(0, top) },
+        { name: t('n (the line to cross)'), points: curve.curve.slice(0, top).map(([n]) => [n, n]) }] });
   } catch { chart = ''; }
   return html`<section class="panel" data-hook="eddington">
-    <div class="panel-head"><p class="eyebrow">Eddington number</p>${link ? html`<p class="panel-note"><a class="quiet-link" href="#/records">Records &amp; collections</a></p>` : ''}</div>
-    <div class="table-scroll"><table><thead><tr><th></th><th class="num">E</th><th>Days still needed for E+1, E+2, E+3</th></tr></thead><tbody>
-      ${e.run.km.days ? html`${eddRow('Running, km', e.run.km, 'km')}${eddRow('Running, miles', e.run.mi, 'mi')}` : ''}
-      ${hasRide ? html`${eddRow('Cycling, km', e.ride.km, 'km')}${eddRow('Cycling, miles', e.ride.mi, 'mi')}` : ''}
+    <div class="panel-head"><p class="eyebrow">${t('Eddington number')}</p>${link ? html`<p class="panel-note"><a class="quiet-link" href="#/records">${t('Records & collections')}</a></p>` : ''}</div>
+    <div class="table-scroll"><table><thead><tr><th></th><th class="num">E</th><th>${t('Days still needed for E+1, E+2, E+3')}</th></tr></thead><tbody>
+      ${e.run.km.days ? html`${eddRow(t('Running, km'), e.run.km, 'km')}${eddRow(t('Running, miles'), e.run.mi, 'mi')}` : ''}
+      ${hasRide ? html`${eddRow(t('Cycling, km'), e.ride.km, 'km')}${eddRow(t('Cycling, miles'), e.ride.mi, 'mi')}` : ''}
     </tbody></table></div>
     ${chart ? raw(chart) : ''}
-    <p class="stat-hint">E is the largest number such that you have covered at least E on at least E different days. Two runs on one day add up.
-      It only ever goes up, and each step is harder than the last.</p></section>`;
+    <p class="stat-hint">${t('E is the largest number such that you have covered at least E on at least E different days. Two runs on one day add up. It only ever goes up, and each step is harder than the last.')}</p></section>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -326,17 +329,20 @@ export async function airMany(ids, { onProgress, signal } = {}) {
   }
   return n;
 }
-const fmtV = (v, u) => (v == null ? '—' : (v >= 10 ? Math.round(v) : v.toFixed(1)) + (u ? ' ' + u : ''));
+const fmtV = (v, u) => (v == null ? '—' : (fmt() ? (v >= 10 ? fmt().number(Math.round(v), { max: 0 }) : fmt().number(v, { min: 1, max: 1 })) : v >= 10 ? Math.round(v) : v.toFixed(1)) + (u ? ' ' + u : ''));
+// C.airCoverage's reasons and C.AQI_BANDS come in English and are translated here.
+// i18n-keys: in the future | before 2013 (the European record starts then) | before August 2022 (the global record starts then)
+// i18n-keys: Good | Moderate | Unhealthy for sensitive groups | Unhealthy | Very unhealthy | Hazardous
 function airBody(v, cov) {
-  if (!v) return html`<p class="dim" style="margin:0">${cov && !cov.ok ? `No air-quality record for this run: it is ${cov.why}.` : 'Nothing recorded for this hour and place.'}</p>`;
+  if (!v) return html`<p class="dim" style="margin:0">${cov && !cov.ok ? t('No air-quality record for this run: it is {why}.', { why: t(cov.why) }) : t('Nothing recorded for this hour and place.')}</p>`;
   const pol = v.pollen ? Object.entries(v.pollen).filter(([, x]) => x > 0) : [];
   return html`<div class="digest">
-    <div class="stat"><div class="stat-value">${v.us_aqi == null ? '—' : Math.round(v.us_aqi)}</div><div class="stat-label">US AQI</div><div class="stat-hint">${v.band || ''}</div></div>
+    <div class="stat"><div class="stat-value">${v.us_aqi == null ? '—' : Math.round(v.us_aqi)}</div><div class="stat-label">US AQI</div><div class="stat-hint">${v.band ? t(v.band) : ''}</div></div>
     <div class="stat"><div class="stat-value">${fmtV(v.pm2_5)}</div><div class="stat-label">PM2.5 µg/m³</div></div>
     <div class="stat"><div class="stat-value">${fmtV(v.pm10)}</div><div class="stat-label">PM10 µg/m³</div></div>
-    <div class="stat"><div class="stat-value">${fmtV(v.ozone)}</div><div class="stat-label">Ozone µg/m³</div></div>
-  </div>${pol.length ? html`<p class="stat-hint">Pollen (grains/m³): ${pol.map(([k, x]) => `${k} ${fmtV(x)}`).join(' · ')}</p>` : ''}
-  <p class="stat-hint">Modelled (CAMS via Open-Meteo) for the start hour, ${esc(String(v.hour).slice(11))} local, on a ~10–40 km grid: the air of the area, not of your street.</p>`;
+    <div class="stat"><div class="stat-value">${fmtV(v.ozone)}</div><div class="stat-label">${t('Ozone')} µg/m³</div></div>
+  </div>${pol.length ? html`<p class="stat-hint">${t('Pollen (grains/m³): {list}', { list: pol.map(([k, x]) => `${k} ${fmtV(x)}`).join(' · ') })}</p>` : ''}
+  <p class="stat-hint">${t('Modelled (CAMS via Open-Meteo) for the start hour, {hour} local, on a ~10–40 km grid: the air of the area, not of your street.', { hour: String(v.hour).slice(11) })}</p>`;
 }
 // The activity page's panel: a placeholder, filled by mountAir(el, id). '' for indoor runs
 // and runs without a start point.
@@ -345,8 +351,8 @@ export function airPanel(id) {
   if (!a || !p || D.isVirtual(a)) return '';
   const cov = C.airCoverage(p[0], p[1], String(a.start).slice(0, 10));
   return html`<section class="panel" data-air="${id}">
-    <div class="panel-head"><p class="eyebrow">Air quality</p><p class="panel-note"><a class="quiet-link" href="#/records">Against your pace</a></p></div>
-    <div data-air-body>${cov.ok ? html`<p class="dim" style="margin:0">Looking up the air…</p>` : airBody(null, cov)}</div></section>`;
+    <div class="panel-head"><p class="eyebrow">${t('Air quality')}</p><p class="panel-note"><a class="quiet-link" href="#/records">${t('Against your pace')}</a></p></div>
+    <div data-air-body>${cov.ok ? html`<p class="dim" style="margin:0">${t('Looking up the air…')}</p>` : airBody(null, cov)}</div></section>`;
 }
 export async function mountAir(el, id) {
   const box = el && el.querySelector(`[data-air="${CSS.escape(id)}"] [data-air-body]`);
@@ -355,7 +361,7 @@ export async function mountAir(el, id) {
   const cov = C.airCoverage(p[0], p[1], String(a.start).slice(0, 10));
   if (!cov.ok) return;
   try { const v = await airFor(id); if (box.isConnected) box.innerHTML = String(airBody(v, cov)); }
-  catch (e) { if (box.isConnected) box.innerHTML = String(html`<p class="dim" style="margin:0">The air-quality service did not answer (${e.message}).</p>`); }
+  catch (e) { if (box.isConnected) box.innerHTML = String(html`<p class="dim" style="margin:0">${t('The air-quality service did not answer ({error}).', { error: e.message })}</p>`); }
 }
 // Rows for C.airCorrelation from what is cached: steady runs (efficiency rows: pace already
 // corrected for hills and heat) that have air.
