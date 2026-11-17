@@ -148,7 +148,7 @@ function heatPanel(heat) {
   return html`<section class="panel">
     <div class="panel-head"><p class="eyebrow">${t('Heat')}</p><p class="panel-note">${t.n('{n} hot run in the last fortnight', '{n} hot runs in the last fortnight', heat.recent)}</p></div>
     <div class="grid-2">
-      <div><div class="stat"><div class="stat-value">${cap(heat.band)}</div><div class="stat-label">${t('Acclimatisation')}</div>
+      <div><div class="stat"><div class="stat-value">${cap(t(heat.band))}</div><div class="stat-label">${t('Acclimatisation')}</div>
         <div class="stat-hint">${heat.hottest_c != null
           ? t("{n} sessions' worth still counting; hottest {c}°C.", { n: heat.sessions.toFixed(1), c: Math.round(heat.hottest_c) })
           : t("{n} sessions' worth still counting.", { n: heat.sessions.toFixed(1) })}</div></div></div>
@@ -212,7 +212,7 @@ function fitnessPanel(s) {
           <div class="stat-label">${t('Threshold HR · est.')}</div></div>` : ''}
         ${sp ? html`<div class="stat"><div class="stat-value ${sp[0] > 1.30 ? 'risk' : ''}">${plus((sp[0] - 1) * 100)}<small class="unit">%</small></div>
           <div class="stat-label">${t('Last run vs your longest')}</div>
-          <div class="stat-hint">${t('{last} km against {longest} km — {verdict}.', { last: (sp[1] / 1000).toFixed(1), longest: (sp[2] / 1000).toFixed(1), verdict: sp[3] })}</div></div>` : ''}
+          <div class="stat-hint">${t('{last} km against {longest} km — {verdict}.', { last: (sp[1] / 1000).toFixed(1), longest: (sp[2] / 1000).toFixed(1), verdict: t(sp[3]) })}</div></div>` : ''}
       </div>
       <div>
         <svg class="chart" viewBox="0 0 680 140" preserveAspectRatio="none" role="img"
@@ -238,7 +238,7 @@ function modelPanels(s) {
     <section class="panel"><div class="panel-head"><p class="eyebrow">${t('If you raced today')}</p></div>
       ${standards.length ? html`<div class="table-scroll"><table>
         <thead><tr><th>${t('Distance')}</th><th class="num">${t('Projected')}</th><th class="num">${t('Pace')}</th></tr></thead>
-        <tbody>${standards.map(([label, dist, p]) => html`<tr><td>${label}</td>
+        <tbody>${standards.map(([label, dist, p]) => html`<tr><td>${t(label)}</td>
           <td class="num time">${fmtTime(p.seconds)}</td><td class="num dim">${fmtPace(p.seconds, dist)}</td></tr>`)}</tbody>
       </table></div>` : html`<div class="empty"><p>${t('No projection yet: the model needs a hard run or two first.')}</p></div>`}
     </section>
@@ -287,14 +287,14 @@ function prescriptionPanels(s) {
     ${s.paces.length ? html`<section class="panel">
       <div class="panel-head"><p class="eyebrow">${t('Your training paces')}</p><p class="panel-note">${t("From today's fitness")}</p></div>
       <div class="table-scroll"><table><thead><tr><th>${t('Type')}</th><th class="num">${t('Pace range')}</th></tr></thead>
-        <tbody>${s.paces.map(([name, purpose, fast, slow]) => html`<tr><td>${name}<span class="dim"><br>${purpose}</span></td>
+        <tbody>${s.paces.map(([name, purpose, fast, slow]) => html`<tr><td>${t(name)}<span class="dim"><br>${t(purpose)}</span></td>
           <td class="num actual">${fmtTime(fast)}–${fmtPace(slow, 1000)}</td></tr>`)}</tbody></table></div>
       ${s.threshold_pace ? html`<p class="stat-hint" style="margin-top:12px">${t('Anchored on {pace}, the pace your curve says you could hold for an hour.', { pace: fmtPace(s.threshold_pace, 1000) })}</p>` : ''}
     </section>` : ''}
     ${s.zones.length ? html`<section class="panel">
       <div class="panel-head"><p class="eyebrow">${t('Heart rate zones')}</p><p class="panel-note">${t('On threshold {n} bpm', { n: s.threshold_hr.toFixed(0) })}</p></div>
       <div class="table-scroll"><table><thead><tr><th>${t('Zone')}</th><th class="num">${t('Range')}</th></tr></thead>
-        <tbody>${s.zones.map(([name, lo, hi]) => html`<tr><td>${name}</td><td class="num">${lo ? `${lo}–${hi}` : t('under {n}', { n: hi })} bpm</td></tr>`)}</tbody>
+        <tbody>${s.zones.map(([name, lo, hi]) => html`<tr><td>${t(name)}</td><td class="num">${lo ? `${lo}–${hi}` : t('under {n}', { n: hi })} bpm</td></tr>`)}</tbody>
       </table></div></section>` : ''}
   </div>`;
 }

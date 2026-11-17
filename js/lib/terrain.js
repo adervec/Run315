@@ -31,6 +31,7 @@
 // Pure functions. Depends on racecraft for the Minetti model. Port of terrain.py;
 // see test/terrain.test.mjs.
 import * as RC from './racecraft.js';
+import { t } from '../i18n.js';
 
 // Naismith's constants, in the units the rule was written in.
 export const FLAT_SPEED_KMH = 5.0;
@@ -171,17 +172,23 @@ export function climbCost(samples, stepM = 200.0) {
   };
 }
 
+// Through t(): climbCost() runs inside english() when the result is stored, and
+// climbVerdictText() re-words the stored factor in the reader's language.
 function _climbVerdict(factor) {
-  const percent = Math.abs(factor - 1.0) * 100.0;
+  const n = _fmt0(Math.abs(factor - 1.0) * 100.0);
   if (factor >= 1.05) {
-    return 'You hold ' + _fmt0(percent) + '% more speed on the climbs than the energy model ' +
-      'expects. Hills are a strength.';
+    return t('You hold {n}% more speed on the climbs than the energy model expects. Hills are a strength.', { n });
   }
   if (factor <= 0.95) {
-    return 'Climbs cost you ' + _fmt0(percent) + '% more than the energy model expects -- ' +
-      'the flat is where your running is strongest.';
+    return t('Climbs cost you {n}% more than the energy model expects -- the flat is where your running is strongest.', { n });
   }
-  return 'You climb about as the energy model expects. No particular bias.';
+  return t('You climb about as the energy model expects. No particular bias.');
+}
+
+// A stored climbCost() (or profile()) verdict, worded for the reader.
+export function climbVerdictText(c) {
+  if (!c) return null;
+  return c.factor ? _climbVerdict(c.factor) : (c.verdict ?? null);
 }
 
 // Average the climbing factor over several runs. -> object|null.

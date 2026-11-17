@@ -10,6 +10,7 @@
 // {date: load} dict) is a plain object keyed by day key.
 import { dayKey, addDayKey, daysBetween, weekStart } from './dt.js';
 import { pyRound, divmod } from './py.js';
+import { t } from '../i18n.js';
 
 export const RUN_TYPES = new Set(['running', 'trail_running', 'treadmill_running', 'track_running',
   'virtual_run', 'indoor_running']);
@@ -28,6 +29,9 @@ export const MIN_EXPONENT = 1.01, MAX_EXPONENT = 1.20;   // physiologically plau
 export const CTL_DAYS = 42, ATL_DAYS = 7;
 export const HALF_LIFE_DAYS = 90.0;  // recency weighting of past efforts in the fit
 
+// Labels are data (summary() is memoised and the brief reads them in English); a page shows
+// them through t(label).
+// i18n-keys: 5K | 10K | 15K | 10 mi | Half marathon | Marathon | 50K
 export const STANDARD_RACES = [
   ['5K', 5000], ['10K', 10000], ['15K', 15000], ['10 mi', 16093],
   ['Half marathon', 21097], ['Marathon', 42195], ['50K', 50000],
@@ -487,6 +491,10 @@ export function thresholdPace(fit) {
 }
 
 // Fractions of threshold speed. Slower fraction first -> slower pace bound.
+// Names are compared (=== 'Interval') and both columns sit in the memoised summary, so they
+// stay English here; a page shows them through t(name) and t(purpose).
+// i18n-keys: Easy | Marathon | Threshold | Interval | Repetition
+// i18n-keys: Most of your week. Conversational. | Race-pace work for the long stuff. | Tempo and cruise intervals. ~1 hour race effort. | VO2max work. 3-5 minute reps. | Speed and economy. 200-600m reps.
 export const TRAINING_PACE_BANDS = [
   ['Easy', 'Most of your week. Conversational.', 0.70, 0.78],
   ['Marathon', 'Race-pace work for the long stuff.', 0.90, 0.95],
@@ -503,7 +511,8 @@ export function trainingPaces(fit) {
   return TRAINING_PACE_BANDS.map(([name, purpose, lo, hi]) => [name, purpose, thr / hi, thr / lo]);
 }
 
-// Friel-style zones anchored on lactate-threshold HR.
+// Friel-style zones anchored on lactate-threshold HR. Shown through t(name).
+// i18n-keys: Z1 Recovery | Z2 Aerobic | Z3 Tempo | Z4 Threshold | Z5 VO2max
 export const HR_ZONE_BANDS = [
   ['Z1 Recovery', 0.00, 0.81],
   ['Z2 Aerobic', 0.81, 0.90],
@@ -597,10 +606,12 @@ export function sessionSpike(runs, referenceDays = SPIKE_REFERENCE_DAYS) {
 
   const longest = Math.max(...window);
   const ratio = distance / longest;
+  // The verdict sits in the memoised summary (and the brief), so it stays English; a page
+  // shows it through t(verdict).
+  // i18n-keys: further than anything in the last month by a good margin -- the sessions that precede injuries look like this one | a step up on your longest run of the last month | your longest run in a month, but only just | within what you have been running
   let verdict;
   if (ratio > 1.0 + SPIKE_HIGH) {
-    verdict = 'further than anything in the last month by a good margin -- ' +
-      'the sessions that precede injuries look like this one';
+    verdict = 'further than anything in the last month by a good margin -- the sessions that precede injuries look like this one';
   } else if (ratio > 1.0 + SPIKE_NOTE) verdict = 'a step up on your longest run of the last month';
   else if (ratio > 1.0) verdict = 'your longest run in a month, but only just';
   else verdict = 'within what you have been running';
@@ -677,6 +688,8 @@ export function calibration(results, today) {
   const raw = Math.exp(swl / sw);
   const factor = Math.max(1.0 - CALIBRATION_MAX_ADJUST, Math.min(1.0 + CALIBRATION_MAX_ADJUST, raw));
   const errors = pairs.map(([p, a]) => Math.abs(a / p - 1.0));
+  // `direction` is data (the brief reads it); a page shows it through t(direction).
+  // i18n-keys: slower than projected | faster than projected | on the money
   return {
     factor,
     raw_factor: raw,
@@ -842,7 +855,7 @@ export function splitTargets(distanceM, seconds, negativeSplit = 0.01) {
     const first = Math.min(m, half);
     const second = Math.max(0.0, m - half);
     const cumulative = first * slow + second * fast;
-    const label = Math.abs(m - distanceM) < 1 ? 'Finish' : _fmtG(pyRound(m / 1000.0, 2)) + 'K';
+    const label = Math.abs(m - distanceM) < 1 ? t('Finish') : t('{n}K', { n: _fmtG(pyRound(m / 1000.0, 2)) });
     return [label, m, cumulative];
   });
 }

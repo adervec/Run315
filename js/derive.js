@@ -8,7 +8,7 @@
 //                     state.derived, which syncs. So the phone gets every number without
 //                     ever downloading a stream.
 //   everything else   aggregates state.activities + state.derived, synchronously.
-import { english } from './i18n.js';
+import { english, t, fmt } from './i18n.js';
 import * as F from './lib/fitness.js';
 import * as Z from './lib/zones.js';
 import * as IV from './lib/intervals.js';
@@ -284,7 +284,11 @@ export function zoneSummary(st, thrHr, weeks = 12, now = new Date()) {
 
 export function readinessToday(st, tsb = null) {
   const days = Object.keys(st.wellness).sort();
-  if (!days.length) return tsb != null ? RV.readiness({ tsb }) : null;
+  if (!days.length) {
+    const r = tsb != null ? RV.readiness({ tsb }) : null;
+    if (r) r.verdict = t(r.verdict);
+    return r;
+  }
   const rows = days.map(d => ({ day: d, ...st.wellness[d] }));
   const hrv = rows.filter(r => r.hrv_ms).map(r => r.hrv_ms), rhr = rows.filter(r => r.rhr).map(r => r.rhr);
   const latest = rows[rows.length - 1];
@@ -293,9 +297,51 @@ export function readinessToday(st, tsb = null) {
   if (result) {
     Object.assign(result, { day: latest.day, nights: rows.length, latest,
       hrv_trend: hrv.length > 3 ? RV.trend(hrv.slice(-14)) : null, rhr_trend: rhr.length > 3 ? RV.trend(rhr.slice(-14)) : null });
-    result.advice = RV.advice(result);
+    result.advice = readinessAdvice(result);
   }
+  if (result) result.verdict = t(result.verdict);
   return result;
+}
+// recovery.js words the readiness in English; Today shows it in the reader's language. The
+// same sentences as RV.advice (so the brief, which asks inside english(), reads exactly as
+// before), one whole t() string each. Only `verdict` and `advice` are worded: `band` is a key.
+// i18n-keys: fresh and ready | ready to train | trainable, not sharp | carrying fatigue | dug out
+const READINESS_ADVICE = () => ({
+  primed: {
+    true: t('Everything is at or above your own normal, so run the hard session as planned and spend it properly.'),
+    false: t('You are fresher than usual. Nothing needs changing, though this is a good morning to pull a hard session forward if one is due later in the week.'),
+  },
+  ready: {
+    true: t('Nothing here argues against the hard session. Run it as planned and judge it on the first rep.'),
+    false: t('Train as planned.'),
+  },
+  steady: {
+    true: t('A middling morning. Do the session, but warm up properly and be willing to drop the last rep or two rather than grind them out.'),
+    false: t('Train as planned, and keep the easy running properly easy.'),
+  },
+  strained: {
+    true: t('Today reads low, so take the easy version of the session -- fewer reps, or the same reps a shade slower -- rather than forcing the planned one.'),
+    false: t('Today reads low. An easy hour, or a short one; nothing that needs recovering from tomorrow.'),
+  },
+  depleted: {
+    true: t('This is a morning to move the hard session rather than survive it. Easy running or nothing at all today, and take the session again once the numbers come back.'),
+    false: t('Take the day off, or walk. One low morning is noise, but this is low enough that a day costs you nothing and buys you the week.'),
+  },
+});
+const READINESS_INPUTS = () => ({ hrv: t('HRV'), rhr: t('resting heart rate'), sleep_hours: t('sleep length'),
+  sleep_score: t('sleep quality'), tsb: t('training load') });
+function readinessAdvice(result, plannedHard = false) {
+  const name = result.band, used = result.used || [], hard = String(!!plannedHard), advice = READINESS_ADVICE();
+  const body = (Object.hasOwn(advice, name) && advice[name][hard]) || advice.steady[hard];
+  const labels = READINESS_INPUTS(), names = used.map(u => labels[u] ?? u);
+  // English joins as recovery.js does ('A, B and C'); another language through Intl.ListFormat.
+  const list = !names.length ? t('nothing') : names.length === 1 ? names[0]
+    : fmt() ? fmt().list(names) : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const tail = [t('Based on {inputs}.', { inputs: list })];
+  if (result.confidence === 'low') tail.push(t('That is thin evidence, so let the warm-up have the final say.'));
+  if ((name === 'strained' || name === 'depleted') && used.some(u => RV.BODY_INPUTS.includes(u)))
+    tail.push(t('Several mornings like this with no hard training behind them are worth raising with a coach or a doctor; this score reads training signals, not health.'));
+  return `${body} ${tail.join(' ')}`;
 }
 
 export function heatState(st, now = new Date(), days = 60) {
@@ -483,17 +529,18 @@ export function secondOpinion(st, s) {
 }
 
 // What the analysis still lacks, said plainly (the brief and the dashboard both show it).
+// Through t(): the brief asks inside english(), Today in the reader's language.
 export function gaps(st, now = new Date()) {
   const out = [], acts = activities(st);
-  if (!acts.length) return ['No activities yet: run the garmin or strava cowork channel, or load the demo.'];
+  if (!acts.length) return [t('No activities yet: run the garmin or strava cowork channel, or load the demo.')];
   const noStream = runs(st).filter(a => !st.derived[a.id]).length;
-  if (noStream) out.push(noStream + ' runs have no per-second stream yet, so no best efforts, reps, stops or durability for them.');
+  if (noStream) out.push(t.n('{n} run has no per-second stream yet, so no best efforts, reps, stops or durability for it.', '{n} runs have no per-second stream yet, so no best efforts, reps, stops or durability for them.', noStream));
   const lastDaily = Object.keys(st.daily).sort().pop();
-  if (!lastDaily) out.push('No daily Garmin data (steps, stress, body battery, sleep stages): vitals is empty.');
-  else if (lastDaily < addDayKey(dayKey(now), -3)) out.push('Daily Garmin data stops at ' + lastDaily + '.');
-  if (!Object.keys(st.wellness).length) out.push('No overnight HRV / resting HR: readiness falls back to form alone.');
-  if (!Object.values(st.activities).some(a => a.strava_id)) out.push('Nothing from Strava yet.');
-  if (!Object.keys(st.races).length) out.push('No races on the calendar: projections have nothing to aim at.');
+  if (!lastDaily) out.push(t('No daily Garmin data (steps, stress, body battery, sleep stages): vitals is empty.'));
+  else if (lastDaily < addDayKey(dayKey(now), -3)) out.push(t('Daily Garmin data stops at {day}.', { day: fmt() ? fmt().date(lastDaily + 'T00:00:00') : lastDaily }));
+  if (!Object.keys(st.wellness).length) out.push(t('No overnight HRV / resting HR: readiness falls back to form alone.'));
+  if (!Object.values(st.activities).some(a => a.strava_id)) out.push(t('Nothing from Strava yet.'));
+  if (!Object.keys(st.races).length) out.push(t('No races on the calendar: projections have nothing to aim at.'));
   return out;
 }
 
@@ -542,7 +589,7 @@ function buildBriefEn(st, now) {
   };
 }
 
-const t = s => F.fmtTime(s), p = (s, m) => F.fmtPace(s, m);
+const ft = s => F.fmtTime(s), p = (s, m) => F.fmtPace(s, m);
 // The brief as prose an agent (or the coach prompt) reads first -- coach._brief's sections.
 export const briefMarkdown = b => english(() => briefMarkdownEn(b));
 function briefMarkdownEn(b) {
@@ -561,29 +608,29 @@ function briefMarkdownEn(b) {
   }
   if (f && f.fit_points.length) {
     L.push('', '## Best efforts driving the model');
-    for (const e of f.fit_points) L.push(`- ${(e.distance_m / 1000).toFixed(2)} km in ${t(e.seconds)} (${p(e.seconds, e.distance_m)}, ${e.age_days} days ago)`);
+    for (const e of f.fit_points) L.push(`- ${(e.distance_m / 1000).toFixed(2)} km in ${ft(e.seconds)} (${p(e.seconds, e.distance_m)}, ${e.age_days} days ago)`);
     L.push(`- Fitted fatigue exponent ${f.fatigue_exponent.toFixed(3)} (textbook ${F.RIEGEL}; higher fades more over distance)`);
   }
   if (b.standards.length) {
     L.push('', '## Projections at standard distances (today\'s form' + (b.calibration ? ', calibrated' : '') + ')');
-    for (const s of b.standards) L.push(`- ${s.label}: ${t(s.seconds)} (${p(s.seconds, s.distance_m)}, confidence ${s.confidence})`);
+    for (const s of b.standards) L.push(`- ${s.label}: ${ft(s.seconds)} (${p(s.seconds, s.distance_m)}, confidence ${s.confidence})`);
   }
   if (b.races.length) {
     L.push('', '## Races');
     for (const r of b.races) {
       const bits = [`${r.name} — ${r.date}, ${(r.distance_m / 1000).toFixed(2)} km`];
-      if (r.actual_s) bits.push(`ran ${t(r.actual_s)}`);
-      if (r.projected_s) bits.push(`projected ${t(r.projected_s)} (${r.confidence}) in ${r.days_to_race} days`);
-      if (r.goal_s) bits.push(`goal ${t(r.goal_s)}`);
+      if (r.actual_s) bits.push(`ran ${ft(r.actual_s)}`);
+      if (r.projected_s) bits.push(`projected ${ft(r.projected_s)} (${r.confidence}) in ${r.days_to_race} days`);
+      if (r.goal_s) bits.push(`goal ${ft(r.goal_s)}`);
       if (r.form) bits.push(`race-day form ${r.form.tsb_no_taper.toFixed(0)} holding load, ${r.form.tsb_with_taper.toFixed(0)} with a ${r.form.taper_days}-day taper`);
       L.push('- ' + bits.join('; '));
     }
   }
-  if (b.paces.length) { L.push('', '## Training paces implied by current fitness'); for (const x of b.paces) L.push(`- ${x.name}: ${t(x.fast_s_per_km)}–${p(x.slow_s_per_km, 1000)}`); }
-  if (b.personalRecords.length) { L.push('', '## Best efforts measured inside runs'); for (const r of b.personalRecords) L.push(`- ${(r.distance_m / 1000).toFixed(2)} km: ${t(r.seconds)} (${p(r.seconds, r.distance_m)}), ${r.date}`); }
+  if (b.paces.length) { L.push('', '## Training paces implied by current fitness'); for (const x of b.paces) L.push(`- ${x.name}: ${ft(x.fast_s_per_km)}–${p(x.slow_s_per_km, 1000)}`); }
+  if (b.personalRecords.length) { L.push('', '## Best efforts measured inside runs'); for (const r of b.personalRecords) L.push(`- ${(r.distance_m / 1000).toFixed(2)} km: ${ft(r.seconds)} (${p(r.seconds, r.distance_m)}), ${r.date}`); }
   if (b.zones) L.push('', '## Intensity (12 weeks)', `- ${b.zones.label || ''}: ${b.zones.verdict || ''}`);
   if (b.readiness) L.push('', '## Readiness today', `- ${b.readiness.band || ''} ${b.readiness.score != null ? '(' + Math.round(b.readiness.score) + ')' : ''} — ${b.readiness.advice || ''}`);
-  if (b.stops) L.push('', '## Interruptions (90 days)', `- ${b.stops.runs} runs: ${b.stops.crossings} crossings, ${b.stops.rests} rests, ${b.stops.climbs} climbs, ${b.stops.exhaustion} fatigue stops; ${t(b.stops.lost_s)} lost`);
+  if (b.stops) L.push('', '## Interruptions (90 days)', `- ${b.stops.runs} runs: ${b.stops.crossings} crossings, ${b.stops.rests} rests, ${b.stops.climbs} climbs, ${b.stops.exhaustion} fatigue stops; ${ft(b.stops.lost_s)} lost`);
   if (b.durability.length) { L.push('', '## Durability (long runs, newest first)'); for (const r of b.durability.slice(0, 6)) L.push(`- ${r.date} ${r.name}: drift ${r.decoupling != null ? ((r.decoupling - 1) * 100).toFixed(1) + '%' : '--'}${r.verdict ? ' — ' + r.verdict : ''}`); }
   if (b.secondOpinion) L.push('', '## Against Garmin\'s own numbers', '- ' + (b.secondOpinion.summary || b.secondOpinion.comparisons + ' comparisons'));
   L.push('', '## Recent activities');

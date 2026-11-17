@@ -19,6 +19,7 @@
 // Pure functions. No I/O, no dependencies. Port of weather.py; see
 // test/weather.test.mjs.
 import { daysBetween } from './dt.js';
+import { t } from '../i18n.js';
 
 // Below this, temperature is not what is slowing you down.
 export const NEUTRAL_C = 13.0;
@@ -114,19 +115,19 @@ export function adjust(paceSPerKm, tempC, humidityPct = null, dewPointC = null) 
   return paceSPerKm / (1.0 + penalty(tempC, humidityPct, dewPointC));
 }
 
-// One line on the conditions and what they cost.
+// One line on the conditions and what they cost, in the reader's language.
 export function describe(tempC, humidityPct = null, dewPointC = null) {
   if (tempC == null) return null;
   const cost = penalty(tempC, humidityPct, dewPointC);
   const felt = heatIndexC(tempC, humidityPct);
-  const bits = [_fmt(tempC) + ' C'];
-  if (humidityPct != null) bits.push(_fmt(humidityPct) + '% humidity');
-  if (dewPointC != null) bits.push(_fmt(dewPointC) + ' C dew point');
-  if (felt != null && Math.abs(felt - tempC) >= 1.0) bits.push('feels like ' + _fmt(felt) + ' C');
+  const bits = [t('{n} C', { n: _fmt(tempC) })];
+  if (humidityPct != null) bits.push(t('{n}% humidity', { n: _fmt(humidityPct) }));
+  if (dewPointC != null) bits.push(t('{n} C dew point', { n: _fmt(dewPointC) }));
+  if (felt != null && Math.abs(felt - tempC) >= 1.0) bits.push(t('feels like {n} C', { n: _fmt(felt) }));
 
   const conditions = bits.join(', ');
-  if (cost < 0.005) return conditions + ' -- good conditions, no correction worth making.';
-  return conditions + ' -- worth about ' + _fmt(cost * 100, 1) + '%, so your corrected pace is what matters.';
+  if (cost < 0.005) return t('{conditions} -- good conditions, no correction worth making.', { conditions });
+  return t('{conditions} -- worth about {n}%, so your corrected pace is what matters.', { conditions, n: _fmt(cost * 100, 1) });
 }
 
 // Group runs by how hot they were, to show the effect over a whole year.
@@ -134,9 +135,10 @@ export function describe(tempC, humidityPct = null, dewPointC = null) {
 // `rows` is [[temp_c, pace_s_per_km, humidity, dew_point]]. -> [object] per band,
 // coldest first, with the raw and corrected mean pace in each.
 export function seasonSummary(rows) {
-  const bands = [[-99.0, 5.0, 'Under 5 C'], [5.0, 13.0, '5-13 C'],
-    [13.0, 20.0, '13-20 C'], [20.0, 26.0, '20-26 C'],
-    [26.0, 99.0, 'Over 26 C']];
+  // Labels are only shown, so they are worded when the table is built.
+  const bands = [[-99.0, 5.0, t('Under 5 C')], [5.0, 13.0, t('5-13 C')],
+    [13.0, 20.0, t('13-20 C')], [20.0, 26.0, t('20-26 C')],
+    [26.0, 99.0, t('Over 26 C')]];
   const out = [];
   for (const [lo, hi, label] of bands) {
     const got = rows.filter(r => r && r.length && r[0] != null && r[1] && lo <= r[0] && r[0] < hi);
@@ -221,6 +223,8 @@ export const FULL_EXPOSURE_MIN = 45.0;     // minutes in the heat for a session 
 // Calibrated against the protocol rather than guessed: decay means 14 consecutive
 // hot sessions bank ~8.5 units, not 14, so the top band sits there. Three
 // consecutive hot days bank ~2.8, which should read as "starting", not "none".
+// The band is a key (compared, and a CSS class); a page shows it through t(band).
+// i18n-keys: none | starting | partial | most of the way
 export const ACCLIMATION_BANDS = [[0.5, 'none'], [2.0, 'starting'], [5.0, 'partial'],
   [8.0, 'most of the way']];
 
@@ -232,7 +236,7 @@ export const ACCLIMATION_BANDS = [[0.5, 'none'], [2.0, 'starting'], [5.0, 'parti
 export function heatExposure(runs, today, halfLife = ACCLIMATION_HALF_LIFE) {
   if (!runs || !runs.length) {
     return { sessions: 0.0, recent: 0, band: 'none', hottest_c: null,
-      note: 'No hot running on record recently.' };
+      note: t('No hot running on record recently.') };
   }
 
   let total = 0.0, recent = 0, hottest = null;
@@ -254,18 +258,13 @@ export function heatExposure(runs, today, halfLife = ACCLIMATION_HALF_LIFE) {
 
 function _acclimationNote(band, sessions) {
   if (band === 'none') {
-    return 'Nothing recent in the heat. A hot race would cost you more than ' +
-      'the pace adjustment on this page suggests.';
+    return t('Nothing recent in the heat. A hot race would cost you more than the pace adjustment on this page suggests.');
   }
   if (band === 'starting') {
-    return 'A couple of hot sessions in the bank. The first week of heat ' +
-      'training is where most of the adaptation happens, so this is ' +
-      'the part worth continuing.';
+    return t('A couple of hot sessions in the bank. The first week of heat training is where most of the adaptation happens, so this is the part worth continuing.');
   }
   if (band === 'partial') {
-    return 'Part-adapted: roughly ' + _fmt(sessions) + " sessions' worth of heat exposure " +
-      'still counting. Another week of it would finish the job.';
+    return t("Part-adapted: roughly {n} sessions' worth of heat exposure still counting. Another week of it would finish the job.", { n: _fmt(sessions) });
   }
-  return 'Well heat-adapted on paper -- around ' + _fmt(sessions) + " sessions' worth still in " +
-    'the bank. It fades within a few weeks of stopping.';
+  return t("Well heat-adapted on paper -- around {n} sessions' worth still in the bank. It fades within a few weeks of stopping.", { n: _fmt(sessions) });
 }

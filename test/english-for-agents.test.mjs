@@ -20,6 +20,10 @@ test('the agent-facing files are English even when the reader reads another lang
   try {
     assert.equal(t('Today'), '«Today»', 'the fake dictionary is in force for the reader');
     const now = new Date(2026, 9, 24, 20);
+    // Warm every cache the way a page does, in the reader's language, before the agent's files are built.
+    for (const f of ['readinessToday', 'gaps', 'heatState', 'zoneSummary', 'secondOpinion', 'summary', 'stopTotals', 'calibration']) {
+      try { if (typeof D[f] === 'function') D[f](store.state, f === 'summary' ? now : undefined); } catch { /* signature differs: skip */ }
+    }
     const brief = D.buildBrief(store.state, now);
     const out = { brief, md: D.briefMarkdown(brief), recent: cowork.recentDigest(store.state, now) };
     for (const c of cowork.CHANNELS) out[c.key] = await cowork.channelContext(c.key);

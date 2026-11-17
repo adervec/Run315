@@ -118,7 +118,7 @@ export function render() {
 
     ${runs.length ? html`<section class="panel">
       <div class="panel-head"><p class="eyebrow">${runs[0].name}</p><p class="panel-note">most recent measurable long run</p></div>
-      <p class="verdict">${runs[0].verdict}</p>
+      <p class="verdict">${DU.verdictText(runs[0])}</p>
       ${runs[0].hot && runs[0].temperature_c != null ? html`<p class="stat-hint">It was ${Math.round(runs[0].temperature_c)}°C. Heat
         inflates this number and it has not been corrected for — the paper this
         follows did not correct for it either, and said so.</p>` : ''}

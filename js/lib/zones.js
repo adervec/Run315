@@ -22,6 +22,7 @@
 // A sample is [seconds, metres, hr, lat, lon, elevation_m]; everything after the
 // first two may be missing or null.
 import { dayKey, weekStart, addDayKey } from './dt.js';
+import { t } from '../i18n.js';
 
 // Python 3.12+ sum() of floats is Neumaier-compensated, not a naive running total.
 // Ported tests can hinge on the last bit (exact ties between |r| values), so match it.
@@ -238,36 +239,26 @@ export function polarisation(zoneSeconds) {
     easy, moderate, hard, label, verdict: verdict(label, easy, moderate, hard) };
 }
 
-// Say what the shape means, in the terms a coach would put it in.
+// Say what the shape means, in the terms a coach would put it in. Through t(): the brief
+// asks for it inside english(), a page in the reader's language.
 export function verdict(label, easy, moderate, hard) {
   const e = (easy * 100.0).toFixed(0), m = (moderate * 100.0).toFixed(0), h = (hard * 100.0).toFixed(0);
   if (label === 'polarised') {
-    return `Polarised: ${e}% easy, ${h}% hard, and almost nothing in between. `
-      + 'This is the shape the evidence keeps landing on -- the easy days are '
-      + 'easy enough to recover from, which is what lets the hard days be hard.';
+    return t('Polarised: {e}% easy, {h}% hard, and almost nothing in between. This is the shape the evidence keeps landing on -- the easy days are easy enough to recover from, which is what lets the hard days be hard.', { e, h });
   }
   if (label === 'threshold-heavy') {
-    return `Threshold-heavy: ${m}% of your time sits in the grey zone between `
-      + 'easy and hard. That is the classic mistake -- too hard to recover '
-      + 'from, too easy to force an adaptation. Slow the easy days down and '
-      + 'let the hard days go properly hard.';
+    return t('Threshold-heavy: {m}% of your time sits in the grey zone between easy and hard. That is the classic mistake -- too hard to recover from, too easy to force an adaptation. Slow the easy days down and let the hard days go properly hard.', { m });
   }
   if (label === 'too-hard') {
-    return `Too hard: ${h}% of your time at threshold or above, with only `
-      + `${e}% easy. There is nothing left to recover with. This is the `
-      + 'shape that plateaus first and breaks second.';
+    return t('Too hard: {h}% of your time at threshold or above, with only {e}% easy. There is nothing left to recover with. This is the shape that plateaus first and breaks second.', { h, e });
   }
   if (label === 'pyramidal') {
     if (hard * 100.0 <= 0.0 && moderate * 100.0 <= 0.0) {
-      return 'All of it easy. A fine base, and a fine block to spend a few '
-        + 'weeks in, but there is no stimulus here to make you faster at '
-        + 'the sharp end.';
+      return t('All of it easy. A fine base, and a fine block to spend a few weeks in, but there is no stimulus here to make you faster at the sharp end.');
     }
-    return `Pyramidal: ${e}% easy, tapering through ${m}% moderate to ${h}% `
-      + 'hard. A broad base with a point on it -- blunter than polarised, and '
-      + 'it works, particularly early in a build.';
+    return t('Pyramidal: {e}% easy, tapering through {m}% moderate to {h}% hard. A broad base with a point on it -- blunter than polarised, and it works, particularly early in a build.', { e, m, h });
   }
-  return 'No heart-rate time to judge this on yet.';
+  return t('No heart-rate time to judge this on yet.');
 }
 
 // Treff's polarisation index: one number for the shape. -> number or null.

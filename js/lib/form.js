@@ -30,6 +30,7 @@
 // A sample is [seconds, metres, hr, lat, lon, elevation_m, cadence_spm, stride_m,
 // gct_ms, vert_osc_cm]. Everything after the first two may be null or absent.
 import { pyRound, divmod } from './py.js';
+import { t } from '../i18n.js';
 
 // Python 3.12+ sum() of floats is Neumaier-compensated, not a naive running total.
 // Ported tests can hinge on the last bit (exact ties between |r| values), so match it.
@@ -340,11 +341,12 @@ export function cadenceByPace(samples, buckets = PACE_BUCKETS, minSpeed = RUN_SP
   return out;
 }
 
+// Shown only (assess() and the activity page), so worded in the reader's language.
 function _bucketLabel(lo, hi) {
-  if (lo === null && hi === null) return 'all paces';
-  if (lo === null) return `faster than ${_mmss(hi)} /km`;
-  if (hi === null) return `slower than ${_mmss(lo)} /km`;
-  return `${_mmss(lo)}-${_mmss(hi)} /km`;
+  if (lo === null && hi === null) return t('all paces');
+  if (lo === null) return t('faster than {pace} /km', { pace: _mmss(hi) });
+  if (hi === null) return t('slower than {pace} /km', { pace: _mmss(lo) });
+  return t('{lo}-{hi} /km', { lo: _mmss(lo), hi: _mmss(hi) });
 }
 
 // First half of the running against the second. -> object or null.
@@ -405,7 +407,8 @@ const f0 = x => x.toFixed(0), f1 = x => x.toFixed(1);
 // Python dict truthiness: null and {} are both false.
 const truthy = o => !!o && (typeof o !== 'object' || Object.keys(o).length > 0);
 
-// Turn a summary into plain-English findings. -> [{metric, severity, text}].
+// Turn a summary into plain-language findings, in the reader's language (t()).
+// -> [{metric, severity, text}].
 //
 // Severity is 'good' (nothing to do), 'watch' (worth a session's attention) or
 // 'note' (context, or a number only interesting next to another one).
@@ -424,82 +427,62 @@ export function assess(summary, drift = null, byPace = null) {
 
   const cad = summary.cadence;
   if (truthy(cad)) {
-    const spm = cad.mean;
-    if (spm < CADENCE_LOW) {
+    const spm = f0(cad.mean), mean = cad.mean;
+    if (mean < CADENCE_LOW) {
       add('cadence', 'watch',
-        `Cadence averaged ${f0(spm)} spm. Most runners sit around ${typLo}-${typHi}, and `
-        + 'this far under usually means the foot is landing out in front of '
-        + 'you. That band is guidance rather than a rule -- cadence falls '
-        + 'with height and with how easy the run was.');
-    } else if (spm < CADENCE_TYPICAL[0]) {
+        t('Cadence averaged {spm} spm. Most runners sit around {lo}-{hi}, and this far under usually means the foot is landing out in front of you. That band is guidance rather than a rule -- cadence falls with height and with how easy the run was.', { spm, lo: typLo, hi: typHi }));
+    } else if (mean < CADENCE_TYPICAL[0]) {
       add('cadence', 'note',
-        `Cadence averaged ${f0(spm)} spm, a little under the ${typLo}-${typHi} most `
-        + 'runners settle at. Unremarkable on an easy run; worth a look if '
-        + 'this one was hard.');
-    } else if (spm <= CADENCE_HIGH) {
+        t('Cadence averaged {spm} spm, a little under the {lo}-{hi} most runners settle at. Unremarkable on an easy run; worth a look if this one was hard.', { spm, lo: typLo, hi: typHi }));
+    } else if (mean <= CADENCE_HIGH) {
       add('cadence', 'good',
-        `Cadence averaged ${f0(spm)} spm, inside the ${typLo}-${typHi} range most runners `
-        + 'settle at.');
+        t('Cadence averaged {spm} spm, inside the {lo}-{hi} range most runners settle at.', { spm, lo: typLo, hi: typHi }));
     } else {
       add('cadence', 'note',
-        `Cadence averaged ${f0(spm)} spm, quicker than most. Nothing wrong with `
-        + 'that as long as the stride does not feel cramped.');
+        t('Cadence averaged {spm} spm, quicker than most. Nothing wrong with that as long as the stride does not feel cramped.', { spm }));
     }
   }
 
   const gct = summary.gct_ms;
   if (truthy(gct)) {
-    const ms = gct.mean;
+    const ms = gct.mean, n = f0(gct.mean), good = f0(GCT_GOOD_MS);
     if (ms <= GCT_GOOD_MS) {
       add('gct_ms', 'good',
-        `Ground contact averaged ${f0(ms)} ms, the quick side of the ~${f0(GCT_GOOD_MS)} ms `
-        + 'usually quoted.');
+        t('Ground contact averaged {n} ms, the quick side of the ~{good} ms usually quoted.', { n, good }));
     } else if (ms <= GCT_LONG_MS) {
       add('gct_ms', 'note',
-        `Ground contact averaged ${f0(ms)} ms, a shade over the ~${f0(GCT_GOOD_MS)} ms usually `
-        + 'quoted. It shortens as you speed up, so an easy run reading like '
-        + 'this means little.');
+        t('Ground contact averaged {n} ms, a shade over the ~{good} ms usually quoted. It shortens as you speed up, so an easy run reading like this means little.', { n, good }));
     } else {
       add('gct_ms', 'watch',
-        `Ground contact averaged ${f0(ms)} ms -- a long time on the ground. It `
-        + 'usually travels with a slow cadence, so raise the turnover first '
-        + 'and expect this to follow.');
+        t('Ground contact averaged {n} ms -- a long time on the ground. It usually travels with a slow cadence, so raise the turnover first and expect this to follow.', { n }));
     }
   }
 
   const ratio = summary.vertical_ratio;
   if (ratio != null) {
+    const n = f1(ratio), good = f0(VERTICAL_RATIO_GOOD);
     if (ratio < VERTICAL_RATIO_GOOD) {
       add('vertical_ratio', 'good',
-        `Vertical ratio ${f1(ratio)}%, under the ~${f0(VERTICAL_RATIO_GOOD)}% usually called economical: `
-        + 'the bounce is paying for itself in stride.');
+        t('Vertical ratio {n}%, under the ~{good}% usually called economical: the bounce is paying for itself in stride.', { n, good }));
     } else if (ratio < VERTICAL_RATIO_HIGH) {
       add('vertical_ratio', 'note',
-        `Vertical ratio ${f1(ratio)}%, right around the ~${f0(VERTICAL_RATIO_GOOD)}% mark the usual `
-        + 'guidance sits at -- close enough that your own past runs are a '
-        + 'better yardstick than any published figure.');
+        t('Vertical ratio {n}%, right around the ~{good}% mark the usual guidance sits at -- close enough that your own past runs are a better yardstick than any published figure.', { n, good }));
     } else {
       add('vertical_ratio', 'watch',
-        `Vertical ratio ${f1(ratio)}%: a lot of the work is going up rather than `
-        + 'along. More often a short stride than a high bounce, so check '
-        + 'stride length before trying to run flatter.');
+        t('Vertical ratio {n}%: a lot of the work is going up rather than along. More often a short stride than a high bounce, so check stride length before trying to run flatter.', { n }));
     }
   }
 
   if (truthy(drift)) {
     if (drift.breaking_down) {
-      let text = `Cadence fell ${f1(Math.abs(drift.cadence_pct))}% and ground contact rose `
-        + `${f1(drift.gct_pct)}% between the `
-        + 'first and second half -- the usual signature of form going late '
-        + 'in a run.';
-      if ((drift.pace_pct || 0) > 2.0) {
-        text += ` You also slowed ${f1(drift.pace_pct)}%, which accounts for some of it.`;
-      }
+      const cadence = f1(Math.abs(drift.cadence_pct)), gctPct = f1(drift.gct_pct);
+      const text = (drift.pace_pct || 0) > 2.0
+        ? t('Cadence fell {cadence}% and ground contact rose {gct}% between the first and second half -- the usual signature of form going late in a run. You also slowed {pace}%, which accounts for some of it.', { cadence, gct: gctPct, pace: f1(drift.pace_pct) })
+        : t('Cadence fell {cadence}% and ground contact rose {gct}% between the first and second half -- the usual signature of form going late in a run.', { cadence, gct: gctPct });
       add('drift', 'watch', text);
     } else if (drift.cadence_pct != null || drift.gct_pct != null) {
       add('drift', 'good',
-        'Cadence and ground contact held between the halves of the run: the '
-        + 'form you finished with was the form you started with.');
+        t('Cadence and ground contact held between the halves of the run: the form you finished with was the form you started with.'));
     }
   }
 
@@ -507,31 +490,25 @@ export function assess(summary, drift = null, byPace = null) {
   if (solid.length >= 2) {
     const cadences = solid.map(b => b.cadence);
     const swing = Math.max(...cadences) - Math.min(...cadences);
-    const where = `${solid[solid.length - 1].label} to ${solid[0].label}`;
+    const where = t('{from} to {to}', { from: solid[solid.length - 1].label, to: solid[0].label });
     if (swing >= CADENCE_SWING_SPM) {
       add('cadence_swing', 'watch',
-        `Cadence swings ${f0(swing)} spm across your paces (${where}). A swing that big `
-        + 'normally means the slow running is done with a long reaching '
-        + 'stride rather than a quicker one -- though where a big swing '
-        + 'starts is a rule of thumb, not a measurement.');
+        t('Cadence swings {n} spm across your paces ({where}). A swing that big normally means the slow running is done with a long reaching stride rather than a quicker one -- though where a big swing starts is a rule of thumb, not a measurement.', { n: f0(swing), where }));
     } else {
       add('cadence_swing', 'good',
-        `Cadence moves only ${f0(swing)} spm from your slowest pace to your fastest, `
-        + 'so the gears are coming from stride length. That is what a settled '
-        + 'gait looks like.');
+        t('Cadence moves only {n} spm from your slowest pace to your fastest, so the gears are coming from stride length. That is what a settled gait looks like.', { n: f0(swing) }));
     }
   }
 
   if (summary.cadence_doubled) {
     add('cadence', 'note',
-      'This file reported single-leg cadence; it has been doubled to steps per '
-      + 'minute over both feet so it can be compared with everything else.');
+      t('This file reported single-leg cadence; it has been doubled to steps per minute over both feet so it can be compared with everything else.'));
   }
 
   if ((summary.seconds || 0) < THIN_RUN_S) {
+    const n = f0((summary.seconds || 0) / 60.0);
     add('data', 'note',
-      `Only ${f0((summary.seconds || 0) / 60.0)} minutes of actual running here -- thin enough that the `
-      + 'averages are indicative rather than solid.');
+      t.n('Only {n} minute of actual running here -- thin enough that the averages are indicative rather than solid.', 'Only {n} minutes of actual running here -- thin enough that the averages are indicative rather than solid.', +n, { n }));
   }
 
   return out;

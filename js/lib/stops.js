@@ -18,6 +18,7 @@
 // A sample is [seconds, metres, hr, lat, lon, elevation_m]; everything after the
 // first two may be missing or null.
 import { pyRound } from './py.js';
+import { t } from '../i18n.js';
 
 export const STOP_SPEED = 0.7;           // m/s -- below this you are standing, not running
 export const RUN_SPEED = 2.4;            // m/s -- below this you are not running either (~6:56/km)
@@ -196,6 +197,8 @@ export function findInterruptions(samples, minS = MIN_INTERRUPTION_S) {
 }
 
 // Label one interruption. -> [label, confidence 0-1, plain-English reason].
+// The reason goes through t(): analyse() runs inside english() when it is stored, and
+// reasonText() re-words a stored interruption in the reader's language.
 export function classify(it, junction = false) {
   const hrDrop = it.hr_drop ?? null;
   const grade = it.grade ?? null;
@@ -205,23 +208,23 @@ export function classify(it, junction = false) {
 
   if (it.full_stop) {
     if (junction && secs <= CROSSING_MAX_S * 1.5) {
-      return ['crossing', 0.9, 'Stopped dead where you often stop -- a junction, not a decision.'];
+      return ['crossing', 0.9, t('Stopped dead where you often stop -- a junction, not a decision.')];
     }
     if (secs <= CROSSING_MAX_S && (hrDrop === null || hrDrop <= CROSSING_MAX_HR_DROP)) {
-      return ['crossing', 0.75, 'Short full stop with heart rate barely moving: a road crossing.'];
+      return ['crossing', 0.75, t('Short full stop with heart rate barely moving: a road crossing.')];
     }
     if (secs > CROSSING_MAX_S && (hrDrop === null || hrDrop >= REST_MIN_HR_DROP)) {
-      return ['rest', 0.8, 'Stood still long enough for heart rate to come down: a real break.'];
+      return ['rest', 0.8, t('Stood still long enough for heart rate to come down: a real break.')];
     }
     if (secs > CROSSING_MAX_S) {
-      return ['rest', 0.55, 'A long stop, though heart rate stayed up -- a queue or a chat.'];
+      return ['rest', 0.55, t('A long stop, though heart rate stayed up -- a queue or a chat.')];
     }
-    return ['crossing', 0.5, 'Brief full stop.'];
+    return ['crossing', 0.5, t('Brief full stop.')];
   }
 
   // Still moving, just not running.
   if (grade !== null && grade >= CLIMB_GRADE) {
-    return ['climb', 0.8, `Slowed on a ${(grade * 100).toFixed(0)}% climb -- the hill explains this one.`];
+    return ['climb', 0.8, t('Slowed on a {n}% climb -- the hill explains this one.', { n: (grade * 100).toFixed(0) })];
   }
 
   const hot = it.hr_mean != null && !!it.run_hr && it.hr_mean >= FATIGUE_HR_SHARE * it.run_hr;
@@ -230,16 +233,23 @@ export function classify(it, junction = false) {
 
   if (late && hot && worse) {
     return ['exhaustion', 0.85,
-      'Late, heart rate still high while barely moving, and you never got ' +
-      'the pace back: this was fatigue.'];
+      t('Late, heart rate still high while barely moving, and you never got the pace back: this was fatigue.')];
   }
   if (late && (hot || worse)) {
-    return ['exhaustion', 0.6, 'Late in the run and the pace afterwards was worse -- probably fatigue.'];
+    return ['exhaustion', 0.6, t('Late in the run and the pace afterwards was worse -- probably fatigue.')];
   }
   if (grade !== null && grade <= -CLIMB_GRADE) {
-    return ['eased', 0.6, 'Slow patch on a descent -- most likely terrain underfoot.'];
+    return ['eased', 0.6, t('Slow patch on a descent -- most likely terrain underfoot.')];
   }
-  return ['eased', 0.4, 'Eased off briefly with nothing else to explain it.'];
+  return ['eased', 0.4, t('Eased off briefly with nothing else to explain it.')];
+}
+
+// A stored interruption's reason, worded for the reader. Re-classified from its own numbers;
+// if that no longer lands on the stored label (the rules changed since), the stored English stays.
+export function reasonText(it) {
+  if (!it) return null;
+  const [label, confidence, reason] = classify(it, !!it.junction);
+  return label === it.label && confidence === it.confidence ? reason : (it.reason ?? null);
 }
 
 const cellKey = (lat, lon) => lat + ',' + lon;
@@ -295,16 +305,21 @@ export function analyse(samples, junctions = null) {
   };
 }
 
-const s = n => (n === 1 ? '' : 's');
-
-// One line summing the run up, in the terms a runner would use.
+// One line summing the run up, in the terms a runner would use. Through t(), like classify().
 export function verdict(counts, rows) {
   if (!rows || !rows.length) return null;
   const fatigue = counts.exhaustion || 0;
-  if (fatigue >= 3) return `You came apart in the back half -- ${fatigue} fatigue breaks.`;
-  if (fatigue) return `Mostly held together, with ${fatigue} fatigue break${s(fatigue)} late on.`;
-  if (counts.rest) return `Clean running either side of ${counts.rest} deliberate stop${s(counts.rest)}.`;
-  if (counts.crossing) return `Only traffic broke this one up -- ${counts.crossing} crossing${s(counts.crossing)}, no fade.`;
-  if (counts.climb) return 'The only slow patches were climbs.';
-  return 'A few easy patches, nothing that reads as fatigue.';
+  if (fatigue >= 3) return t.n('You came apart in the back half -- {n} fatigue break.', 'You came apart in the back half -- {n} fatigue breaks.', fatigue);
+  if (fatigue) return t.n('Mostly held together, with {n} fatigue break late on.', 'Mostly held together, with {n} fatigue breaks late on.', fatigue);
+  if (counts.rest) return t.n('Clean running either side of {n} deliberate stop.', 'Clean running either side of {n} deliberate stops.', counts.rest);
+  if (counts.crossing) return t.n('Only traffic broke this one up -- {n} crossing, no fade.', 'Only traffic broke this one up -- {n} crossings, no fade.', counts.crossing);
+  if (counts.climb) return t('The only slow patches were climbs.');
+  return t('A few easy patches, nothing that reads as fatigue.');
+}
+
+// A stored analyse() verdict, worded for the reader, from its counts (core or detail record).
+export function verdictText(s) {
+  if (!s) return null;
+  if (!s.counts || !(s.count > 0)) return s.verdict ?? null;
+  return verdict(s.counts, [s]) ?? s.verdict ?? null;
 }

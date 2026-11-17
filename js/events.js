@@ -13,12 +13,15 @@
 // since anything longer, and trends need a baseline of three weeks of nights.
 //
 // Pure apart from allEvents(), which reads the state through derive.js. Tests:
-// test/events.test.mjs.
+// test/events.test.mjs. Titles and details are only shown (never stored or sent to an agent),
+// so they are worded in the reader's language through t(); changing the language reloads the
+// page, which empties cachedEvents.
 import { DISTANCE_TIERS_KM } from './lib/recap.js';
 import { weekStart, addDayKey, daysBetween, dayKey, isoLocal } from './lib/dt.js';
 import { fmtTime } from './lib/fitness.js';
 import { maxSquare } from './lib/territory.js';
 import { trailKey, DEFAULT_COMPLETE_AT } from './lib/trails.js';
+import { t, fmt } from './i18n.js';
 
 export const MIN_PRIOR_EFFORTS = 3;      // a best beats at least this many earlier efforts
 export const LONGEST_MIN_WEEKS = 6;      // "longest in N weeks" only from six weeks up
@@ -32,13 +35,20 @@ const dayOf = v => iso(v).slice(0, 10);
 const atDay = d => d + 'T12:00:00';
 const chrono = (a, b) => iso(a.start).localeCompare(iso(b.start));
 
-const DIST_NAMES = { 1609: '1 mile', 16093: '10 miles', 21097: 'half marathon', 42195: 'marathon' };
+// Worded when asked for (not at load, when the language is not ready yet).
+const distNames = () => ({ 1609: t('1 mile'), 16093: t('10 miles'), 21097: t('half marathon'), 42195: t('marathon') });
 export function distLabel(m) {
-  const r = Math.round(m);
-  if (DIST_NAMES[r]) return DIST_NAMES[r];
-  return r < 1000 ? r + ' m' : +(r / 1000).toFixed(2) + ' km';
+  const r = Math.round(m), names = distNames();
+  if (names[r]) return names[r];
+  return r < 1000 ? t('{n} m', { n: r }) : t('{n} km', { n: +(r / 1000).toFixed(2) });
 }
-const shortDay = d => { const [y, m, dd] = dayOf(d).split('-'); return `${+dd} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m - 1]} ${y}`; };
+// The reader's date format through font.js; the English fallback (node, the tests) as before.
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const shortDay = d => {
+  const [y, m, dd] = dayOf(d).split('-'), f = fmt();
+  return f ? f.custom(new Date(+y, +m - 1, +dd), { day: 'numeric', month: 'short', year: 'numeric' }) : `${+dd} ${MONTHS_EN[+m - 1]} ${y}`;
+};
+const bigNumber = n => (fmt() ? fmt().number(n) : n.toLocaleString('en-GB'));
 
 // ---- best efforts ----
 // rows: derive.prRows ([distance, seconds, day, activity id]); acts: id -> activity.
@@ -63,13 +73,15 @@ export function bestEffortEvents(rows, acts = {}, noticed = {}) {
     const top = beat[beat.length - 1];   // the longest distance leads the title
     const name = acts[a.id]?.name;
     out.push({ id: 'pr-' + a.id, at: iso(a.start), kind: 'best', noticed: noticed[a.id] || null,
-      title: beat.length === 1 ? `New ${distLabel(top[0])} best: ${fmtTime(top[1])}`
-        : `New bests at ${beat.map(b => distLabel(b[0])).join(', ')}`,
-      detail: (name ? name + ': ' : '') + beat.map(([d, s, b]) => `${distLabel(d)} ${fmtTime(s)}, was ${fmtTime(b.secs)} (${shortDay(b.start)})`).join('; ') + '.',
+      title: beat.length === 1 ? t('New {dist} best: {time}', { dist: distLabel(top[0]), time: fmtTime(top[1]) })
+        : t('New bests at {list}', { list: beat.map(b => distLabel(b[0])).join(', ') }),
+      detail: detailOf(name, beat.map(([d, s, b]) => t('{dist} {time}, was {was} ({day})', { dist: distLabel(d), time: fmtTime(s), was: fmtTime(b.secs), day: shortDay(b.start) })).join('; ')),
       link: '#/activity/' + a.id });
   }
   return out;
 }
+
+const detailOf = (name, list) => (name ? t('{name}: {list}.', { name, list }) : t('{list}.', { list }));
 
 // ---- longest run in N weeks ----
 // runs: [{id, start, distance_m, name}]. Needs five earlier runs, so the first weeks of
@@ -85,11 +97,11 @@ export function longestRunEvents(runs, noticed = {}) {
     const km = (r.distance_m / 1000).toFixed(1);
     if (j < 0 && span >= LONGEST_MIN_WEEKS * 7)
       out.push({ id: 'long-' + r.id, at: iso(r.start), kind: 'longest', noticed: noticed[r.id] || null,
-        title: `Longest run on record: ${km} km`, detail: `Further than anything in the ${Math.floor(span / 7)} weeks this record covers.`, link: '#/activity/' + r.id });
+        title: t('Longest run on record: {km} km', { km }), detail: t('Further than anything in the {n} weeks this record covers.', { n: Math.floor(span / 7) }), link: '#/activity/' + r.id });
     else if (since != null && since >= LONGEST_MIN_WEEKS * 7)
       out.push({ id: 'long-' + r.id, at: iso(r.start), kind: 'longest', noticed: noticed[r.id] || null,
-        title: `Longest run in ${Math.floor(since / 7)} weeks: ${km} km`,
-        detail: `The last one at least this long was ${shortDay(rs[j].start)} (${(rs[j].distance_m / 1000).toFixed(1)} km).`, link: '#/activity/' + r.id });
+        title: t('Longest run in {n} weeks: {km} km', { n: Math.floor(since / 7), km }),
+        detail: t('The last one at least this long was {day} ({km} km).', { day: shortDay(rs[j].start), km: (rs[j].distance_m / 1000).toFixed(1) }), link: '#/activity/' + r.id });
   }
   return out;
 }
@@ -105,7 +117,7 @@ export function streakEvents(runs, noticed = {}) {
     if (!STREAK_MILESTONES.includes(n)) continue;
     const r = firstOfWeek.get(weeks[i]);
     out.push({ id: `streak-${n}-${weeks[i]}`, at: iso(r.start), kind: 'streak', noticed: noticed[r.id] || null,
-      title: `${n} weeks in a row with a run`, detail: `Streak running since the week of ${shortDay(addDayKey(weeks[i], -7 * (n - 1)))}. Counted in weeks, so rest days never break it.`,
+      title: t('{n} weeks in a row with a run', { n }), detail: t('Streak running since the week of {day}. Counted in weeks, so rest days never break it.', { day: shortDay(addDayKey(weeks[i], -7 * (n - 1))) }),
       link: '#/career' });
   }
   return out;
@@ -119,7 +131,7 @@ export function careerEvents(runs, noticed = {}, tiers = DISTANCE_TIERS_KM) {
     km += (r.distance_m || 0) / 1000;
     while (k < tiers.length && km >= tiers[k]) {
       out.push({ id: 'career-' + tiers[k], at: iso(r.start), kind: 'career', noticed: noticed[r.id] || null,
-        title: `${tiers[k].toLocaleString('en-GB')} km on record`, detail: `Crossed on ${r.name || 'a run'}, ${shortDay(r.start)}.`, link: '#/career' });
+        title: t('{km} km on record', { km: bigNumber(tiers[k]) }), detail: t('Crossed on {name}, {day}.', { name: r.name || t('a run'), day: shortDay(r.start) }), link: '#/career' });
       k++;
     }
   }
@@ -140,11 +152,11 @@ export function tileEvents(firstSeen) {
     all.push(...fresh);
     const [n] = maxSquare(all);
     if (i > 0 && fresh.length >= BIG_TILE_DAY)
-      out.push({ id: 'tiles-' + d, at: atDay(d), kind: 'tiles', title: `${fresh.length} new tiles in a day`,
-        detail: `${all.length} claimed in all.`, link: '#/territory' });
+      out.push({ id: 'tiles-' + d, at: atDay(d), kind: 'tiles', title: t('{n} new tiles in a day', { n: fresh.length }),
+        detail: t('{n} claimed in all.', { n: all.length }), link: '#/territory' });
     if (i > 0 && n > sq && n >= 2)
-      out.push({ id: 'square-' + n, at: atDay(d), kind: 'square', title: `Max square grew to ${n}×${n}`,
-        detail: `Up from ${sq}×${sq}.`, link: '#/territory' });
+      out.push({ id: 'square-' + n, at: atDay(d), kind: 'square', title: t('Max square grew to {n}×{n}', { n }),
+        detail: t('Up from {n}×{n}.', { n: sq }), link: '#/territory' });
     sq = Math.max(sq, n);
   });
   return out;
@@ -170,8 +182,8 @@ export function trailEvents(areas, completeAt = DEFAULT_COMPLETE_AT) {
     const before = hit.get(key) || 0, after = before + (nodes || 0), n = total.get(key) || 1;
     hit.set(key, after);
     if (before / n < completeAt && completeAt <= after / n)
-      out.push({ id: 'trail-' + key, at: atDay(d), kind: 'trail', title: `Finished ${names.get(key) || 'a trail'}`,
-        detail: `${Math.round(completeAt * 100)}% of its length covered.`, link: '#/trails' });
+      out.push({ id: 'trail-' + key, at: atDay(d), kind: 'trail', title: t('Finished {name}', { name: names.get(key) || t('a trail') }),
+        detail: t('{n}% of its length covered.', { n: Math.round(completeAt * 100) }), link: '#/trails' });
   }
   return out;
 }
@@ -181,13 +193,21 @@ export function raceEvents(races) {
   const out = [];
   for (const r of Object.values(races || {})) {
     if (!r.actual_s || !r.predicted_s || !(r.actual_s < r.predicted_s)) continue;
-    const goal = r.goal_s ? (r.actual_s <= r.goal_s ? `, goal ${fmtTime(r.goal_s)} met` : `, goal ${fmtTime(r.goal_s)} missed by ${fmtTime(r.actual_s - r.goal_s)}`) : '';
+    const p = { time: fmtTime(r.actual_s), projected: fmtTime(r.predicted_s), goal: r.goal_s ? fmtTime(r.goal_s) : '', by: r.goal_s ? fmtTime(r.actual_s - r.goal_s) : '' };
+    const detail = !r.goal_s ? t('Ran {time} against a projected {projected}.', p)
+      : r.actual_s <= r.goal_s ? t('Ran {time} against a projected {projected}, goal {goal} met.', p)
+        : t('Ran {time} against a projected {projected}, goal {goal} missed by {by}.', p);
     out.push({ id: 'race-' + r.id, at: atDay(r.date), kind: 'race', noticed: r.u || null,
-      title: `${r.name}: beat the projection by ${fmtTime(r.predicted_s - r.actual_s)}`,
-      detail: `Ran ${fmtTime(r.actual_s)} against a projected ${fmtTime(r.predicted_s)}${goal}.`, link: '#/race/' + r.id });
+      title: t('{name}: beat the projection by {by}', { name: r.name, by: fmtTime(r.predicted_s - r.actual_s) }),
+      detail, link: '#/race/' + r.id });
   }
   return out;
 }
+
+// One whole sentence per metric and band, so a translation can order it freely.
+const trendTitle = (metric, band) => (metric === 'hrv_ms'
+  ? (band === 'usual' ? t('HRV back in your usual range') : band === 'high' ? t('HRV above your usual range') : t('HRV below your usual range'))
+  : (band === 'usual' ? t('Resting HR back in your usual range') : band === 'high' ? t('Resting HR above your usual range') : t('Resting HR below your usual range')));
 
 // ---- readiness trends: a week of nights against the nights before it ----
 // rows: [{day, hrv_ms, rhr}] sorted. For each day, the median of the last 7 nights against
@@ -195,7 +215,7 @@ export function raceEvents(races) {
 // is reported once it has held three days, so one bad night is not news.
 export function trendEvents(rows, metric = 'hrv_ms') {
   const v = rows.filter(r => typeof r[metric] === 'number' && r[metric] > 0);
-  const out = [], label = metric === 'hrv_ms' ? 'HRV' : 'Resting HR', unit = metric === 'hrv_ms' ? 'ms' : 'bpm';
+  const out = [], unit = metric === 'hrv_ms' ? 'ms' : 'bpm';
   let state = null, cand = null, held = 0;
   for (let i = 0; i < v.length; i++) {
     const recent = v.slice(Math.max(0, i - 6), i + 1), base = v.slice(Math.max(0, i - 66), Math.max(0, i - 6));
@@ -209,11 +229,11 @@ export function trendEvents(rows, metric = 'hrv_ms') {
     if (band === cand) held++; else { cand = band; held = 1; }
     if (held < TREND_HOLD_DAYS || band === state) continue;
     if (state !== null) {
-      const words = band === 'usual' ? 'back in your usual range' : band === 'high' ? 'above your usual range' : 'below your usual range';
       const good = metric === 'hrv_ms' ? band !== 'low' : band !== 'high';
       out.push({ id: `trend-${metric}-${v[i].day}`, at: atDay(v[i].day), kind: 'trend', noticed: v[i].u || null, good,
-        title: `${label} ${words}`,
-        detail: `7-night median ${m.toFixed(0)} ${unit} against ${bm.toFixed(0)} ± ${sd.toFixed(0)} ${unit} over the ${base.length} nights before. A trend in the numbers, not a diagnosis.`,
+        title: trendTitle(metric, band),
+        detail: t('7-night median {m} {unit} against {mean} ± {sd} {unit} over the {n} nights before. A trend in the numbers, not a diagnosis.',
+          { m: m.toFixed(0), unit, mean: bm.toFixed(0), sd: sd.toFixed(0), n: base.length }),
         link: '#/vitals' });
     }
     state = band;

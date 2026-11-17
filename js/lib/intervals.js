@@ -11,6 +11,7 @@
 // A sample is [seconds, cumulative_metres, hr_or_null] or any longer array whose
 // first three entries are those; extra fields (lat, lon) are ignored.
 import { pyRound, pstdev } from './py.js';
+import { t } from '../i18n.js';
 
 // What counts as a rep. Anything briefer is a traffic light or a GPS wobble.
 export const MIN_REP_S = 18.0;
@@ -296,22 +297,34 @@ export function looksLikeTrack(points) {
 // A one-line name for the session, the way a coach would write it.
 //
 // "8 x 400 m" when the set is uniform, "6 reps, 400-1000 m" when it is not.
+// Through t(): analyse() runs inside english() when the name is stored, and nameText()
+// re-words a stored session in the reader's language.
 export function describe(reps) {
   if (!reps || !reps.length) return null;
+  const n = reps.length;
   const snapped = reps.map(r => r.snapped_m ?? null);
   if (snapped.every(s => s !== null) && new Set(snapped).size === 1) {
-    return `${reps.length} x ${Math.trunc(snapped[0])} m`;
+    return t('{n} x {m} m', { n, m: Math.trunc(snapped[0]) });
   }
   const known = snapped.filter(s => s !== null);
   if (known.length === reps.length && known.length) {
-    return `${reps.length} reps, ${Math.trunc(Math.min(...known))}-${Math.trunc(Math.max(...known))} m`;
+    return t.n('{n} rep, {lo}-{hi} m', '{n} reps, {lo}-{hi} m', n, { lo: Math.trunc(Math.min(...known)), hi: Math.trunc(Math.max(...known)) });
   }
   const lo = Math.min(...reps.map(r => r.distance_m));
   const hi = Math.max(...reps.map(r => r.distance_m));
   if (Math.abs(hi - lo) / Math.max(hi, 1.0) < 0.1) {
-    return `${reps.length} x ~${pyRound((lo + hi) / 2 / 10) * 10} m`;
+    return t('{n} x ~{m} m', { n, m: pyRound((lo + hi) / 2 / 10) * 10 });
   }
-  return `${reps.length} reps, ${pyRound(lo)}-${pyRound(hi)} m`;
+  return t.n('{n} rep, {lo}-{hi} m', '{n} reps, {lo}-{hi} m', n, { lo: pyRound(lo), hi: pyRound(hi) });
+}
+
+// A stored session's name, worded for the reader: from its reps (the detail record), or from
+// the core's count and uniform distance; otherwise the stored English name.
+export function nameText(session) {
+  if (!session) return null;
+  if (session.reps && session.reps.length) return describe(session.reps);
+  if (session.uniform && session.snapped_m && session.count) return t('{n} x {m} m', { n: session.count, m: Math.trunc(session.snapped_m) });
+  return session.name ?? null;
 }
 
 // Full session analysis. -> object, or null when there is no rep structure.

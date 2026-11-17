@@ -46,6 +46,7 @@
 // Pure functions. No I/O, no dependencies beyond racecraft for the grade model.
 // Port of durability.py; see test/durability.test.mjs.
 import * as RC from './racecraft.js';
+import { t } from '../i18n.js';
 
 // The fitting window for critical speed. Shorter efforts are dominated by the
 // anaerobic reserve, longer ones by pacing and fuelling, and both bend the line.
@@ -215,25 +216,29 @@ function _meanIntensity(samples, cs) {
   return (distance / duration) / cs;
 }
 
-// One sentence, in the runner's terms.
+// One sentence, in the runner's terms. Through t(): analyse() runs inside english() when the
+// result is stored, and verdictText() re-words the stored numbers in the reader's language.
 function _verdict(value, intensity) {
-  const percent = (value - 1.0) * 100.0;
+  const n = _fmt0((value - 1.0) * 100.0);
   let head;
   if (value < BAND_LOW) {
-    head = 'Your heart rate held its pace to the end -- ' + _fmt0(percent) + '% drift, which ' +
-      'is the durable end of the range.';
+    head = t('Your heart rate held its pace to the end -- {n}% drift, which is the durable end of the range.', { n });
   } else if (value < BAND_HIGH) {
-    head = _fmt0(percent) + '% drift between the start and the end: the ordinary amount ' +
-      'of fade for a long run.';
+    head = t('{n}% drift between the start and the end: the ordinary amount of fade for a long run.', { n });
   } else {
-    head = _fmt0(percent) + '% drift -- the same pace cost markedly more by the end than ' +
-      'it did at the start.';
+    head = t('{n}% drift -- the same pace cost markedly more by the end than it did at the start.', { n });
   }
   if (intensity && intensity > 0.90) {
-    head += ' You were running at ' + _fmt0(intensity * 100) + '% of critical speed, quicker than a ' +
-      'long run usually goes, so some of this is the pace.';
+    head += ' ' + t('You were running at {n}% of critical speed, quicker than a long run usually goes, so some of this is the pace.',
+      { n: _fmt0(intensity * 100) });
   }
   return head;
+}
+
+// A stored analysis's verdict, worded for the reader (the stored one stays English).
+export function verdictText(d) {
+  if (!d) return null;
+  return d.decoupling != null ? _verdict(d.decoupling, d.intensity) : (d.verdict ?? null);
 }
 
 // Decoupling over one long run. -> object, or null if the run cannot answer.
@@ -290,9 +295,9 @@ export function trend(runs) {
   const late = mean(comparable.slice(comparable.length - half));
   const change = late - early;
   let note;
-  if (change < -0.03) note = 'You are holding together better over distance than you were.';
-  else if (change > 0.03) note = 'You are fading more over distance than you were.';
-  else note = 'Your durability is level across this block.';
+  if (change < -0.03) note = t('You are holding together better over distance than you were.');
+  else if (change > 0.03) note = t('You are fading more over distance than you were.');
+  else note = t('Your durability is level across this block.');
   return {
     runs: comparable.length, early, late, change, note,
     best: Math.min(...comparable.map(([, a]) => a.decoupling)),

@@ -16,6 +16,8 @@ import * as D from '../derive.js';
 import * as F from '../lib/fitness.js';
 import * as FM from '../lib/form.js';
 import * as WX from '../lib/weather.js';
+import * as ST from '../lib/stops.js';
+import * as IV from '../lib/intervals.js';
 import * as S from '../streams.js';
 import { fetchStream, driveOn } from '../drive.js';
 import { journalWidget, mountJournal } from '../journal.js';
@@ -303,7 +305,7 @@ function sessionPanel(session, prescribed, band) {
   const paces = session.reps.map(r => r.pace), slow = Math.max(...paces), fast = Math.min(...paces), span = slow - fast;
   return html`<section class="panel">
     <div class="panel-head">
-      <p class="eyebrow">${t('Session · {name}', { name: session.name })} ${session.on_track ? html`<span class="badge-track">${t('TRACK')}</span>` : ''}</p>
+      <p class="eyebrow">${t('Session · {name}', { name: IV.nameText(session) })} ${session.on_track ? html`<span class="badge-track">${t('TRACK')}</span>` : ''}</p>
       <p class="panel-note"><a class="quiet-link" href="#/sessions">${t('All sessions')}</a></p>
     </div>
     <div class="race-headline" style="margin-bottom:20px">
@@ -387,14 +389,14 @@ function breaksPanel(b) {
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   return html`<section class="panel">
     <div class="panel-head"><p class="eyebrow">${t('Why you stopped')}</p><p class="panel-note">${t('{time} not running', { time: fmtTime(b.lost_s) })}</p></div>
-    ${b.verdict ? html`<p class="verdict">${b.verdict}</p>` : ''}
+    ${b.verdict ? html`<p class="verdict">${ST.verdictText(b)}</p>` : ''}
     <div class="break-counts">${BREAK_KINDS.filter(([k]) => b[k]).map(([k, label, cls]) => html`<span class="break-chip ${cls}">${b[k]} ${t(label)}</span>`)}</div>
     <div class="table-scroll" style="margin-top:16px"><table>
       <thead><tr><th>${t('At')}</th><th>${t('What it was')}</th><th class="num">${t('For')}</th><th class="num">${t('HR')}</th><th class="num">${t('Pace after')}</th><th></th></tr></thead>
       <tbody>${(b.interruptions || []).map(it => html`<tr>
         <td class="dim">${t('{n} km', { n: (it.at_m / 1000).toFixed(2) })}</td>
         <td><span class="break-dot k-${it.label}"></span> <b>${t(cap(it.label))}</b>
-          ${it.junction ? html`<span class="dim"> · ${t('known corner')}</span>` : ''}<br><span class="dim">${it.reason}</span></td>
+          ${it.junction ? html`<span class="dim"> · ${t('known corner')}</span>` : ''}<br><span class="dim">${ST.reasonText(it)}</span></td>
         <td class="num actual">${fmtTime(it.seconds)}</td>
         <td class="num dim">${it.hr_drop != null ? '−' + it.hr_drop.toFixed(0) : '—'}</td>
         <td class="num">${it.penalty != null ? html`<span class="${fade(it.penalty)}">${sgn(it.penalty * 100, 1)}%</span>` : html`<span class="dim">—</span>`}</td>
