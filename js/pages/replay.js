@@ -316,14 +316,14 @@ async function startReplay(root, cleanup) {
   const CH = 6, tails = Array.from({ length: CH }, (_, k) => L.polyline([], { color: colour, weight: 5, opacity: (k + 1) / CH, interactive: false }).addTo(map));
   const dot = L.circleMarker(RP.posAt(tr, 0), { radius: 8, color: token('--surface', '#fff'), weight: 2, fillColor: colour, fillOpacity: 1, interactive: false }).addTo(map);
   const ride = isRide(a);
-  const onFrame = t => {
-    const p = RP.posAt(tr, t), ch = RP.tailChunks(tr, t, RP.TAIL_S, CH);
+  const onFrame = c => {
+    const p = RP.posAt(tr, c), ch = RP.tailChunks(tr, c, RP.TAIL_S, CH);
     dot.setLatLng(p);
     tails.forEach((pl, k) => pl.setLatLngs(ch[k] || []));
     if (u.follow !== false && !map.getBounds().pad(-0.2).contains(p)) map.panTo(p, { animate: false });
   };
-  const onSlow = t => {
-    const r = RP.readout(tr, t);
+  const onSlow = c => {
+    const r = RP.readout(tr, c);
     const speed = r.pace ? (ride ? stat(t('Speed'), (3600 / r.pace).toFixed(1), 'km/h') : stat(t('Pace'), fmtTime(r.pace), '/km')) : stat(ride ? t('Speed') : t('Pace'), '--');
     reads.innerHTML = String(html`${stat(t('Time'), fmtTime(r.t))}${stat(t('Distance'), km(r.d, 2), 'km')}${speed}
       ${tr.hr ? stat(t('Heart rate'), r.hr != null ? Math.round(r.hr) : '--', 'bpm') : ''}
