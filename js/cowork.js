@@ -20,6 +20,7 @@ import { importGarmin, importStrava } from './ingest.js';
 import { queueStream } from './drive.js';
 import { buildBrief, briefMarkdown, deriveAll } from './derive.js';
 import { dayKey } from './lib/dt.js';
+import { english } from './i18n.js';
 import { podContext, importPod } from './pod.js';
 import { reviewContext, importReview, scanRecord } from './datareview.js';
 import { runReviewContext, importRunReview, INSTRUCTIONS as RUN_REVIEW } from './runreview.js';
@@ -103,7 +104,8 @@ async function write(parent, path, content) {
 // and when each source last got new data so a stale folder is visible as stale.
 const STRIP_DERIVED = ['tiles', 'sig', 'p0', 'points', 'splits'];
 const slimDay = r => r && Object.fromEntries(Object.entries(r).filter(([, v]) => !(Array.isArray(v) && v.length > 48)));
-export function recentDigest(st, now = new Date(), days = 42) {
+export const recentDigest = (st, now = new Date(), days = 42) => english(() => recentDigestEn(st, now, days));
+function recentDigestEn(st, now, days) {
   const from = dayKey(new Date(now - days * 864e5)), today = dayKey(now);
   const newest = coll => Object.keys(st[coll] || {}).sort().pop() || null;
   const acts = Object.values(st.activities || {}).filter(a => String(a.start) >= from).sort(byStart);
@@ -170,8 +172,8 @@ export async function channelContext(key) {
     };
   }
   if (key === 'analysis') return { requests: dueRequests() };
-  if (key === 'pod') return podContext(state, new Date());
-  if (key === 'datareview') return reviewContext(state);
+  if (key === 'pod') return english(() => podContext(state, new Date()));
+  if (key === 'datareview') return english(() => reviewContext(state));
   if (key === 'run-review') return runReviewContext(state, new Date());
   // coach: the standing weekly review
   const reviews = Object.values(state.reviews).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));

@@ -5,15 +5,9 @@ import { fmtTime, fmtPace } from './lib/fitness.js';
 import { renderChart } from './charts.js';
 export { fmtTime, fmtPace };
 
-// ---- languages (house standard 20) ----
-// Write English straight into the code: t('Saved {n} runs', { n }), t.n('{n} run', '{n} runs', count).
-// The English is the key; font.js holds the chosen language's dictionary (locales/<lang>.json, machine
-// translated, and the app says so). Without font.js (node tests) the English comes back as written.
-const interp = (s, p) => (p ? String(s).replace(/\{(\w+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(p, k) ? String(p[k]) : m)) : String(s));
-const AF = () => globalThis.appFont;
-export const t = (key, params) => (AF() && AF().t ? AF().t(key, params) : interp(key, params));
-t.n = (one, other, n, params) => (AF() && AF().t && AF().t.n ? AF().t.n(one, other, n, params) : interp(n === 1 ? one : other, { n, ...params }));
-const fmt = () => AF() && AF().fmt;
+// ---- languages (house standard 20): t() lives in js/i18n.js so the analysis modules can use it ----
+import { t, fmt } from './i18n.js';
+export { t };
 
 // ---- templating: html`...` escapes every interpolation unless it is raw() or another html`` ----
 class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }

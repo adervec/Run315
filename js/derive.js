@@ -8,6 +8,7 @@
 //                     state.derived, which syncs. So the phone gets every number without
 //                     ever downloading a stream.
 //   everything else   aggregates state.activities + state.derived, synchronously.
+import { english } from './i18n.js';
 import * as F from './lib/fitness.js';
 import * as Z from './lib/zones.js';
 import * as IV from './lib/intervals.js';
@@ -196,7 +197,8 @@ export async function deriveActivity(st, id, ctx = {}) {
   const lim = ctx.limits || limits(st);
   const temp = st.weather[id]?.temp_c ?? null;
   const hasHr = samples.some(s => s[2]), virtual = isVirtual(a);
-  const d = {
+  // Stored and synced: any wording in it stays English (pages re-word it for the reader).
+  const d = english(() => ({
     v: DERIVE_VERSION,
     efforts: run ? F.bestEffortCurve(td) : {},
     splits: run ? F.kmSplits(td) : [],
@@ -211,11 +213,11 @@ export async function deriveActivity(st, id, ctx = {}) {
     hrf: hasHr ? hrLoadFactor(samples, restingHr(st), lim.hr_max) : null,
     power: PW.isRide(a) && rec.channels?.power_w ? PW.summarise(rec.channels) : null,
     points: pts.length ? thinTrack(pts, 600) : null,   // enough to draw the route without the stream
-  };
+  }));
   if (run && lim.hr_max && lim.cs && (a.distance_m || 0) >= DU.MIN_DISTANCE_M && (a.moving_s || 0) >= DU.MIN_DURATION_S)
-    d.durability = DU.analyse(samples, lim.hr_max, lim.cs, temp);
+    d.durability = english(() => DU.analyse(samples, lim.hr_max, lim.cs, temp));
   // Heart-rate recovery after hard efforts: ~20 bytes synced, so a phone sees the trend too.
-  d.hrr = run && hasHr ? hrrCore(hrRecovery(samples, d.session?.reps)) : null;
+  d.hrr = run && hasHr ? english(() => hrrCore(hrRecovery(samples, d.session?.reps))) : null;
   const [core, detail] = splitDerived(d);
   await putDetailRec(id, detail);
   if (!ctx.getStream) await queueDetail(id).catch(() => {});
@@ -496,7 +498,9 @@ export function gaps(st, now = new Date()) {
 }
 
 // ---- the brief: the app's conclusions, for the cowork folder and the coach ----
-export function buildBrief(st, now = new Date()) {
+// What an AI agent reads is English whatever the reader picked (js/i18n.js).
+export const buildBrief = (st, now = new Date()) => english(() => buildBriefEn(st, now));
+function buildBriefEn(st, now) {
   const s = summary(st, now), today = dayKey(now);
   const cal = calibration(st, now);
   const prs = personalRecords(st);
@@ -540,7 +544,8 @@ export function buildBrief(st, now = new Date()) {
 
 const t = s => F.fmtTime(s), p = (s, m) => F.fmtPace(s, m);
 // The brief as prose an agent (or the coach prompt) reads first -- coach._brief's sections.
-export function briefMarkdown(b) {
+export const briefMarkdown = b => english(() => briefMarkdownEn(b));
+function briefMarkdownEn(b) {
   const L = ['# Run315 — morning brief', '', `Generated ${b.generatedAt}. ${b.counts.activities} activities (${b.counts.runs} runs, ${b.counts.withStreams} with streams), ${b.counts.days} days and ${b.counts.nights} nights of Garmin data, ${b.counts.strava} linked to Strava.`, ''];
   const f = b.fitness;
   L.push('## Training load (TSS-style, exponential averages)');
