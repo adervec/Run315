@@ -14,6 +14,7 @@
 //
 // Pure functions. No I/O, no dependencies. Port of racecraft.py; see
 // test/racecraft.test.mjs.
+import { t } from '../i18n.js';
 
 export const EARTH_R = 6371000.0;
 
@@ -403,22 +404,20 @@ export function postmortem(plan, actual, targetS = null) {
 // One line on how the race was run.
 export function verdict(fade, gapFade, lostS, uphillLossS, hrDrift) {
   if (fade === null || fade === undefined) {
-    return 'Not enough of the race recorded to judge how it was run.';
+    return t('Not enough of the race recorded to judge how it was run.');
   }
   if (fade > 0.06) {
     if (gapFade != null && gapFade < fade - 0.03) {
-      return 'You slowed a long way, but the course did most of it -- on ' +
-        'effort you held together better than the splits suggest.';
+      return t('You slowed a long way, but the course did most of it -- on effort you held together better than the splits suggest.');
     }
     if (hrDrift != null && hrDrift < 3) {
-      return 'Second half ' + _fmt(fade * 100, 0) + '% slower with heart rate flat: the legs went ' +
-        'before the engine did.';
+      return t('Second half {pct}% slower with heart rate flat: the legs went before the engine did.', { pct: _fmt(fade * 100, 0) });
     }
-    return 'Second half ' + _fmt(fade * 100, 0) + '% slower. You went out too hard.';
+    return t('Second half {pct}% slower. You went out too hard.', { pct: _fmt(fade * 100, 0) });
   }
   if (lostS && uphillLossS >= 0.6 * lostS) {
-    return 'Paced it well; almost all the lost time was on the climbs.';
+    return t('Paced it well; almost all the lost time was on the climbs.');
   }
-  if (fade < -0.02) return 'Negative split. Exactly how it is supposed to be done.';
-  return 'Evenly run, start to finish.';
+  if (fade < -0.02) return t('Negative split. Exactly how it is supposed to be done.');
+  return t('Evenly run, start to finish.');
 }

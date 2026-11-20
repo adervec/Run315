@@ -283,8 +283,11 @@ export function journalSignals(jd, minTag = MIN_TAG_DAYS) {
   return { signals: sig, tagCounts: counts, tags };
 }
 
+// signalLabel is the English name kept on a finding; signalText is what Vitals shows.
 export const signalLabel = k => (k === 'rpe_avg' ? 'effort (RPE)' : k === 'feel_avg' ? 'feel' : k === 'session_rpe_load'
   ? 'session RPE load' : k.startsWith('tag_') ? '“' + k.slice(4) + '”' : k);
+export const signalText = k => (k === 'rpe_avg' ? t('effort (RPE)') : k === 'feel_avg' ? t('feel') : k === 'session_rpe_load'
+  ? t('session RPE load') : k.startsWith('tag_') ? t('“{tag}”', { tag: tagText(k.slice(4)) }) : k);
 
 // What the watch measures that the journal might line up with.
 export const WATCH_METRICS = ['hrv_ms', 'rhr', 'sleep_score', 'body_battery_high', 'stress_avg'];
@@ -353,6 +356,9 @@ export function rInterval(r, n) {
 
 // ---- what predicts a good run ----
 export const MIN_FEEL_RUNS = 15;
+// The labels stay English here (data); Vitals shows them through t(label).
+// i18n-keys: HRV the night before | sleep score the night before | sleep length the night before
+// i18n-keys: resting HR that morning | temperature on the run | load over the previous 7 days
 export const PREDICTORS = [
   ['hrv_ms', 'HRV the night before', 'ms'],
   ['sleep_score', 'sleep score the night before', ''],
@@ -390,9 +396,9 @@ export function runPredictors(rows, minRuns = MIN_FEEL_RUNS) {
     if (paired < Math.min(10, minRuns)) continue;
     tests.push({ key, label: lbl, unit, xs, ys, n: paired });
   }
-  const results = tests.map(t => {
-    const r = pearson(t.xs, t.ys), threshold = criticalR(t.n, ALPHA, tests.length);
-    return { key: t.key, label: t.label, unit: t.unit, n: t.n, r, ci: rInterval(r, t.n), threshold,
+  const results = tests.map(ts => {
+    const r = pearson(ts.xs, ts.ys), threshold = criticalR(ts.n, ALPHA, tests.length);
+    return { key: ts.key, label: ts.label, unit: ts.unit, n: ts.n, r, ci: rInterval(r, ts.n), threshold,
       clears: r != null && threshold != null && Math.abs(r) >= threshold };
   });
   return { n, needed: 0, tested: tests.length, results };

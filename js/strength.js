@@ -25,7 +25,10 @@ import { state, save, rev, onChange, idbGet, idbSet } from './store.js';
 import { readAppFile, driveOn } from './drive.js';
 import * as F from './lib/fitness.js';
 import { weekStart } from './lib/dt.js';
-import { html, day, ago, fmtTime } from './ui.js';
+import { html, raw, esc, day, ago, fmtTime } from './ui.js';
+// Reader-visible text only: the pseudo-activities' names ('Strength · quads, glutes') are data
+// that derive.js and the brief read, so they stay English.
+import { t, fmt } from './i18n.js';
 
 export const FILE = 'gymtracker-state.json', CACHE_KEY = 'gymtracker-sessions';
 export const REFRESH_MIN = 15;
@@ -49,15 +52,15 @@ const num = v => { const n = typeof v === 'number' ? v : parseFloat(v); return N
 const sessionKey = s => s.id || 'd:' + s.date;
 // GymTracker's own sessionTs(): the newest of updatedAt / endedAt / date / any set's ts.
 function sessionTs(s) {
-  let t = s.updatedAt || s.endedAt || s.date || '';
-  for (const ex of s.exercises || []) for (const st of ex.sets || []) if (st && st.ts && st.ts > t) t = st.ts;
-  return t;
+  let ts = s.updatedAt || s.endedAt || s.date || '';
+  for (const ex of s.exercises || []) for (const st of ex.sets || []) if (st && st.ts && st.ts > ts) ts = st.ts;
+  return ts;
 }
 // An id that is stable across refreshes and safe in a hash route.
 export function gtId(s) {
   if (s.id) return 'gt' + String(s.id).replace(/[^A-Za-z0-9-]/g, '');
-  const t = Date.parse(s.date);
-  return 'gtd' + (Number.isFinite(t) ? t.toString(36) : String(s.date).replace(/[^A-Za-z0-9]/g, ''));
+  const ms = Date.parse(s.date);
+  return 'gtd' + (Number.isFinite(ms) ? ms.toString(36) : String(s.date).replace(/[^A-Za-z0-9]/g, ''));
 }
 
 // Exercise lookup: built-in variations by uuid prefix, the athlete's custom ones (synced in the
@@ -92,7 +95,7 @@ export function parseGymTracker(file, catalog, now = new Date()) {
   const unit = file.unit === 'kg' ? 'kg' : 'lb';           // GymTracker's default is lb; w is stored in it
   const look = resolver(catalog, file);
   const tombs = new Map();
-  for (const t of file.deletedSessions || []) if (t && t.id && t.deletedAt && !(tombs.get(t.id) > t.deletedAt)) tombs.set(t.id, t.deletedAt);
+  for (const d of file.deletedSessions || []) if (d && d.id && d.deletedAt && !(tombs.get(d.id) > d.deletedAt)) tombs.set(d.id, d.deletedAt);
   // Bodyweight (for bodyweight-mode volume): the newest weigh-in, in the log's unit.
   const bw = (file.bodyComp || []).filter(b => b && num(b.weightKg)).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
   const bwUnit = bw ? (unit === 'kg' ? num(bw.weightKg) : num(bw.weightKg) * LB_PER_KG) : null;
@@ -189,25 +192,32 @@ export const RPE_TO_SESSION = 2, LOAD_PER_RPE_HOUR = 10;
 export function sessionLoad(rec, thrHr = null) {
   const hours = rec.dur_s / 3600;
   const sets = rec.exercises.flatMap(e => e.sets);
-  if (!sets.length || hours <= 0) return { load: 0, method: 'none', confidence: 'none', note: 'No strength sets.' };
+  // `note` is shown on the session page only (toActivities does not keep it).
+  if (!sets.length || hours <= 0) return { load: 0, method: 'none', confidence: 'none', note: t('No strength sets.') };
   const rated = sets.filter(s => s[2] != null);
   if (rated.length >= 3 && rated.length >= 0.3 * sets.length) {
     const mean = rated.reduce((a, s) => a + s[2], 0) / rated.length;
     const srpe = Math.max(1, Math.min(10, mean - RPE_TO_SESSION));
     return { load: hours * LOAD_PER_RPE_HOUR * srpe, method: 'srpe', confidence: 'medium', srpe, set_rpe: mean, rated: rated.length,
-      note: `Session RPE ≈ ${srpe.toFixed(1)} (mean of ${rated.length} logged set RPEs ${mean.toFixed(1)}, minus ${RPE_TO_SESSION} for the rests) × ${Math.round(hours * 60)} min.` };
+      note: t('Session RPE ≈ {srpe} (mean of {n} logged set RPEs {mean}, minus {minus} for the rests) × {min} min.',
+        { srpe: dec(srpe, 1), n: rated.length, mean: dec(mean, 1), minus: RPE_TO_SESSION, min: Math.round(hours * 60) }) };
   }
   if (rec.avg_hr && thrHr) {
     const intensity = Math.max(0.4, Math.min(1.15, rec.avg_hr / thrHr));
     return { load: hours * intensity * intensity * 100, method: 'hr', confidence: 'medium', intensity,
-      note: `Average HR ${Math.round(rec.avg_hr)} against a threshold of ${Math.round(thrHr)} (intensity ${intensity.toFixed(2)}) over ${Math.round(hours * 60)} min, as for a run. Tends to read low for lifting.` };
+      note: t('Average HR {hr} against a threshold of {thr} (intensity {intensity}) over {min} min, as for a run. Tends to read low for lifting.',
+        { hr: Math.round(rec.avg_hr), thr: Math.round(thrHr), intensity: dec(intensity, 2), min: Math.round(hours * 60) }) };
   }
   const est = rec.exercises.flatMap(e => e.est_rpe || e.sets.map(() => 7));
   const mean = est.reduce((a, v) => a + v, 0) / est.length;
   const srpe = Math.max(1, Math.min(10, mean - RPE_TO_SESSION));
   return { load: hours * LOAD_PER_RPE_HOUR * srpe, method: 'volume', confidence: 'low', srpe, set_rpe: mean,
-    note: `No RPE or heart rate: each set's effort guessed from its weight against your best for that lift (mean ≈ RPE ${mean.toFixed(1)}), then as session RPE ${srpe.toFixed(1)} × ${Math.round(hours * 60)} min. A rough guess.` };
+    note: t("No RPE or heart rate: each set's effort guessed from its weight against your best for that lift (mean ≈ RPE {mean}), then as session RPE {srpe} × {min} min. A rough guess.",
+      { mean: dec(mean, 1), srpe: dec(srpe, 1), min: Math.round(hours * 60) }) };
 }
+// Decimals and big numbers in the reader's number format where font.js is there.
+const dec = (v, dp) => (fmt() ? fmt().number(v, { min: dp, max: dp }) : v.toFixed(dp));
+const big = v => (fmt() ? fmt().number(v) : v.toLocaleString());
 
 // Fractional sets per muscle group for one session (GymTracker's bpSessionLoad).
 export function groupSets(rec) {
@@ -300,14 +310,14 @@ export async function loadStrengthCache() {
 
 export async function refreshStrength({ force = false } = {}) {
   if (!strengthEnabled()) return strengthStatus();
-  if (!driveOn()) { _error = 'Google Drive is not connected on this device.'; return strengthStatus(); }
+  if (!driveOn()) { _error = t('Google Drive is not connected on this device.'); return strengthStatus(); }
   if (_busy) return strengthStatus();
   if (!force && _fetchedAt && Date.now() - Date.parse(_fetchedAt) < REFRESH_MIN * 60000) return strengthStatus();
   _busy = true;
   try {
     const file = await readAppFile(FILE);
     _fetchedAt = new Date().toISOString();
-    if (!file) _error = 'No gymtracker-state.json in the Drive app folder yet: connect Google Drive in GymTracker (Data sync) with the same Google account.';
+    if (!file) _error = t('No {file} in the Drive app folder yet: connect Google Drive in GymTracker (Data sync) with the same Google account.', { file: FILE });
     else {
       const catalog = await import('./gtcatalog.js');
       _recs = parseGymTracker(file, catalog);
@@ -337,8 +347,13 @@ if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
 // ---------------------------------------------------------------------------------------
 // html
 // ---------------------------------------------------------------------------------------
+// i18n-keys: session RPE | heart rate | volume (rough)
 const METHOD = { srpe: 'session RPE', hr: 'heart rate', volume: 'volume (rough)', none: '—' };
-const fmtH = h => (h < 1 ? '<1 h' : h < 48 ? Math.round(h) + ' h' : (h / 24).toFixed(1) + ' days');
+export const methodLabel = m => (METHOD[m] && METHOD[m] !== '—' ? t(METHOD[m]) : METHOD[m] || '');
+// GymTracker's muscle groups are keys; worded for the reader.
+// i18n-keys: chest | shoulders | triceps | back | biceps | quads | glutes | hamstrings | calves | core
+const groupLabel = k => t(k);
+const fmtH = h => (h < 1 ? t('<1 h') : h < 48 ? t('{n} h', { n: Math.round(h) }) : t('{n} days', { n: dec(h / 24, 1) }));
 const r0 = v => Math.round(v || 0);
 
 // This week's load from Run315's own cardio and from GymTracker, with the same thresholds.
@@ -351,27 +366,34 @@ export function weekShare(acts, own, now = new Date()) {
   return { cardio, strength, share: cardio + strength > 0 ? strength / (cardio + strength) : 0 };
 }
 
+// A translated sentence with one piece of markup inside it: the placeholder becomes the markup.
+const withMarkup = (s, html_) => raw(esc(s).replace('\u0001', String(html_)));
+
 export function strengthPanel(now = new Date()) {
   if (!strengthEnabled()) return '';
   const acts = strengthActivities();
   if (!acts.length) {
-    return html`<section class="panel"><div class="panel-head"><p class="eyebrow">Strength</p>
+    return html`<section class="panel"><div class="panel-head"><p class="eyebrow">${t('Strength')}</p>
       <p class="panel-note"><a class="quiet-link" href="#/strength">GymTracker</a></p></div>
-      <p class="stat-hint">${_error || (_fetchedAt ? 'No strength sessions in GymTracker yet.' : 'Waiting for the first read of GymTracker’s file.')}</p></section>`;
+      <p class="stat-hint">${_error || (_fetchedAt ? t('No strength sessions in GymTracker yet.') : t('Waiting for the first read of GymTracker’s file.'))}</p></section>`;
   }
   const legs = legsLoaded(acts, now);
   const wk = weekShare(acts, Object.values(state.activities), now);
   const recent = acts.slice().sort((a, b) => b.start.localeCompare(a.start)).slice(0, 3);
+  const loaded = legs && html`<b>${t('Legs loaded {when} ago', { when: fmtH(legs.hours) })}</b>`;
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">Strength</p><p class="panel-note"><a class="quiet-link" href="#/strength">From GymTracker · ${ago(_fetchedAt)}</a></p></div>
+    <div class="panel-head"><p class="eyebrow">${t('Strength')}</p><p class="panel-note"><a class="quiet-link" href="#/strength">${t('From GymTracker · {when}', { when: ago(_fetchedAt) })}</a></p></div>
     <p style="margin-top:0">${legs
-      ? html`<b>Legs loaded ${fmtH(legs.hours)} ago</b> (${legs.legSets.toFixed(0)} leg sets). Heavy leg work can leave easy pace feeling hard and intervals flat for 48–72 h; a quality run may go better after it has passed.`
-      : html`No leg session in the last ${LEGS_WINDOW_H} h.`}</p>
-    <p class="stat-hint">This week: strength ≈ <b>${r0(wk.strength)}</b> of ${r0(wk.cardio + wk.strength)} load (${r0(wk.share * 100)} %). Estimated, ±30–40 %.</p>
+      ? withMarkup(t.n('{loaded} ({n} leg set). Heavy leg work can leave easy pace feeling hard and intervals flat for 48–72 h; a quality run may go better after it has passed.',
+        '{loaded} ({n} leg sets). Heavy leg work can leave easy pace feeling hard and intervals flat for 48–72 h; a quality run may go better after it has passed.',
+        Math.round(legs.legSets), { loaded: '\u0001' }), loaded)
+      : t('No leg session in the last {n} h.', { n: LEGS_WINDOW_H })}</p>
+    <p class="stat-hint">${withMarkup(t('This week: strength ≈ {strength} of {total} load ({share} %). Estimated, ±30–40 %.',
+      { strength: '\u0001', total: r0(wk.cardio + wk.strength), share: r0(wk.share * 100) }), html`<b>${r0(wk.strength)}</b>`)}</p>
     <div class="table-scroll"><table><tbody>${recent.map(a => html`<tr>
       <td class="dim">${day(a.start)}</td>
       <td><a class="quiet-link" href="#/activity/${a.id}">${a.name}</a></td>
-      <td class="num">${a.sets} sets</td><td class="num">${r0(a.load)}${a.load_confidence === 'low' ? '?' : ''}</td></tr>`)}</tbody></table></div>
+      <td class="num">${t.n('{n} set', '{n} sets', a.sets)}</td><td class="num">${r0(a.load)}${a.load_confidence === 'low' ? '?' : ''}</td></tr>`)}</tbody></table></div>
   </section>`;
 }
 
@@ -385,29 +407,33 @@ export function strengthDetail(id) {
   const legs = LEG_GROUPS.reduce((a, k) => a + (groupSets(rec)[k] || 0), 0);
   const assumed = rec.exercises.some(e => e.assumed);
   const fmtSet = (e, [w, r, rpe]) => (e.mode === 't' ? `${fmtTime(r)}${w ? ' @ ' + w : ''}` : e.mode === 'd' ? `${w} × ${r} m`
-    : e.mode === 'b' ? `${w ? (w > 0 ? '+' : '') + w + ' × ' : 'BW × '}${r}` : `${w} × ${r}`) + (rpe != null ? ` @${rpe}` : '');
+    : e.mode === 'b' ? `${w ? (w > 0 ? '+' : '') + w + ' × ' : t('BW') + ' × '}${r}` : `${w} × ${r}`) + (rpe != null ? ` @${rpe}` : '');
   const vol = rec.exercises.reduce((a, e) => a + (e.volume || 0), 0);
+  const dur = rec.dur_src === 'estimate' ? t('{time} (estimated from set count)', { time: fmtTime(rec.dur_s) })
+    : rec.dur_src === 'sets' ? t('{time} (from set times)', { time: fmtTime(rec.dur_s) }) : fmtTime(rec.dur_s);
+  const strava = `<a class="quiet-link" href="#/activity/${esc(act?.shadows || '')}">${esc(t('this activity'))}</a>`;
   return html`<section class="panel">
-    <div class="panel-head"><p class="eyebrow">GymTracker session</p>
-      <p class="panel-note">${fmtTime(rec.dur_s)}${rec.dur_src === 'estimate' ? ' (estimated from set count)' : rec.dur_src === 'sets' ? ' (from set times)' : ''}${rec.avg_hr ? ` · avg HR ${r0(rec.avg_hr)}` : ''}</p></div>
-    ${act ? '' : html`<p class="stat-hint">Not counted in load: ${rec.imported || !rec.exercises.some(e => e.sets.length) ? 'cardio only, Run315 has its own copy.' : 'its Strava activity is already in Run315.'}</p>`}
+    <div class="panel-head"><p class="eyebrow">${t('GymTracker session')}</p>
+      <p class="panel-note">${rec.avg_hr ? t('{duration} · avg HR {hr}', { duration: dur, hr: r0(rec.avg_hr) }) : dur}</p></div>
+    ${act ? '' : html`<p class="stat-hint">${rec.imported || !rec.exercises.some(e => e.sets.length)
+      ? t('Not counted in load: cardio only, Run315 has its own copy.') : t('Not counted in load: its Strava activity is already in Run315.')}</p>`}
     <div class="table-scroll"><table>
-      <thead><tr><th>Exercise</th><th>Sets (${rec.unit})</th><th class="num">Volume</th></tr></thead>
+      <thead><tr><th>${t('Exercise')}</th><th>${t('Sets ({unit})', { unit: rec.unit })}</th><th class="num">${t('Volume')}</th></tr></thead>
       <tbody>${rec.exercises.map(e => html`<tr>
         <td>${e.name}${e.family && e.family !== e.name ? html`<span class="dim"> · ${e.family}</span>` : ''}</td>
-        <td>${e.cardio ? `${r0(e.minutes)} min${e.distance ? ` · ${e.distance} ${e.distance_unit || ''}` : ''}` : e.sets.map(s => fmtSet(e, s)).join(', ')}</td>
-        <td class="num">${e.volume ? e.volume.toLocaleString() : '--'}</td></tr>`)}</tbody>
-      <tfoot><tr><td>Total</td><td>${rec.exercises.reduce((n, e) => n + e.sets.length, 0)} sets</td><td class="num">${vol.toLocaleString()} ${rec.unit}</td></tr></tfoot>
+        <td>${e.cardio ? `${t('{n} min', { n: r0(e.minutes) })}${e.distance ? ` · ${e.distance} ${e.distance_unit || ''}` : ''}` : e.sets.map(s => fmtSet(e, s)).join(', ')}</td>
+        <td class="num">${e.volume ? big(e.volume) : '--'}</td></tr>`)}</tbody>
+      <tfoot><tr><td>${t('Total')}</td><td>${t.n('{n} set', '{n} sets', rec.exercises.reduce((n, e) => n + e.sets.length, 0))}</td><td class="num">${big(vol)} ${rec.unit}</td></tr></tfoot>
     </table></div>
     <div class="grid-2" style="margin-top:14px">
       <div><div class="stat"><div class="stat-value">${r0(L.load)}</div>
-        <div class="stat-label">Estimated load · ${METHOD[L.method]}</div>
-        <div class="stat-hint">${L.note} ${L.confidence === 'low' ? 'Low confidence.' : 'About ±30–40 %.'} Same scale as a run's load (an hour at threshold = 100).</div></div></div>
-      <div><div class="stat"><div class="stat-value">${legs.toFixed(1)}</div><div class="stat-label">Leg sets</div>
-        <div class="stat-hint">${g.length ? g.map(([k, v]) => `${k} ${v.toFixed(1)}`).join(' · ') : 'No muscle groups known for these exercises.'}
-          Fractional sets, as GymTracker splits each exercise over muscles.${assumed ? ' Full-body moves (cleans, carries, swings, jumps) are counted as part leg work: Run315’s assumption.' : ''}</div></div></div>
+        <div class="stat-label">${t('Estimated load · {method}', { method: methodLabel(L.method) })}</div>
+        <div class="stat-hint">${L.note} ${L.confidence === 'low' ? t('Low confidence.') : t('About ±30–40 %.')} ${t("Same scale as a run's load (an hour at threshold = 100).")}</div></div></div>
+      <div><div class="stat"><div class="stat-value">${dec(legs, 1)}</div><div class="stat-label">${t('Leg sets')}</div>
+        <div class="stat-hint">${g.length ? g.map(([k, v]) => `${groupLabel(k)} ${dec(v, 1)}`).join(' · ') : t('No muscle groups known for these exercises.')}
+          ${t('Fractional sets, as GymTracker splits each exercise over muscles.')}${assumed ? ' ' + t('Full-body moves (cleans, carries, swings, jumps) are counted as part leg work: Run315’s assumption.') : ''}</div></div></div>
     </div>
-    ${act && act.shadows ? html`<p class="stat-hint">Also in Run315 from Strava as <a class="quiet-link" href="#/activity/${act.shadows}">this activity</a>; only this one counts.</p>` : ''}
+    ${act && act.shadows ? html`<p class="stat-hint">${withMarkup(t('Also in Run315 from Strava as {link}; only this one counts.', { link: '\u0001' }), strava)}</p>` : ''}
     ${rec.notes ? html`<p class="stat-hint">${rec.notes}</p>` : ''}
   </section>`;
 }

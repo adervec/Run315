@@ -24,6 +24,7 @@
 // Pure functions. No I/O, no dependencies. `today` is a 'YYYY-MM-DD' day key;
 // activity `start` is a Date (a day key also works). See test/recap.test.mjs.
 import { dayKey, daysBetween, weekStart, addDayKey } from './dt.js';
+import { t } from '../i18n.js';
 
 // Career milestones. Distance in kilometres, races as a count -- both chosen to
 // be reachable rather than aspirational, which is the point of a ladder.
@@ -184,9 +185,9 @@ export function compareYears(rows, year) {
 
 function _yearNote(change) {
   const percent = (Math.abs(change) * 100.0).toFixed(0);
-  if (change > 0.10) return `${percent}% more running than the year before.`;
-  if (change < -0.10) return `${percent}% less running than the year before.`;
-  return 'About the same as the year before.';
+  if (change > 0.10) return t('{pct}% more running than the year before.', { pct: percent });
+  if (change < -0.10) return t('{pct}% less running than the year before.', { pct: percent });
+  return t('About the same as the year before.');
 }
 
 // This year so far against the same span of last year. -> object|null.
@@ -216,8 +217,7 @@ export function partialYearCompare(activities, year, today = null) {
   // useless.
   const thin = before < now * THIN_BASELINE;
   const note = thin
-    ? "Last year's record does not go back far enough to compare against " +
-      '-- this is effectively your first full year.'
+    ? t("Last year's record does not go back far enough to compare against -- this is effectively your first full year.")
     : _yearNote(change);
   return { so_far_m: now, same_point_last_year_m: before, change, day_of_year: cutoff,
     thin_baseline: thin, note };

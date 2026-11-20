@@ -35,6 +35,7 @@
 // Pure functions. No I/O, no dependencies. Port of fuelling.py; see
 // test/fuelling.test.mjs.
 import { pyRound } from './py.js';
+import { t } from '../i18n.js';
 
 // Carbohydrate, grams per hour, by how long you will be out there.
 // [duration_hours_at_least, low, high, note_key]
@@ -86,19 +87,16 @@ export function carbTarget(durationS) {
 function _carbNote(key, low, high) {
   const d = Math.trunc;   // '%d'
   if (key === 'none') {
-    return 'Short enough that stored glycogen covers it. Carrying anything is optional.';
+    return t('Short enough that stored glycogen covers it. Carrying anything is optional.');
   }
   if (key === 'rinse') {
-    return 'Around this length a carbohydrate mouth rinse works about as ' +
-      'well as swallowing one -- the effect is on the brain, not the gut.';
+    return t('Around this length a carbohydrate mouth rinse works about as well as swallowing one -- the effect is on the brain, not the gut.');
   }
   if (key === 'standard') {
-    return `${d(low)}-${d(high)} g of carbohydrate an hour. A single sugar is fine at this ` +
-      'rate; the gut absorbs it without help.';
+    return t('{low}-{high} g of carbohydrate an hour. A single sugar is fine at this rate; the gut absorbs it without help.', { low: d(low), high: d(high) });
   }
-  return `${d(low)}-${d(high)} g an hour, and above ${SINGLE_SUGAR_CEILING} g it has to be a glucose-and-fructose ` +
-    `mix, roughly 2:1. Glucose transport saturates near ${SINGLE_SUGAR_CEILING} g/h, so ` +
-    'taking more of a single-sugar gel mostly leaves it in your stomach.';
+  return t('{low}-{high} g an hour, and above {ceiling} g it has to be a glucose-and-fructose mix, roughly 2:1. Glucose transport saturates near {ceiling} g/h, so taking more of a single-sugar gel mostly leaves it in your stomach.',
+    { low: d(low), high: d(high), ceiling: SINGLE_SUGAR_CEILING });
 }
 
 // Fluid per hour, as a range. -> object|null.
@@ -114,10 +112,7 @@ export function fluidTarget(durationS, tempC = null) {
     per_hour_low: low, per_hour_high: high,
     total_low: low * hours, total_high: high * hours,
     hot,
-    note: 'Drink to thirst inside this range rather than to a schedule. ' +
-      'Overdrinking dilutes your blood sodium, which is more ' +
-      'dangerous than mild dehydration and does put runners in ' +
-      'hospital every year.',
+    note: t('Drink to thirst inside this range rather than to a schedule. Overdrinking dilutes your blood sodium, which is more dangerous than mild dehydration and does put runners in hospital every year.'),
   };
 }
 
@@ -131,9 +126,7 @@ export function sodiumTarget(durationS, tempC = null) {
     per_litre_high: SODIUM_PER_LITRE[1],
     total_low: SODIUM_PER_LITRE[0] * fluid.total_low / 1000.0,
     total_high: SODIUM_PER_LITRE[1] * fluid.total_high / 1000.0,
-    note: 'Most sports drinks land in this range already. It matters ' +
-      'more the longer and hotter the race, and more again if you ' +
-      'finish races with salt on your face.',
+    note: t('Most sports drinks land in this range already. It matters more the longer and hotter the race, and more again if you finish races with salt on your face.'),
   };
 }
 
@@ -143,10 +136,7 @@ export function loading(durationS, weightKg = null) {
   const [low, high] = LOADING_G_PER_KG;
   const out = {
     g_per_kg_low: low, g_per_kg_high: high, days: 2,
-    note: 'For a race this long, 36-48 hours of high-carbohydrate ' +
-      'eating beforehand measurably helps. It is about eating ' +
-      'more carbohydrate, not more food -- and the training taper ' +
-      'is what makes room for it.',
+    note: t('For a race this long, 36-48 hours of high-carbohydrate eating beforehand measurably helps. It is about eating more carbohydrate, not more food -- and the training taper is what makes room for it.'),
   };
   if (weightKg) {
     out.grams_low = low * weightKg;

@@ -14,6 +14,7 @@
 // τ2 alone and the one cross term, which is what keeps 200 bootstrap refits under a second
 // on eight years of days. Pure: no DOM, no store.
 import { daysBetween, addDayKey } from './dt.js';
+import { t } from '../i18n.js';
 
 export const TAU1 = [20, 60], TAU2 = [3, 20];
 export const MIN_GAP = 2;                 // τ1 − τ2: equal constants make the two terms one column
@@ -270,21 +271,23 @@ export function plans(daysOut, load, n, f) {
 // daily: {day: load}; perfs: performances(); -> the model, or {ok: false, reason, ...}.
 export function fitModel(daily, perfs, today, { boot = BOOT_N, seed = 315 } = {}) {
   const series = loadSeries(daily, today);
-  if (!series) return { ok: false, reason: 'No training load recorded yet.', n: 0 };
+  if (!series) return { ok: false, reason: t('No training load recorded yet.'), n: 0 };
   const warm = addDayKey(series.start, WARMUP_DAYS);
   const use = perfs.filter(q => q.day >= warm && q.day <= today);
   if (use.length < MIN_PERFORMANCES) {
     return { ok: false, n: use.length, series, perfs: use,
-      reason: `Only ${use.length} usable performance${use.length === 1 ? '' : 's'} (races, and hard best efforts after the first ${WARMUP_DAYS} days of the record); the model has five parameters and needs at least ${MIN_PERFORMANCES} to say anything.` };
+      reason: t.n('Only {n} usable performance (races, and hard best efforts after the first {warmup} days of the record); the model has five parameters and needs at least {min} to say anything.',
+        'Only {n} usable performances (races, and hard best efforts after the first {warmup} days of the record); the model has five parameters and needs at least {min} to say anything.',
+        use.length, { warmup: WARMUP_DAYS, min: MIN_PERFORMANCES }) };
   }
   const idx = use.map(q => series.index(q.day)), w = Float64Array.from(use, q => q.w), p = Float64Array.from(use, q => q.p);
 
   // 1. grid, fine enough for the main fit
   const t1s = range(TAU1[0], TAU1[1], 1), t2s = range(TAU2[0], TAU2[1], 0.5);
-  const G1full = t1s.map(t => impulse(series.loads, t)), G2full = t2s.map(t => impulse(series.loads, t));
+  const G1full = t1s.map(tau => impulse(series.loads, tau)), G2full = t2s.map(tau => impulse(series.loads, tau));
   const G1 = G1full.map(g => at(g, idx)), G2 = G2full.map(g => at(g, idx));
   const top = gridSearch(t1s, t2s, G1, G2, w, p, 3);
-  if (!top.length) return { ok: false, n: use.length, series, perfs: use, reason: 'The fit could not be solved (the load history is too flat to separate fitness from fatigue).' };
+  if (!top.length) return { ok: false, n: use.length, series, perfs: use, reason: t('The fit could not be solved (the load history is too flat to separate fitness from fatigue).') };
 
   // 2. refine from the best three cells
   const base = baseSums(w, p);
@@ -341,16 +344,16 @@ export function fitModel(daily, perfs, today, { boot = BOOT_N, seed = 315 } = {}
 
   // 5. what to warn about
   const warnings = [];
-  if (n < 25) warnings.push(`Only ${n} performances: treat every number here as a rough first estimate.`);
-  if (best.bound) warnings.push(best.k1 === 0 ? 'The best fit puts no weight on fitness (k1 = 0): the load history does not explain these performances.'
-    : 'The best fit puts no weight on fatigue (k2 = 0): the performances do not show a cost of recent load, so taper advice is weak.');
-  if (Math.abs(corr) > 0.99) warnings.push('Fitness and fatigue move almost together in this history (correlation ' + corr.toFixed(3) + '), so k1 and k2 are poorly separated.');
-  if (best.tau1 <= TAU1[0] + 0.5 || best.tau1 >= TAU1[1] - 0.5) warnings.push(`τ1 sits on its bound (${TAU1.join('–')} days): the data would like it outside the plausible range.`);
-  if (best.tau2 <= TAU2[0] + 0.25 || best.tau2 >= TAU2[1] - 0.25) warnings.push(`τ2 sits on its bound (${TAU2.join('–')} days).`);
-  if (ci.tau1[1] - ci.tau1[0] > 25) warnings.push('τ1 is poorly determined: resampling the performances moves it across most of its range.');
-  if (r2 < 0.1) warnings.push(`The model explains little of the variation (R² ${r2.toFixed(2)}): day-to-day noise and things load cannot see (terrain, heat, pacing) dominate.`);
-  if (!(best.k2 > best.k1)) warnings.push('k2 ≤ k1, unusual (fatigue per unit load is normally larger than fitness): a bout never costs form, even the day after.');
-  if (sets.filter(s => s.bound).length > boot * 0.3) warnings.push('In many resamples a k hits zero: the split between fitness and fatigue is fragile.');
+  if (n < 25) warnings.push(t('Only {n} performances: treat every number here as a rough first estimate.', { n }));
+  if (best.bound) warnings.push(best.k1 === 0 ? t('The best fit puts no weight on fitness (k1 = 0): the load history does not explain these performances.')
+    : t('The best fit puts no weight on fatigue (k2 = 0): the performances do not show a cost of recent load, so taper advice is weak.'));
+  if (Math.abs(corr) > 0.99) warnings.push(t('Fitness and fatigue move almost together in this history (correlation {r}), so k1 and k2 are poorly separated.', { r: corr.toFixed(3) }));
+  if (best.tau1 <= TAU1[0] + 0.5 || best.tau1 >= TAU1[1] - 0.5) warnings.push(t('τ1 sits on its bound ({range} days): the data would like it outside the plausible range.', { range: TAU1.join('–') }));
+  if (best.tau2 <= TAU2[0] + 0.25 || best.tau2 >= TAU2[1] - 0.25) warnings.push(t('τ2 sits on its bound ({range} days).', { range: TAU2.join('–') }));
+  if (ci.tau1[1] - ci.tau1[0] > 25) warnings.push(t('τ1 is poorly determined: resampling the performances moves it across most of its range.'));
+  if (r2 < 0.1) warnings.push(t('The model explains little of the variation (R² {r2}): day-to-day noise and things load cannot see (terrain, heat, pacing) dominate.', { r2: r2.toFixed(2) }));
+  if (!(best.k2 > best.k1)) warnings.push(t('k2 ≤ k1, unusual (fatigue per unit load is normally larger than fitness): a bout never costs form, even the day after.'));
+  if (sets.filter(s => s.bound).length > boot * 0.3) warnings.push(t('In many resamples a k hits zero: the split between fitness and fatigue is fragile.'));
 
   return {
     ok: true, n, n_races: use.filter(q => q.kind === 'race').length, series, perfs: use, fitted, resid,

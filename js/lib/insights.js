@@ -18,6 +18,7 @@ import { costRatio, haversine } from './racecraft.js';
 import { adjust as heatAdjust } from './weather.js';
 import { medianCI } from './efficiency.js';
 import { addDayKey as addDay } from './dt.js';
+import { t } from '../i18n.js';
 
 export { medianCI };
 export const median = xs => {
@@ -359,8 +360,8 @@ export function formByYear(rows, { minSecs = 300, maxBands = 4 } = {}) {
   let flag = null;
   if (balance.length) {
     const lastB = balance[balance.length - 1][1], firstB = balance[0][1];
-    if (Math.abs(lastB - 50) >= 1.5) flag = `${lastB.toFixed(1)}% left in ${balance[balance.length - 1][0]}: ${Math.abs(lastB - 50).toFixed(1)} points off even`;
-    else if (balance.length >= 2 && Math.abs(lastB - firstB) >= 1.0) flag = `moved ${Math.abs(lastB - firstB).toFixed(1)} points since ${balance[0][0]}`;
+    if (Math.abs(lastB - 50) >= 1.5) flag = t('{pct}% left in {year}: {d} points off even', { pct: lastB.toFixed(1), year: balance[balance.length - 1][0], d: Math.abs(lastB - 50).toFixed(1) });
+    else if (balance.length >= 2 && Math.abs(lastB - firstB) >= 1.0) flag = t('moved {d} points since {year}', { d: Math.abs(lastB - firstB).toFixed(1), year: balance[0][0] });
   }
   return { years, bands, series, balance, flag };
 }

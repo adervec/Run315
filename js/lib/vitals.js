@@ -38,15 +38,16 @@
 // {day: load}.
 import { normInv } from './py.js';
 import { addDayKey } from './dt.js';
+import { t } from '../i18n.js';
 
 // Python 3.12+ sum() of floats is Neumaier-compensated, not a naive running total.
 // Ported tests can hinge on the last bit (exact ties between |r| values), so match it.
 function pySum(xs) {
   let s = 0.0, c = 0.0;
   for (const x of xs) {
-    const t = s + x;
-    c += Math.abs(s) >= Math.abs(x) ? (s - t) + x : (x - t) + s;
-    s = t;
+    const sum = s + x;
+    c += Math.abs(s) >= Math.abs(x) ? (s - sum) + x : (x - sum) + s;
+    s = sum;
   }
   return c && Number.isFinite(c) ? s + c : s;
 }
@@ -76,7 +77,12 @@ export const MECHANICAL = new Set(['calories_total', 'calories_active', 'intensi
 export const HIGHER_IS_WORSE = new Set(['stress_avg', 'stress_max', 'avg_stress', 'restless_count',
   'awake_s', 'body_fat_pct', 'fitness_age', 'respiration_avg']);
 
-// Human names, because "spo2_low" on a page is a failure of nerve.
+// Human names, because "spo2_low" on a page is a failure of nerve. They stay English on the
+// findings (`label`); a page shows them through t(label).
+// i18n-keys: daily steps | floors climbed | average stress | peak stress | body battery peak | body battery low point
+// i18n-keys: blood oxygen | lowest blood oxygen | breathing rate | intensity minutes | vigorous minutes | body mass
+// i18n-keys: body fat | Garmin readiness | total calories | active calories | fitness age | deep sleep | light sleep
+// i18n-keys: REM sleep | time awake | restlessness | overnight stress | HRV | resting heart rate | sleep length | sleep score
 export const LABELS = {
   steps: 'daily steps', floors: 'floors climbed',
   stress_avg: 'average stress', stress_max: 'peak stress',
@@ -205,20 +211,25 @@ function _metricNames(daily) {
 // Python's "%+.2f".
 const signed2 = x => (x < 0 || Object.is(x, -0) ? '' : '+') + x.toFixed(2);
 
+// The notes are only shown on Vitals (nothing an agent reads carries them), so they come
+// through t() as whole sentences: the reader's language on the page, English in the tests.
 function _findingNote(name, lag, r) {
-  const direction = r > 0 ? 'rises' : 'falls';
-  const when = { 0: 'on a hard day itself', 1: 'the day after a hard day',
-    2: 'two days after a hard day' }[lag] ?? 'about a week after a hard day';
-  const worse = (r > 0) === HIGHER_IS_WORSE.has(name);
-  let tail = worse ? ' That is the direction that costs you.' : ' That is the direction you would hope for.';
+  const p = { metric: t(label(name)), r: signed2(r) }, up = r > 0;
+  const first = lag === 0
+    ? (up ? t('Your {metric} rises on a hard day itself (r = {r}).', p) : t('Your {metric} falls on a hard day itself (r = {r}).', p))
+    : lag === 1
+      ? (up ? t('Your {metric} rises the day after a hard day (r = {r}).', p) : t('Your {metric} falls the day after a hard day (r = {r}).', p))
+      : lag === 2
+        ? (up ? t('Your {metric} rises two days after a hard day (r = {r}).', p) : t('Your {metric} falls two days after a hard day (r = {r}).', p))
+        : (up ? t('Your {metric} rises about a week after a hard day (r = {r}).', p) : t('Your {metric} falls about a week after a hard day (r = {r}).', p));
+  const worse = up === HIGHER_IS_WORSE.has(name);
+  let tail = ' ' + (worse ? t('That is the direction that costs you.') : t('That is the direction you would hope for.'));
   if (lag >= 7) {
     // Training is weekly, so a seven-day lag is nearly the same phase as no
     // lag at all. Saying so is more useful than pretending otherwise.
-    tail += ' Careful with this one: training runs on a weekly rhythm, so a '
-      + 'seven-day lag lands on almost the same phase as no lag, and the '
-      + 'two are hard to tell apart.';
+    tail += ' ' + t('Careful with this one: training runs on a weekly rhythm, so a seven-day lag lands on almost the same phase as no lag, and the two are hard to tell apart.');
   }
-  return `Your ${label(name)} ${direction} ${when} (r = ${signed2(r)}).${tail}`;
+  return first + tail;
 }
 
 // How the night is built, against the usual adult proportions. -> object|null.
@@ -250,19 +261,21 @@ export function sleepArchitecture(daily) {
 }
 
 function _sleepNote(deep, rem) {
-  const parts = [];
-  if (deep < 0.13) parts.push('less deep sleep than the usual adult range');
-  else if (deep > 0.23) parts.push('more deep sleep than the usual adult range');
-  if (rem < 0.20) parts.push('less REM than typical');
-  else if (rem > 0.25) parts.push('more REM than typical');
-  if (!parts.length) {
-    return 'Your nights are built in roughly the usual adult proportions. '
-      + 'Sleep staging from a wrist device is an estimate, so read this '
-      + 'as a shape rather than a measurement.';
+  const d = deep < 0.13 ? 'less' : deep > 0.23 ? 'more' : '', m = rem < 0.20 ? 'less' : rem > 0.25 ? 'more' : '';
+  if (!d && !m) {
+    return t('Your nights are built in roughly the usual adult proportions. Sleep staging from a wrist device is an estimate, so read this as a shape rather than a measurement.');
   }
-  return `Your nights show ${parts.join(' and ')}. Wrist-based sleep staging is an estimate and `
-    + 'disagrees with a sleep lab often enough that this is worth watching '
-    + 'for a trend, not acting on from one week.';
+  const first = {
+    'less|': () => t('Your nights show less deep sleep than the usual adult range.'),
+    'more|': () => t('Your nights show more deep sleep than the usual adult range.'),
+    '|less': () => t('Your nights show less REM than typical.'),
+    '|more': () => t('Your nights show more REM than typical.'),
+    'less|less': () => t('Your nights show less deep sleep than the usual adult range and less REM than typical.'),
+    'less|more': () => t('Your nights show less deep sleep than the usual adult range and more REM than typical.'),
+    'more|less': () => t('Your nights show more deep sleep than the usual adult range and less REM than typical.'),
+    'more|more': () => t('Your nights show more deep sleep than the usual adult range and more REM than typical.'),
+  }[d + '|' + m]();
+  return first + ' ' + t('Wrist-based sleep staging is an estimate and disagrees with a sleep lab often enough that this is worth watching for a trend, not acting on from one week.');
 }
 
 // Where a metric is heading. -> object|null.

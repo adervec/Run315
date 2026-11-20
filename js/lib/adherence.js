@@ -25,6 +25,7 @@
 // Pure functions. No I/O, no dependencies. Dates are 'YYYY-MM-DD' day keys;
 // activity `start` may be a Date or a day key. See test/adherence.test.mjs.
 import { dayKey, addDayKey, daysBetween, weekStart } from './dt.js';
+import { t, english } from '../i18n.js';
 
 // How far off a week's target still counts as having done it. Training is not
 // surgery, and a plan hit to within a tenth is a plan followed.
@@ -130,7 +131,7 @@ export function review(plan, activities, startDate, today = null) {
     long_runs_done: longRuns.filter(r => r.long_done).length,
     long_runs_planned: longRuns.length,
     drift: _drift(rows),
-    note: _note(rows, actualTotal, plannedTotal),
+    note: english(() => _note(rows, actualTotal, plannedTotal)),   // English: pod.js hands it to the agent
   };
 }
 
@@ -147,40 +148,39 @@ function _drift(rows) {
 // The sentence worth reading, which depends on the direction.
 function _note(rows, actualTotal, plannedTotal) {
   if (rows.length < MIN_WEEKS) {
-    return 'Too early in the block to see a pattern -- one week either way ' +
-      'is just a week.';
+    return t('Too early in the block to see a pattern -- one week either way is just a week.');
   }
   const drift = _drift(rows);
   const share = plannedTotal ? actualTotal / plannedTotal : 1.0;
   const pct = (share * 100).toFixed(0);
 
   if (drift === 'under') {
-    return `You are running ${pct}% of what the plan asks, most weeks. That ` +
-      'is worth taking seriously in the other direction: the race ' +
-      'projections assume the training in the plan, so either the plan ' +
-      'needs to come down to meet you, or they are optimistic.';
+    return t('You are running {pct}% of what the plan asks, most weeks. That is worth taking seriously in the other direction: the race projections assume the training in the plan, so either the plan needs to come down to meet you, or they are optimistic.', { pct });
   }
   if (drift === 'over') {
     const skipped = rows.filter(r => r.easy_week && r.share > 1.0 + ON_TARGET);
-    let tail = '';
     if (skipped.length) {
-      tail = ` ${skipped.length} of the easy weeks were run through, which is the part ` +
-        'that costs you later.';
+      // "{n} of the easy weeks were": reads for one as well, and keeps plan.py's wording.
+      return t('You are running {pct}% of the plan, most weeks over rather than under. {n} of the easy weeks were run through, which is the part that costs you later.',
+        { pct, n: skipped.length });
     }
-    return `You are running ${pct}% of the plan, most weeks over rather than under.${tail}`;
+    return t('You are running {pct}% of the plan, most weeks over rather than under.', { pct });
   }
   const onTarget = rows.filter(r => r.verdict === 'on target').length;
   if (onTarget >= rows.length * DRIFT_SHARE) {
-    return 'You are tracking the plan closely -- within a tenth on most ' +
-      'weeks, which is as close as anyone follows a schedule.';
+    return t('You are tracking the plan closely -- within a tenth on most weeks, which is as close as anyone follows a schedule.');
   }
   // Neither a consistent drift nor consistent accuracy: the weeks disagree
   // with each other, which is its own finding and should not be dressed up as
   // either success or failure.
-  return 'Your weeks land on both sides of the plan rather than drifting one ' +
-    `way -- ${onTarget} of ${rows.length} on target, and the rest split. The totals come out ` +
-    `at ${pct}%, so the volume is roughly right and the week-to-week ` +
-    'shape is not.';
+  return t('Your weeks land on both sides of the plan rather than drifting one way -- {on} of {weeks} on target, and the rest split. The totals come out at {pct}%, so the volume is roughly right and the week-to-week shape is not.',
+    { on: onTarget, weeks: rows.length, pct });
+}
+
+// A review's note, worded for the reader (the one in the review stays English).
+export function noteText(rv) {
+  if (!rv) return null;
+  return rv.rows ? _note(rv.rows, rv.actual_m, rv.planned_m) : (rv.note ?? null);
 }
 
 // The week the athlete is in now, and what it asks for. -> object|null.

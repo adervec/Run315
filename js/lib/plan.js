@@ -21,6 +21,7 @@
 //
 // Pure functions. No I/O, no dependencies. Port of plan.py; see test/plan.test.mjs.
 import { pyRound } from './py.js';
+import { t } from '../i18n.js';
 
 // Three up, one down. The easy week is what lets the next block land.
 export const CYCLE = 4;
@@ -161,6 +162,13 @@ export function keySessions(phase, distanceM, paces, weekM) {
   return out;
 }
 
+// The sessions stay English in the plan (pod.js hands them to the agent); a page shows them
+// through these, in the reader's language.
+// i18n-keys: Steady | Strides | Threshold | Intervals | Race pace | Sharpener
+// i18n-keys: 20-30 min continuous, comfortably hard | 6 x 20 s relaxed and fast off a jog | 3 x 8 min with 2 min jog | 6 x 3 min hard with 2 min jog | 2 x 20 min at goal pace inside the long run | 4 x 8 min with 2 min jog | 5 x 1000 m with 3 min jog | 20 min continuous | 10 min easy, 6 x 90 s at race effort, 10 min easy
+export const sessionName = name => t(name);
+export const sessionText = description => t(description);
+
 // A week-by-week plan. -> [object] one per week, first week first.
 //
 // `startWeekM` is what the athlete is actually running now, not what they
@@ -207,7 +215,8 @@ export function summarise(plan, raceDistanceM = null) {
   };
 }
 
-// Warnings worth showing before anyone follows this. -> [string].
+// Warnings worth showing before anyone follows this. -> [string], in the reader's language
+// (only the race page shows them).
 //
 // A generated plan should be able to say when it is asking for something
 // unreasonable, rather than presenting every number with equal confidence.
@@ -216,12 +225,10 @@ export function sanity(plan, currentWeekM) {
   if (!plan || !plan.length) return notes;
   const peak = Math.max(...plan.map(w => w.distance_m));
   if (currentWeekM && peak > currentWeekM * MAX_TOTAL_GROWTH + 1) {
-    notes.push('This peaks a long way above what you are running now. ' +
-      'Treat the later weeks as provisional.');
+    notes.push(t('This peaks a long way above what you are running now. Treat the later weeks as provisional.'));
   }
   if (plan.length < 8) {
-    notes.push('Under eight weeks is short for a real build -- expect to ' +
-      'arrive fit rather than peaked.');
+    notes.push(t('Under eight weeks is short for a real build -- expect to arrive fit rather than peaked.'));
   }
   // The week after an easy week climbs back to where the build was, which is
   // the point of an easy week -- it is not a ramp violation. Compare each week
@@ -233,8 +240,7 @@ export function sanity(plan, currentWeekM) {
     if (week.distance_m > previous.distance_m) jumps.push(week.distance_m / previous.distance_m - 1.0);
   }
   if (jumps.length && Math.max(...jumps) > MAX_RAMP + 0.005) {
-    notes.push('One week rises faster than the ' + pyRound(MAX_RAMP * 100) + '% ramp this plan is ' +
-      'meant to hold to.');
+    notes.push(t('One week rises faster than the {pct}% ramp this plan is meant to hold to.', { pct: pyRound(MAX_RAMP * 100) }));
   }
   return notes;
 }

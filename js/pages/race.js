@@ -336,7 +336,7 @@ function blockPanel(m) {
         <div class="stat-value ${rv.drift === 'under' ? 'behind' : rv.on_target >= rv.weeks * 0.6 ? 'ahead' : ''}">${rv.share != null ? (rv.share * 100).toFixed(0) : '--'}<small class="unit">%</small></div>
         <div class="stat-label">${t('Of the plan, actually run')}</div>
         <div class="stat-hint">${t('{on} of {weeks} finished weeks on target · {done}/{planned} long runs done.', { on: rv.on_target, weeks: rv.weeks, done: rv.long_runs_done, planned: rv.long_runs_planned })}</div></div></div>
-      <div><p class="stat-hint">${rv.note}</p></div></div>` : ''}
+      <div><p class="stat-hint">${AD.noteText(rv)}</p></div></div>` : ''}
     <div class="plan-strip">${tp.map(w => html`<span class="plan-week ph-${w.phase}" style="height:${(14 + 46 * (w.distance_m / top)).toFixed(0)}px"
       title="${t('Week {week} ({phase}): {km} km, long run {long} km', { week: w.week, phase: t(cap(w.phase)), km: (w.distance_m / 1000).toFixed(0), long: (w.long_run_m / 1000).toFixed(1) })}"></span>`)}</div>
     <div class="polar-key" style="margin-top:8px">
@@ -349,8 +349,8 @@ function blockPanel(m) {
         <td><span class="phase-dot ph-${w.phase}"></span>${t(cap(w.phase))}${w.easy_week ? html` <span class="dim">${t('easy')}</span>` : ''}</td>
         <td class="num actual">${(w.distance_m / 1000).toFixed(0)} km</td>
         <td class="num dim">${(w.long_run_m / 1000).toFixed(1)} km</td>
-        <td>${(w.sessions || []).map(([name, desc, band]) => html`<div class="session"><b>${name}</b>${band ? html` <span class="time">${fmtTime(band[0])}–${fmtPace(band[1], 1000)}</span>` : ''}
-          <br><span class="dim">${desc}</span></div>`)}</td>
+        <td>${(w.sessions || []).map(([name, desc, band]) => html`<div class="session"><b>${PL.sessionName(name)}</b>${band ? html` <span class="time">${fmtTime(band[0])}–${fmtPace(band[1], 1000)}</span>` : ''}
+          <br><span class="dim">${PL.sessionText(desc)}</span></div>`)}</td>
       </tr>`)}</tbody></table></div>
     <p class="stat-hint" style="margin-top:10px">${withLink('A schedule, not a prescription. It has no idea whether you slept, and the readiness read on {link} is the thing that should override it.', {}, `<a class="quiet-link" href="#/">${esc(t('Today'))}</a>`)}</p>
   </section>`;

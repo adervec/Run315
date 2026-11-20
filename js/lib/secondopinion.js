@@ -24,7 +24,11 @@
 // So the comparisons below are framed as agreement or disagreement, never as
 // "Garmin says you are wrong".
 //
-// Pure functions. No I/O, no dependencies. See test/secondopinion.test.mjs.
+// Pure functions. No I/O. See test/secondopinion.test.mjs.
+//
+// The notes go through t(): the brief (brief.json carries this review) is built inside
+// english(), so the agent reads English, and the Second opinion page the reader's language.
+import { t, fmt } from '../i18n.js';
 
 // How close two estimates have to be before it is not worth mentioning.
 export const HR_CLOSE_BPM = 5.0;
@@ -52,15 +56,11 @@ export function thresholdHr(ours, theirs) {
   const beats = Math.abs(difference).toFixed(0);
   let note;
   if (band === 'agree') {
-    note = 'Both methods put your threshold within a few beats of the same ' +
-      'place, which is about as much agreement as either can offer.';
+    note = t('Both methods put your threshold within a few beats of the same place, which is about as much agreement as either can offer.');
   } else if (difference > 0) {
-    note = `This app reads your threshold ${beats} beats higher than Garmin ` +
-      "does. If your zones feel too hard, Garmin's is the more " +
-      'conservative number to train off.';
+    note = t("This app reads your threshold {n} beats higher than Garmin does. If your zones feel too hard, Garmin's is the more conservative number to train off.", { n: beats });
   } else {
-    note = `This app reads your threshold ${beats} beats lower than Garmin ` +
-      'does. If your easy runs feel too easy, that gap is why.';
+    note = t('This app reads your threshold {n} beats lower than Garmin does. If your easy runs feel too easy, that gap is why.', { n: beats });
   }
   return { ours, theirs, difference, band, note };
 }
@@ -113,26 +113,18 @@ export function raceSummary(comparisons) {
   const optimistic = relatives.filter(r => r < -TIME_CLOSE).length;
   const pessimistic = relatives.filter(r => r > TIME_CLOSE).length;
   const total = relatives.length;
-  const pct = Math.abs(mean * 100).toFixed(1);
+  const pct = fmt() ? fmt().number(Math.abs(mean * 100), { min: 1, max: 1 }) : Math.abs(mean * 100).toFixed(1);
 
   if (Math.abs(mean) <= TIME_CLOSE && !optimistic && !pessimistic) {
-    return 'Both models land within a couple of per cent at every distance. ' +
-      'That is the good case: two different methods, one answer.';
+    return t('Both models land within a couple of per cent at every distance. That is the good case: two different methods, one answer.');
   }
   if (optimistic === total) {
-    return `This app is quicker than Garmin at every distance, by ${pct}% on ` +
-      'average. A consistent offset like that usually means the two ' +
-      'disagree about your threshold rather than about any one race.';
+    return t('This app is quicker than Garmin at every distance, by {pct}% on average. A consistent offset like that usually means the two disagree about your threshold rather than about any one race.', { pct });
   }
   if (pessimistic === total) {
-    return `This app is slower than Garmin at every distance, by ${pct}% on ` +
-      'average. Garmin leans optimistic for runners whose long-distance ' +
-      'work is thin, so check the longer projections against a real ' +
-      'race before trusting them.';
+    return t('This app is slower than Garmin at every distance, by {pct}% on average. Garmin leans optimistic for runners whose long-distance work is thin, so check the longer projections against a real race before trusting them.', { pct });
   }
-  return 'The two models agree at some distances and not others, which points ' +
-    'at the shape of the curve rather than at its level -- the fitted ' +
-    'fade exponent is where to look.';
+  return t('The two models agree at some distances and not others, which points at the shape of the curve rather than at its level -- the fitted fade exponent is where to look.');
 }
 
 // Everything comparable, in one call. -> object.

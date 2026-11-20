@@ -17,6 +17,7 @@
 // window, critical power and W' from its 3-20 min points (linear work-time model, W = CP*t + W'),
 // eFTP, and W' balance through one ride (Skiba's differential form).
 import { dayKey, addDayKey } from './dt.js';
+import { t } from '../i18n.js';
 
 // 1, 5, 10, 15, 30 s; 1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60, 90, 120 min.
 export const DURATIONS = [1, 5, 10, 15, 30, 60, 120, 180, 300, 480, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200];
@@ -137,7 +138,7 @@ export function fitCP(env) {
   const pts = DURATIONS.filter(d => d >= CP_MIN_S && d <= CP_MAX_S && env[d] && env[d].w > 0)
     .map(d => ({ t: d, w: env[d].w, id: env[d].id, date: env[d].date }));
   const n = pts.length;
-  if (n < CP_MIN_POINTS) return { ok: false, n, points: pts, reason: `needs best efforts at ${CP_MIN_POINTS} or more of 3, 5, 8, 10, 15 and 20 min; has ${n}` };
+  if (n < CP_MIN_POINTS) return { ok: false, n, points: pts, reason: t('needs best efforts at {min} or more of 3, 5, 8, 10, 15 and 20 min; has {n}', { min: CP_MIN_POINTS, n }) };
   const xs = pts.map(q => q.t), ys = pts.map(q => q.w * q.t);
   const mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
   let sxx = 0, sxy = 0, syy = 0;
@@ -149,7 +150,7 @@ export function fitCP(env) {
   const r2 = syy ? 1 - sse / syy : 1;
   const maxErrPct = Math.max(...pts.map(q => Math.abs(cp + wPrime / q.t - q.w) / q.w * 100));
   const base = { n, points: pts, cp: Math.round(cp), wPrime: Math.round(wPrime), seCp: r1(seCp), seW: Math.round(seW), r2, maxErrPct: r1(maxErrPct) };
-  if (!(cp > 0) || !(wPrime > 0)) return { ...base, ok: false, reason: 'the points imply a non-positive CP or W\' (the efforts are not all-out)' };
+  if (!(cp > 0) || !(wPrime > 0)) return { ...base, ok: false, reason: t("the points imply a non-positive CP or W' (the efforts are not all-out)") };
   return { ...base, ok: true };
 }
 
