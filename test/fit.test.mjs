@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { decodeFit, fitType, FIT_EPOCH } from '../js/fit.js';
 import { FitWriter, T, fitTime, sampleActivity } from './fitenc.mjs';
 
@@ -82,12 +83,13 @@ test('fit: sport mapping fallback', () => {
 });
 
 // The athlete's own files, when this machine has them (CI does not).
-const REAL = 'C:\\Users\\Adam Erik Eryavec\\Documents\\Cowork\\Cowork Link Folders\\Run315\\garmin\\fit';
+// Real FIT files for a local smoke run: set RUN315_FIT_DIR to their folder (never committed).
+const REAL = process.env.RUN315_FIT_DIR || '';
 test('fit: real Garmin files decode', { skip: !existsSync(REAL) && 'no real FIT files on this machine' }, () => {
   const files = readdirSync(REAL).filter(f => /\.fit$/i.test(f)).slice(0, 12);
   assert.ok(files.length);
   for (const name of files) {
-    const f = decodeFit(readFileSync(REAL + '\\' + name));
+    const f = decodeFit(readFileSync(join(REAL, name)));
     assert.equal(f.file_type, 4, name);
     assert.ok(f.records.length > 10, name);
     assert.ok(f.session && f.session.total_timer_time > 0, name);

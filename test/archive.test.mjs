@@ -199,7 +199,8 @@ test('archive: the panel renders', () => {
 });
 
 // The real export, when this machine has one: every summary reads, the units come out sane.
-const REAL = 'C:\\Users\\Adam Erik Eryavec\\Downloads\\366ba449-ce28-41cc-b707-bfbbf7d732ea_1.zip';
+// A real export for a local smoke run: set RUN315_GARMIN_ZIP to its path (never committed).
+const REAL = process.env.RUN315_GARMIN_ZIP || '';
 test('archive: real export summaries', { skip: !existsSync(REAL) && 'no Garmin export on this machine' }, async () => {
   let n = 0;
   for await (const p of importArchive(await openAsBlob(REAL))) {
