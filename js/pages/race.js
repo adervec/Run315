@@ -436,7 +436,7 @@ function weatherPanel(race, m) {
       <thead><tr><th>${t('Start')}</th><th class="num">${t('Temp')}</th><th class="num">${t('Dew pt')}</th><th class="num">${t('Rain')}</th><th class="num">${t('Wind')}</th>
         <th class="num">${t('Heat cost')}</th>${w.goalPace ? html`<th class="num">${t('Pace')}</th><th class="num">${t('Finish')}</th>` : ''}</tr></thead>
       <tbody>${w.rows.map(r => html`<tr>
-        <td>${hourLabel(r.hour)}</td>
+        <td>${hourLabel(r.hour)}${race.start_time && +race.start_time.slice(0, 2) === r.hour ? html` <b>${t('your start')}</b>` : ''}</td>
         <td class="num">${Math.round(r.temp)}°</td><td class="num dim">${r.dew != null ? Math.round(r.dew) + '°' : '—'}</td>
         <td class="num dim">${r.rain != null ? r.rain + '%' : '—'}</td><td class="num dim">${r.wind != null ? Math.round(r.wind) : '—'}</td>
         <td class="num ${r.penalty >= 0.02 ? 'behind' : 'dim'}">${r.penalty >= 0.005 ? '+' + (r.penalty * 100).toFixed(1) + '%' : '—'}</td>

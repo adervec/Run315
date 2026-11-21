@@ -5,8 +5,10 @@ import { state, save } from '../store.js';
 import { put, remove } from '../merge.js';
 import * as D from '../derive.js';
 import { dayKey, daysBetween } from '../lib/dt.js';
-import { html, pageHead, emptyState, fmtTime, fmtPace, toast, useCss, day, km, t } from '../ui.js';
+import { html, raw, esc, ago, pageHead, emptyState, fmtTime, fmtPace, toast, useCss, day, km, t } from '../ui.js';
 import { fmt } from '../i18n.js';
+import { cleanFields } from '../racemail.js';
+import * as cowork from '../cowork.js';
 
 export const title = 'Races';
 export const LANES = { high: 3, medium: 2, low: 1, none: 0 };
@@ -53,6 +55,7 @@ export function startRow(race, p, today) {
     <div class="race-cell">
       <p class="race-name"><a href="#/race/${encodeURIComponent(race.id)}">${race.name}</a></p>
       <p class="race-sub">${day(race.date, true)} · ${km(race.distance_m, 2)} km</p>
+      ${raceFacts(race)}
       <div class="lanes" title="${t('Confidence: {level}', { level: p ? t(p.confidence) : t('no data') })}">
         ${[0, 1, 2].map(i => html`<span class="lane ${p && i < LANES[p.confidence] ? 'on' : ''}"></span>`)}
       </div>
@@ -70,6 +73,21 @@ export function startRow(race, p, today) {
   </div>`;
 }
 
+// What the races channel filled in (status, start time, wave, bib, place, pickup), on one quiet line.
+// i18n-keys: registered | deferred | cancelled | done
+export function raceFacts(r) {
+  const bits = [
+    r.status && r.status !== 'registered' ? t(r.status) : '',
+    r.start_time ? t('start {time}', { time: r.start_time }) : '',
+    r.wave ? t('wave {wave}', { wave: r.wave }) : '',
+    r.bib ? t('bib {bib}', { bib: r.bib }) : '',
+    r.place || '',
+    r.pickup ? t('pickup {when}', { when: [r.pickup.date && day(r.pickup.date), r.pickup.where].filter(Boolean).join(', ') }) : '',
+  ].filter(Boolean);
+  if (!bits.length && !r.url) return '';
+  return html`<p class="race-sub dim">${bits.join(' · ')}${r.url ? html`${bits.length ? ' · ' : ''}<a class="quiet-link" href="${r.url}" target="_blank" rel="noopener noreferrer">${t('race website')}</a>` : ''}</p>`;
+}
+
 export function pastTable(past) {
   return html`<div class="table-scroll races-past"><table>
     <thead><tr><th>${t('Race')}</th><th>${t('Date')}</th><th class="num">${t('Result')}</th><th class="num">${t('Projected')}</th><th class="num">${t('Gap')}</th></tr></thead>
@@ -78,7 +96,7 @@ export function pastTable(past) {
       return html`<tr>
         <td><a class="quiet-link" href="#/race/${encodeURIComponent(r.id)}">${r.name}</a></td>
         <td class="dim">${day(r.date, true)}</td>
-        <td class="num actual">${r.actual_s ? fmtTime(r.actual_s) : '—'}</td>
+        <td class="num actual">${r.actual_s ? fmtTime(r.actual_s) : '—'}${r.chip_s ? html`<br><small class="dim">${t('chip {time}', { time: fmtTime(r.chip_s) })}</small>` : ''}</td>
         <td class="num time">${r.predicted_s ? fmtTime(r.predicted_s) : '—'}</td>
         <td class="num">${gap != null ? html`<span class="${gap > 0 ? 'behind' : 'ahead'}">${minus(gap)}${fmtTime(Math.abs(gap))}</span>`
           : !r.actual_s ? html`<a class="quiet-link" href="#/race/${encodeURIComponent(r.id)}">${t('add result')}</a>` : '—'}</td>
@@ -119,7 +137,7 @@ export function addRace(fields) {
     throw new Error(t('Give the race a valid date and a distance in metres.'));
   const id = 'race-' + Date.now().toString(36);
   put(state, 'races', id, { id, name: name.slice(0, 120), date, distance_m: distance, goal_s: parseGoal(fields.goal),
-    actual_s: null, predicted_s: null, garmin_id: null, created_at: new Date().toISOString() });
+    actual_s: null, predicted_s: null, garmin_id: null, created_at: new Date().toISOString(), ...cleanFields({ url: fields.url, place: fields.place }) });
   save('edit');
   return id;
 }
@@ -149,7 +167,8 @@ export function render() {
   const { upcoming, past, today } = split(state);
   const cal = D.calibration(state);
   if (!upcoming.length && !past.length) return html`${pageHead(t('Races'))}
-    ${emptyState(t('No races on the calendar'), t('Add the next one and Run315 will project your finish time from here on.'), raceForm())}`;
+    ${emptyState(t('No races on the calendar'), t('Add the next one and Run315 will project your finish time from here on.'), raceForm())}
+    ${channelPanel()}`;
   return html`${pageHead(t('Races'), t('{ahead} ahead · {run} run', { ahead: upcoming.length, run: past.length }))}
     <section class="panel">
       <div class="panel-head"><p class="eyebrow">${t('Start list')}</p><p class="panel-note">${t('Projections update on every sync')}</p></div>
@@ -160,10 +179,58 @@ export function render() {
     </section>
     ${past.length ? html`<section class="panel">
       <div class="panel-head"><p class="eyebrow">${t('Run')}</p><p class="panel-note">${t.n('{n} past race · each result teaches the projections', '{n} past races · each result teaches the projections', past.length)}</p></div>
-      ${pastTable(past)}</section>` : ''}`;
+      ${pastTable(past)}</section>` : ''}
+    ${channelPanel()}`;
+}
+
+// Updates from email and race websites, and the races the agent scouted when asked.
+function channelPanel() {
+  const waiting = cowork.pendingReviews().filter(p => p.channel === 'races').length;
+  const sc = state.local.raceScout, sug = (state.local.raceSuggestions && state.local.raceSuggestions.list) || [];
+  const lnk = '<a class="quiet-link" href="#/sync">' + esc(t('Sync & cowork')) + '</a>';
+  return html`<section class="panel">
+    <div class="panel-head"><p class="eyebrow">${t('From your email and the web')}</p>
+      <p class="panel-note">${waiting ? t.n('{n} race update waiting for you', '{n} race updates waiting for you', waiting) : ''}</p></div>
+    <p class="stat-hint">${raw(esc(t("The cowork races channel reads your race emails (entries, bibs, start times, changes, results) and each race's website, then proposes updates you tick on {link}. Only races you have entered are added.", { link: '\u0001' })).replace('\u0001', lnk))}</p>
+    <form class="form-row" data-scout-form style="margin-top:14px">
+      <div class="field field-grow"><label for="sreg">${t('Scout for races near')}</label>
+        <input type="text" id="sreg" name="region" maxlength="80" value="${(sc && sc.region) || ''}" placeholder="${t('a city or region')}"></div>
+      <div class="field"><label for="smo">${t('Within')}</label>
+        <select id="smo" name="months">${[3, 6, 12].map(m => html`<option value="${m}" ${(sc ? sc.months : 6) === m ? 'selected' : ''}>${t.n('{n} month', '{n} months', m)}</option>`)}</select></div>
+      <fieldset class="field"><legend>${t('Distances')}</legend>${DISTANCES.map(([label, d]) => html`<label><input type="checkbox" name="d" value="${d}" ${sc && (sc.distances_m || []).includes(d) ? 'checked' : ''}> ${t(label)}</label> `)}</fieldset>
+      <button class="btn" type="submit">${sc ? t('Scout again') : t('Scout')}</button>
+    </form>
+    ${sc ? html`<p class="stat-hint">${t('Asked {when}: the next races reply brings suggestions.', { when: ago(sc.at) })}</p>` : ''}
+    ${sug.length ? html`<div class="table-scroll"><table><thead><tr><th>${t('Suggested race')}</th><th>${t('Date')}</th><th class="num">km</th><th></th></tr></thead>
+      <tbody>${sug.map((x, i) => html`<tr><td>${x.url ? html`<a class="quiet-link" href="${x.url}" target="_blank" rel="noopener noreferrer">${x.name}</a>` : x.name}
+        ${x.place || x.why ? html`<br><small class="dim">${[x.place, x.why].filter(Boolean).join(' · ')}</small>` : ''}</td>
+        <td class="dim">${day(x.date, true)}</td><td class="num">${km(x.distance_m, 1)}</td>
+        <td><button class="btn btn-quiet" type="button" data-sug-add="${i}">${t('Add')}</button> <button class="btn-quiet" type="button" data-sug-drop="${i}" title="${t('Not for me')}">×</button></td></tr>`)}</tbody></table></div>` : ''}
+  </section>`;
+}
+
+function wireChannel(el, redraw) {
+  const f = el.querySelector('[data-scout-form]');
+  if (f) f.onsubmit = ev => {
+    ev.preventDefault();
+    const fd = new FormData(f);
+    state.local.raceScout = { at: new Date().toISOString(), region: String(fd.get('region') || '').trim().slice(0, 80) || null,
+      months: [3, 6, 12].includes(+fd.get('months')) ? +fd.get('months') : 6, distances_m: fd.getAll('d').map(Number).filter(Boolean) };
+    save('local');
+    cowork.exportNow(false).catch(e => console.warn('scout export', e));
+    toast(t('Asked: the next races reply brings suggestions.')); redraw();
+  };
+  const list = () => (state.local.raceSuggestions && state.local.raceSuggestions.list) || [];
+  el.querySelectorAll('[data-sug-add]').forEach(b => b.onclick = () => {
+    const x = list()[+b.dataset.sugAdd]; if (!x) return;
+    try { addRace({ name: x.name, date: x.date, distance: x.distance_m, url: x.url, place: x.place }); } catch (e) { toast(e.message); return; }
+    list().splice(+b.dataset.sugAdd, 1); save('local'); toast(t('Race added')); redraw();
+  });
+  el.querySelectorAll('[data-sug-drop]').forEach(b => b.onclick = () => { list().splice(+b.dataset.sugDrop, 1); save('local'); redraw(); });
 }
 
 export function mount(el) {
   const redraw = () => { el.innerHTML = String(render()); mount(el); };
   wireRaceForms(el, redraw);
+  wireChannel(el, redraw);
 }

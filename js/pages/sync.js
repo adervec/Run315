@@ -45,7 +45,7 @@ function reviewBlock() {
   const waiting = cowork.pendingReviews();
   return html`${waiting.map(p => html`<div class="cw-review" data-pk="${p.key}">
       <p style="margin:0"><b>${p.channel}</b> · ${p.name} · ${ago(p.at)}${p.stale ? html` · <span class="bad">${t('answers an older request')}</span>` : ''}</p>
-      ${p.rows.length ? p.rows.map(r => html`<label><input type="checkbox" checked data-row="${r.id}"><span>${r.label}${r.detail ? html` <span class="dim">${r.detail}</span>` : ''}</span></label>`)
+      ${p.rows.length ? p.rows.map(r => html`<label><input type="checkbox" ${r.off ? '' : 'checked'} data-row="${r.id}"><span>${r.label}${r.detail ? html` <span class="dim">${r.detail}</span>` : ''}</span></label>`)
         : html`<p class="dim">${t('Nothing in this reply would change anything.')}</p>`}
       <div class="row-actions"><button class="btn" data-act="cw-approve" data-rkey="${p.key}">${t('Apply ticked')}</button>
         <button class="btn btn-ghost" data-act="cw-discard" data-rkey="${p.key}">${t('Discard')}</button></div></div>`)}

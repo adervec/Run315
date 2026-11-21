@@ -23,6 +23,7 @@ import { dayKey } from './lib/dt.js';
 import { english } from './i18n.js';
 import { podContext, importPod } from './pod.js';
 import { reviewContext, importReview, scanRecord } from './datareview.js';
+import { raceContext, importRaces, previewRows as raceRows, filterRaces, INSTRUCTIONS as RACES } from './racemail.js';
 import { runReviewContext, importRunReview, INSTRUCTIONS as RUN_REVIEW } from './runreview.js';
 
 export const PROTOCOL = 'run315-cowork', VERSION = 1;
@@ -33,6 +34,7 @@ export const CHANNELS = [
   { key: 'coach', replyKind: 'coach-output' },
   { key: 'pod', replyKind: 'pod-output' },
   { key: 'datareview', replyKind: 'datareview-output' },
+  { key: 'races', replyKind: 'races-output' },
   // Last on purpose: a hub walking the manifest (and pollAll) handles it after garmin and strava.
   { key: 'run-review', replyKind: 'run-review-output' },
 ];
@@ -174,6 +176,7 @@ export async function channelContext(key) {
   if (key === 'analysis') return { requests: dueRequests() };
   if (key === 'pod') return english(() => podContext(state, new Date()));
   if (key === 'datareview') return english(() => reviewContext(state));
+  if (key === 'races') return raceContext(state, new Date());
   if (key === 'run-review') return runReviewContext(state, new Date());
   // coach: the standing weekly review
   const reviews = Object.values(state.reviews).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
@@ -253,6 +256,7 @@ Every activity since \`lastActivityStart\` is pulled, all sports, plus streams f
 - Targets come from the app's own training paces and HR zones in \`../brief.json\`. Respect niggles. Never prescribe through a readiness of "rest" without saying so plainly.
 `;
   if (key === 'run-review') return head + RUN_REVIEW;
+  if (key === 'races') return head + RACES;
   if (key === 'datareview') return head + `## kind: \`datareview-output\` — review the data the app flagged
 
 \`\`\`json
@@ -427,7 +431,8 @@ export function previewReply(kind, p, st = state) {
       const a = st.activities[r.sessionId];
       add(r.sessionId, `${a ? String(a.start).slice(0, 10) + ' ' + a.name : r.sessionId + ' (not in this app)'}: ${r.grade || 'no grade'}`, String(r.summary || '').slice(0, 160));
     }
-  } else if (kind === 'datareview-output') add('proposals', `${(p.proposals || []).length} proposals`, 'Each one still waits for your decision on the data review page');
+  } else if (kind === 'races-output') rows.push(...raceRows(st, p));
+  else if (kind === 'datareview-output') add('proposals', `${(p.proposals || []).length} proposals`, 'Each one still waits for your decision on the data review page');
   return rows;
 }
 // The reply with only the accepted rows left in it (null: nothing to apply).
@@ -438,6 +443,7 @@ export function filterPayload(kind, p, accepted) {
     personalRecords: ok('records') ? p.personalRecords : [] };
   if (kind === 'strava-output') return { ...p, activities: ok('activities') ? p.activities : [], gear: ok('gear') ? p.gear : [] };
   if (kind === 'analysis-output') return { ...p, answers: (p.answers || []).filter(a => a && ok(a.id)) };
+  if (kind === 'races-output') return filterRaces(p, accepted);
   if (kind === 'run-review-output') return { ...p, reviews: (p.reviews || []).filter(r => r && ok(r.sessionId)) };
   return accepted.size ? p : null;   // the single-row kinds: all or nothing
 }
@@ -545,6 +551,7 @@ async function applyReply(kind, p) {
   if (kind === 'pod-output') return importPod(state, p);
   if (kind === 'datareview-output') return importReview(state, p);
   if (kind === 'run-review-output') return importRunReview(state, p);
+  if (kind === 'races-output') return importRaces(state, p);
   return { handled: false, note: 'unknown kind ' + kind };
 }
 
