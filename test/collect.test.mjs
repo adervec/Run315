@@ -122,7 +122,7 @@ test('yearReview', () => {
   assert.equal(r.topWeeks[1].distance_m, 13000);
   assert.equal(r.longestWeekStreak, 2);
   assert.equal(r.weeksRun, 3);
-  assert.equal(r.busiestMonth.name, 'January');
+  assert.equal(r.busiestMonth.month, 1);
   assert.deepEqual(r.bests.map(b => [b.dist, b.secs, b.pr]), [[5000, 1450, true], [10000, 3100, true]]);
   assert.equal(r.bests[0].previous, 1500);
   assert.equal(r.route.count, 2);

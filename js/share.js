@@ -19,7 +19,7 @@ import { t, fmt, showDate } from './i18n.js';
 
 const nowIso = () => new Date().toISOString();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const n0 = v => (fmt() ? fmt().number(Math.round(v || 0), { max: 0 }) : Math.round(v || 0).toLocaleString('en-US'));
+const n0 = v => (fmt() ? fmt().number(Math.round(v || 0), { max: 0 }) : Math.round(v || 0).toLocaleString());
 
 // ---------------------------------------------------------------------------
 // Privacy

@@ -332,7 +332,7 @@ export function mount(el) {
     if (!items.length) {
       const core = coreHrrRows();
       const none = html`<p class="verdict">${t('No streams on this device. These panels read the per-second data, which stays on the computer that imported it — open Insights there.')}</p>`;
-      hosts[0].innerHTML = String(core.length ? hrrPanel(core, t('from the synced per-run summary')) : html`${head(t('Heart-rate recovery'))}${none}`);
+      hosts[0].innerHTML = String(html`${core.length ? hrrPanel(core, t('from the synced per-run summary')) : html`${head(t('Heart-rate recovery'))}${none}`}`);
       hosts[1].innerHTML = String(html`${head(t('Running form at matched pace'))}${none}`);
       hosts[2].innerHTML = String(html`${head(t('Climbs'))}${none}`);
       return;

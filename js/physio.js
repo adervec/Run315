@@ -16,7 +16,7 @@ import { html, raw, esc, t } from './ui.js';
 import { fmt } from './i18n.js';
 
 const dec = (v, dp) => (fmt() ? fmt().number(v, { min: dp, max: dp }) : v.toFixed(dp));
-const big = v => (fmt() ? fmt().number(v) : v.toLocaleString('en-US'));
+const big = v => (fmt() ? fmt().number(v) : v.toLocaleString());
 const kmS = m => t('{n} km', { n: dec(m / 1000, 1) });
 const paceOf = v => (v > 0 ? F.fmtPace(1000 / v, 1000) : '--');
 const mins = s => Math.round(s / 60);

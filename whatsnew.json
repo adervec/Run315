@@ -1,4 +1,7 @@
 [
+  { "date": "2026-11-22", "items": [
+    "The heatmap's colour key is now in your language too."
+  ] },
   { "date": "2026-11-21", "items": [
     "Dates now read year first, like 2026-11-21, the same in every app. If you prefer your region's style, choose \"Dates: Regional\" once under the font picker."
   ] },

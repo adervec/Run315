@@ -164,7 +164,7 @@ const chipZ = (a, c) => { const l = c.load(a); return Math.min(1, Math.sqrt((l !
 // Month and weekday names in the reader's language (Monday first, like the grid).
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const dowNames = () => (fmt() ? DOW.map((_, i) => fmt().custom(new Date(2026, 0, 5 + i), { weekday: 'short' })) : DOW);
-const monthLabel = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }));   // iso-ok: a month heading, not a date
+const monthLabel = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
 const longDay = d => showDate(d, 'full');
 // 'Race: <link>' as one translated sentence, the link put in after escaping.
 const raceLine = r => raw(esc(t('Race: {name}', { name: '\u0001' }))

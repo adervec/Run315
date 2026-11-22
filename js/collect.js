@@ -215,7 +215,6 @@ export function cardStats(a, pick = new Set(CARD_STATS.map(s => s[0]))) {
 //   tiles:   {17: Map key -> [firstDay, ...], 14: same}  (explore index), or null
 //   cities:  state.cities
 // ---------------------------------------------------------------------------
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const inYear = (d, y) => String(d).slice(0, 4) === String(y);
 function totalsOf(rs) {
   let distance_m = 0, seconds = 0, ascent_m = 0;
@@ -273,7 +272,7 @@ export function yearReview({ runs = [], prRows = [], routes = [], tiles = null, 
     year, totals, previous: prev, change,
     topWeeks, longest, bests, route, newTiles,
     streets: haveCities ? { new_km: (streetNodes * 25) / KM, trail_km: (trailNodes * 25) / KM, finished: streetsDone } : null,
-    busiestMonth: months[bm] > 0 ? { month: bm + 1, name: MONTHS[bm], distance_m: months[bm] } : null,
+    busiestMonth: months[bm] > 0 ? { month: bm + 1, distance_m: months[bm] } : null,
     months, weeksRun: weeks.size, longestWeekStreak: longestStreak,
   };
 }
@@ -348,7 +347,7 @@ export function contributionSvg(days, years, { title = 'Every day you ran' } = {
       const col = Math.floor((d + dow0) / 7), row = (d + dow0) % 7;
       out += `<rect x="${m + col * (c + g)}" y="${y0 + row * (c + g)}" width="${c}" height="${c}" rx="2" fill="${POSTER.ramp[lvl(v)]}"/>`;
     }
-    out += `<text x="${m}" y="${y0 + 7 * (c + g) + 14}" font-size="11" fill="${POSTER.faint}">${Math.round(km).toLocaleString('en-US')} km</text>`;
+    out += `<text x="${m}" y="${y0 + 7 * (c + g) + 14}" font-size="11" fill="${POSTER.faint}">${Math.round(km).toLocaleString()} km</text>`;
   });
   return svgOpen(W, H, title) + `<text x="${m}" y="56" font-size="30" font-weight="800" fill="${POSTER.ink}">${x(title)}</text>` + out + wordmark(W, H) + '</svg>';
 }

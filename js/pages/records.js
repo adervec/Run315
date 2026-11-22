@@ -26,7 +26,7 @@ const CSS = `
 .rec-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 10px 0 0; font-size: 13px; }
 `;
 const ui = { allMunis: false };
-const n0 = v => (fmt() ? fmt().number(Math.round(v || 0)) : Math.round(v || 0).toLocaleString('en-US'));
+const n0 = v => (fmt() ? fmt().number(Math.round(v || 0)) : Math.round(v || 0).toLocaleString());
 const span = r => (r.first === r.last ? day(r.first, true) : html`${day(r.first, true)} – ${day(r.last, true)}`);
 
 // label is also the kind ('Countries', 'Regions', 'Municipalities'); it is shown through t().
@@ -132,7 +132,7 @@ function wall(el) {
       const a = e.target;
       S.localTrack(a.dataset.tw, 80).then(segs => {
         if (!segs || !segs.length || !a.isConnected) return;
-        a.innerHTML = `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="${C.pathD(C.fitSegments(segs, 64, 64, 6))}"/></svg>`;
+        a.innerHTML = String(html`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="${C.pathD(C.fitSegments(segs, 64, 64, 6))}"/></svg>`);
       });
     }
   }, { rootMargin: '300px' });

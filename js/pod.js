@@ -147,7 +147,11 @@ function blockWeek(st, s, now, today) {
 // The wall-clock time at the forecast's location (Open-Meteo returns its IANA zone).
 export function wallClock(f, now = new Date()) {
   if (!f || !f.tz) return now;
-  try { return new Date(now.toLocaleString('en-US', { timeZone: f.tz })); } catch { return now; }
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en', { timeZone: f.tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })   // iso-ok: machine-read parts in the forecast's zone, never shown
+      .formatToParts(now).map(x => [x.type, +x.value]));
+    return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  } catch { return now; }
 }
 export function forecastToday(st, now = new Date(), opts = normOptions(st.profile?.podOptions)) {
   const loc = defaultLocation(st);

@@ -7,7 +7,7 @@
 import { state, idbKeys, getDetailRec } from '../store.js';
 import * as D from '../derive.js';
 import { RUN_TYPES } from '../lib/fitness.js';
-import { html, pageHead, emptyState, useCss } from '../ui.js';
+import { html, pageHead, emptyState, useCss, t } from '../ui.js';
 import { loadLeaflet, whenGone } from '../routemaker.js';
 
 export const title = 'Heatmap';
@@ -126,13 +126,13 @@ export async function mount(el) {
         d[i] = LUT[j]; d[i + 1] = LUT[j + 1]; d[i + 2] = LUT[j + 2]; d[i + 3] = LUT[j + 3];
       }
       ctx.putImageData(img, 0, 0);
-      scale.innerHTML = `once <b style="background:linear-gradient(90deg, rgba(11,110,121,.7), rgb(63,184,196), rgb(240,190,80), rgb(255,255,240))"></b> hundreds of times`;
+      scale.innerHTML = String(html`${t('once')} <b style="background:linear-gradient(90deg, rgba(11,110,121,.7), rgb(63,184,196), rgb(240,190,80), rgb(255,255,240))"></b> ${t('hundreds of times')}`);
     } else {
       const sp = list.map(t => t.speed).filter(Boolean).sort((a, b) => a - b);
       const q = v => sp.length ? Math.min(4, Math.floor(5 * sp.findIndex(s => s >= v) / sp.length)) : 2;
       ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.35;
       for (const t of list) if (inView(t) && t.speed) { ctx.strokeStyle = PACE[q(t.speed)]; path(ctx, t); shown++; }
-      scale.innerHTML = `slowest fifth ${PACE.map(c => `<b style="width:28px;background:${c}"></b>`).join('')} fastest fifth <span class="dim">· of the runs shown</span>`;
+      scale.innerHTML = String(html`${t('slowest fifth')} ${PACE.map(c => html`<b style="width:28px;background:${c}"></b>`)} ${t('fastest fifth')} <span class="dim">${t('· of the runs shown')}</span>`);
     }
     // Missing = outdoor activities that claimed ground (so had GPS) but whose track is not here.
     const have = new Set(tracks.map(t => t.id));

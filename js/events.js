@@ -44,7 +44,7 @@ export function distLabel(m) {
 }
 // The reader's date format through font.js; the English fallback (node, the tests) as before.
 const shortDay = d => { const [y, m, dd] = dayOf(d).split('-'); return showDate(new Date(+y, +m - 1, +dd)); };
-const bigNumber = n => (fmt() ? fmt().number(n) : n.toLocaleString('en-GB'));
+const bigNumber = n => (fmt() ? fmt().number(n) : n.toLocaleString());
 
 // ---- best efforts ----
 // rows: derive.prRows ([distance, seconds, day, activity id]); acts: id -> activity.

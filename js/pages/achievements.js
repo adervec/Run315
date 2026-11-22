@@ -37,7 +37,7 @@ function feed(events) {
   })}`;
 }
 
-const monthName = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }));   // iso-ok: a month heading, not a date
+const monthName = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
 
 export function render() {
   useCss('achievements', CSS);

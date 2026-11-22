@@ -22,10 +22,9 @@ const CSS = `
 @media (max-width: 520px) { .huge { font-size: 42px; } }
 `;
 
-const n = v => (fmt() ? fmt().number(Math.round(v || 0)) : Math.round(v || 0).toLocaleString('en-US'));
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const n = v => (fmt() ? fmt().number(Math.round(v || 0)) : Math.round(v || 0).toLocaleString());
 // "March 2019" in the reader's language.
-const monthYear = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`);
+const monthYear = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : '');
 
 export function render() {

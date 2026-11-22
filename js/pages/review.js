@@ -30,14 +30,14 @@ const CSS = `
 @media (max-width: 520px) { .yr-huge { font-size: 42px; } }
 `;
 const ui = { year: null, posterScope: 'all' };
-const n0 = v => (fmt() ? fmt().number(Math.round(v || 0)) : Math.round(v || 0).toLocaleString('en-US'));
+const n0 = v => (fmt() ? fmt().number(Math.round(v || 0)) : Math.round(v || 0).toLocaleString());
 const n1 = v => (fmt() ? fmt().number(v || 0, { min: 1, max: 1 }) : (v || 0).toFixed(1));
 const km = m => n0((m || 0) / 1000);
 const pct = v => (v == null ? '' : (v >= 0 ? '+' : '−') + (fmt() ? fmt().percent(Math.abs(Math.round(v * 100)) / 100, 0) : Math.abs(Math.round(v * 100)) + '%'));
 const M3 = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 // Month initials and names in the reader's language; the English letters as the fallback.
 const monthInitial = i => (fmt() ? fmt().custom(new Date(2026, i, 1), { month: 'narrow' }) : M3[i]);
-const monthName = bm => (fmt() ? fmt().custom(new Date(2026, bm.month - 1, 1), { month: 'long' }) : bm.name);
+const monthName = bm => (fmt() ? fmt().custom(new Date(2026, bm.month - 1, 1), { month: 'long' }) : String(bm.month));   // ponytail: number only when font.js is missing
 
 const runsOf = () => D.runs(state).filter(a => a.source !== 'gymtracker');
 function inputs(year) {
