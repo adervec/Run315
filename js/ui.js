@@ -6,7 +6,7 @@ import { renderChart } from './charts.js';
 export { fmtTime, fmtPace };
 
 // ---- languages (house standard 20): t() lives in js/i18n.js so the analysis modules can use it ----
-import { t, fmt } from './i18n.js';
+import { t, fmt, showDate } from './i18n.js';
 export { t };
 
 // ---- templating: html`...` escapes every interpolation unless it is raw() or another html`` ----
@@ -26,14 +26,12 @@ export function html(strings, ...vals) {
 export const km = (m, d = 1) => (m == null ? '--' : (m / 1000).toFixed(d));
 export const pace = (s, m) => (s && m ? fmtPace(s, m) : '--');
 export const signed = v => { const n = Math.round(v || 0); return (n > 0 ? '+' : n < 0 ? '−' : '+') + Math.abs(n); };
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-// '2026-08-18…' or a Date -> '18 Aug' (or '18 Aug 2025' when not this year)
-export function day(v, withYear) {
-  const s = typeof v === 'string' ? v : v.toISOString();
-  const y = +s.slice(0, 4), m = +s.slice(5, 7), d = +s.slice(8, 10);
-  const year = withYear || y !== new Date().getFullYear();
-  if (fmt()) return fmt().custom(new Date(y, m - 1, d), { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) });
-  return d + ' ' + MONTHS[m - 1] + (year ? ' ' + y : '');
+// '2026-08-18…' (a stored day, read as that local day) or a Date -> the reader's date: ISO
+// 2026-08-18 by default (house standard 28). The second argument is kept for old callers.
+export function day(v) {
+  if (v instanceof Date) return showDate(v);
+  const s = String(v);
+  return showDate(new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)));
 }
 export const typeLabel = t => String(t || 'other').replace(/_/g, ' ');
 export function ago(iso) {

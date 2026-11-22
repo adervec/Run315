@@ -15,7 +15,7 @@ test('a best needs three earlier efforts to beat, and names the record it beat',
   assert.equal(ev.length, 1);
   assert.equal(ev[0].id, 'pr-d');
   assert.match(ev[0].title, /5 km best: 20:50/);
-  assert.match(ev[0].detail, /was 21:30 \(8 Jan 2026\)/);
+  assert.match(ev[0].detail, /was 21:30 \(2026-01-08\)/);
   // With only two before it, the same time is not an event.
   assert.equal(E.bestEffortEvents(rows.filter(r => r[3] !== 'c'), acts).length, 0);
 });

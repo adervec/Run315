@@ -50,7 +50,7 @@ const CSS = `
 const pct = (v, d = 0) => (v * 100).toFixed(d);
 const plus = (v, d = 0) => (v >= 0 ? '+' : '') + v.toFixed(d);
 const cap = s => (s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : '');
-const weekday = d => (globalThis.appFont?.fmt?.custom ? globalThis.appFont.fmt.custom(d, { weekday: 'short' }) : d.toLocaleDateString(undefined, { weekday: 'short' }));
+const weekday = d => (globalThis.appFont?.fmt?.custom ? globalThis.appFont.fmt.custom(d, { weekday: 'short' }) : d.toLocaleDateString(undefined, { weekday: 'short' }));   // iso-ok: a weekday name, not a date
 
 // SVG points for pace against distance, log-scaled on x. -> [points, labels]
 function paceCurvePoints(prs, width = 680, height = 150) {

@@ -29,6 +29,7 @@ import { segmentsButton, mountSegmentsButton } from '../datareview.js';
 import { strengthDetail } from '../strength.js';
 import { runReviewPanel } from '../runreview.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, fmtPace, typeLabel, useCss, toast, t } from '../ui.js';
+import { showDateTime } from '../i18n.js';
 
 export const title = p => state.activities[p && p.id]?.name
   || (p && String(p.id || '').startsWith('gt') && D.activities(state).find(a => a.id === p.id)?.name) || t('Activity');
@@ -103,10 +104,7 @@ let _view = { id: null, track: null, sx: null };
 function dateLine(iso) {
   const d = new Date(iso);
   if (isNaN(d)) return '';
-  const f = globalThis.appFont?.fmt;
-  if (f && f.custom) return f.custom(d, { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString(undefined, { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })
-    + ', ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return showDateTime(d, 'full');
 }
 function sourceLabel(a, rec) {
   const both = a.source === 'garmin' && a.strava_id;

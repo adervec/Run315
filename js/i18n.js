@@ -22,3 +22,10 @@ export function english(fn) {
 }
 // The reader's formatting (dates, numbers) through font.js, or null for the caller's fallback.
 export const fmt = () => (!_english && globalThis.appFont && globalThis.appFont.fmt) || null;
+// A whole date or date-and-time the reader sees (house standard 28): ISO by default
+// (2026-11-21, 2026-11-21 14:05; style 'full' adds the weekday), the reader's region when they
+// chose "Regional". Without font.js (node, the tests, what an agent reads) it is plain ISO.
+const p2 = n => String(n).padStart(2, '0');
+const isoDay = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+export const showDate = (d, style) => (fmt() ? fmt().date(d, style) : isoDay(d));
+export const showDateTime = (d, style) => (fmt() ? fmt().dateTime(d, style) : `${isoDay(d)} ${p2(d.getHours())}:${p2(d.getMinutes())}`);

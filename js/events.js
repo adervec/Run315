@@ -21,7 +21,7 @@ import { weekStart, addDayKey, daysBetween, dayKey, isoLocal } from './lib/dt.js
 import { fmtTime } from './lib/fitness.js';
 import { maxSquare } from './lib/territory.js';
 import { trailKey, DEFAULT_COMPLETE_AT } from './lib/trails.js';
-import { t, fmt } from './i18n.js';
+import { t, fmt, showDate } from './i18n.js';
 
 export const MIN_PRIOR_EFFORTS = 3;      // a best beats at least this many earlier efforts
 export const LONGEST_MIN_WEEKS = 6;      // "longest in N weeks" only from six weeks up
@@ -43,11 +43,7 @@ export function distLabel(m) {
   return r < 1000 ? t('{n} m', { n: r }) : t('{n} km', { n: +(r / 1000).toFixed(2) });
 }
 // The reader's date format through font.js; the English fallback (node, the tests) as before.
-const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const shortDay = d => {
-  const [y, m, dd] = dayOf(d).split('-'), f = fmt();
-  return f ? f.custom(new Date(+y, +m - 1, +dd), { day: 'numeric', month: 'short', year: 'numeric' }) : `${+dd} ${MONTHS_EN[+m - 1]} ${y}`;
-};
+const shortDay = d => { const [y, m, dd] = dayOf(d).split('-'); return showDate(new Date(+y, +m - 1, +dd)); };
 const bigNumber = n => (fmt() ? fmt().number(n) : n.toLocaleString('en-GB'));
 
 // ---- best efforts ----

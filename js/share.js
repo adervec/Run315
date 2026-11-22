@@ -15,7 +15,7 @@ import * as D from './derive.js';
 import * as C from './collect.js';
 import { renderChart } from './charts.js';
 import { html, raw, esc, toast, useCss, day } from './ui.js';
-import { t, fmt } from './i18n.js';
+import { t, fmt, showDate } from './i18n.js';
 
 const nowIso = () => new Date().toISOString();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -144,8 +144,7 @@ export async function shareCard(id, { stats = C.CARD_STATS.map(s => s[0]), w = 1
   if (segs.length) strokeTrack(g, C.fitSegments(segs, w - 120, mapH, 30).map(s => s.map(([x, y]) => [x + 60, y + mapTop])), 7);
   else { g.fillStyle = FAINT; g.font = `500 28px ${FONT}`; g.fillText(D.isVirtual(a) ? t('Indoor / virtual: no map') : t('No track to draw'), 60, mapTop + 40); }
   g.fillStyle = FAINT; g.font = `500 30px ${FONT}`;
-  const dateOpts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  g.fillText(fmt() ? fmt().custom(new Date(a.start), dateOpts) : new Date(a.start).toLocaleDateString('en-GB', dateOpts), 60, h - 380);
+  g.fillText(showDate(new Date(a.start), 'full'), 60, h - 380);
   const name = a.name || t('Run');
   g.fillStyle = INK; fitText(g, name, w - 120, 64);
   g.fillText(name, 60, h - 310);

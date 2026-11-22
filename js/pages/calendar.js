@@ -12,7 +12,7 @@ import * as F from '../lib/fitness.js';
 import { dayKey, addDayKey, fromDay, weekStart } from '../lib/dt.js';
 import { dayTagsWidget, mountDayTags } from '../journal.js';
 import { html, raw, esc, pageHead, emptyState, fmtTime, typeLabel, day, useCss, t } from '../ui.js';
-import { fmt } from '../i18n.js';
+import { fmt, showDate } from '../i18n.js';
 
 export const title = 'Calendar';
 
@@ -164,9 +164,8 @@ const chipZ = (a, c) => { const l = c.load(a); return Math.min(1, Math.sqrt((l !
 // Month and weekday names in the reader's language (Monday first, like the grid).
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const dowNames = () => (fmt() ? DOW.map((_, i) => fmt().custom(new Date(2026, 0, 5 + i), { weekday: 'short' })) : DOW);
-const monthLabel = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }));
-const longDay = d => (fmt() ? fmt().custom(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+const monthLabel = d => (fmt() ? fmt().custom(d, { month: 'long', year: 'numeric' }) : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }));   // iso-ok: a month heading, not a date
+const longDay = d => showDate(d, 'full');
 // 'Race: <link>' as one translated sentence, the link put in after escaping.
 const raceLine = r => raw(esc(t('Race: {name}', { name: '\u0001' }))
   .replace('\u0001', `<a class="quiet-link" href="#/race/${esc(r.id)}">${esc(r.name)}</a>`));
